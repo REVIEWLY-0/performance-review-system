@@ -266,14 +266,21 @@ export class NotificationsService {
       return;
     }
 
-    // Get all employees in the company
+    // Get all employees in the company (include prefs for opt-out check)
     const employees = await this.prisma.user.findMany({
       where: { companyId, role: 'EMPLOYEE' },
+      select: { id: true, email: true, name: true, notificationPreferences: true },
     });
 
     this.logger.log(`Sending to ${employees.length} employees`);
 
     for (const employee of employees) {
+      const prefs = this.getPrefsFromRaw(employee.notificationPreferences);
+      if (!prefs.cycleStarted) {
+        this.logger.log(`Skipping cycle started email for ${employee.email} (opted out)`);
+        continue;
+      }
+
       await this.sendEmail({
         to: employee.email,
         subject: `New Review Cycle: ${cycle.name}`,
@@ -304,6 +311,12 @@ export class NotificationsService {
 
     if (!reviewer || !employee || !cycle) {
       this.logger.error('Reviewer, employee, or cycle not found');
+      return;
+    }
+
+    const prefs = this.getPrefsFromRaw(reviewer.notificationPreferences);
+    if (!prefs.reviewAssigned) {
+      this.logger.log(`Skipping review assigned email for ${reviewer.email} (opted out)`);
       return;
     }
 
@@ -371,6 +384,12 @@ export class NotificationsService {
       for (const [userId, pendingCount] of reviewsByUser) {
         const user = reviews.find((r) => r.reviewerId === userId)?.reviewer;
         if (user) {
+          const prefs = this.getPrefsFromRaw(user.notificationPreferences);
+          if (!prefs.reminders) {
+            this.logger.log(`Skipping reminder for ${user.email} (opted out)`);
+            continue;
+          }
+
           await this.sendEmail({
             to: user.email,
             subject: `Reminder: ${pendingCount} Pending Reviews`,
@@ -405,6 +424,12 @@ export class NotificationsService {
       return;
     }
 
+    const prefs = this.getPrefsFromRaw(employee.notificationPreferences);
+    if (!prefs.scoreAvailable) {
+      this.logger.log(`Skipping score available email for ${employee.email} (opted out)`);
+      return;
+    }
+
     await this.sendEmail({
       to: employee.email,
       subject: `Your Review Score for ${cycle.name}`,
@@ -415,6 +440,23 @@ export class NotificationsService {
   // ============================================================================
   // Notification Preferences
   // ============================================================================
+
+  /**
+   * Safely parse raw JSON preference field from the database.
+   * Absent or null field means all notifications are ON (opt-out model).
+   */
+  private getPrefsFromRaw(raw: unknown): NotificationPreferences {
+    if (raw && typeof raw === 'object') {
+      const p = raw as Partial<NotificationPreferences>;
+      return {
+        cycleStarted: p.cycleStarted !== false,
+        reviewAssigned: p.reviewAssigned !== false,
+        reminders: p.reminders !== false,
+        scoreAvailable: p.scoreAvailable !== false,
+      };
+    }
+    return { cycleStarted: true, reviewAssigned: true, reminders: true, scoreAvailable: true };
+  }
 
   async getUserPreferences(userId: string): Promise<NotificationPreferences> {
     const user = await this.prisma.user.findUnique({
