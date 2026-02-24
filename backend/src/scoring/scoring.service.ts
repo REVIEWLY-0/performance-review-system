@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -68,9 +67,9 @@ export class ScoringService {
   ) {}
 
   /**
-   * Calculate final score for a single employee
+   * Calculate final score for a single employee.
    * Formula: (Self + Avg(Managers) + Avg(Peers)) / 3
-   * CRITICAL: Only use SUBMITTED reviews, filter by companyId
+   * CRITICAL: Only uses SUBMITTED reviews, filtered by companyId.
    */
   async calculateFinalScore(
     employeeId: string,
@@ -81,107 +80,213 @@ export class ScoringService {
       `🧮 Calculating final score for employee ${employeeId} in cycle ${cycleId}`,
     );
 
-    // Verify cycle exists and belongs to company
+    // Verify cycle and employee exist
     const cycle = await this.prisma.reviewCycle.findFirst({
-      where: {
-        id: cycleId,
-        companyId,
-      },
+      where: { id: cycleId, companyId },
     });
-
     if (!cycle) {
       throw new NotFoundException('Review cycle not found or access denied');
     }
 
-    // Get employee details
     const employee = await this.prisma.user.findFirst({
-      where: {
-        id: employeeId,
-        companyId,
-      },
+      where: { id: employeeId, companyId },
     });
-
     if (!employee) {
       throw new NotFoundException('Employee not found or access denied');
     }
 
-    // Get all SUBMITTED reviews for this employee
-    const reviews = await this.prisma.review.findMany({
-      where: {
-        employeeId,
-        reviewCycleId: cycleId,
-        status: 'SUBMITTED', // CRITICAL: Only submitted reviews
-        reviewCycle: {
-          companyId, // CRITICAL: Multi-tenancy
+    // Fetch reviews and rating questions in parallel
+    const [reviews, ratingQuestions] = await Promise.all([
+      this.prisma.review.findMany({
+        where: {
+          employeeId,
+          reviewCycleId: cycleId,
+          status: 'SUBMITTED',
+          reviewCycle: { companyId },
         },
-      },
-      include: {
-        answers: {
-          include: {
-            question: true,
-          },
-        },
-      },
-    });
+        include: { answers: { include: { question: true } } },
+      }),
+      this.prisma.question.findMany({
+        where: { companyId, type: 'RATING' },
+        orderBy: { order: 'asc' },
+      }),
+    ]);
 
     console.log(`📊 Found ${reviews.length} submitted reviews`);
 
-    // Separate reviews by type
+    const result = this.calculateScoreFromData(
+      employee,
+      cycle,
+      reviews,
+      ratingQuestions,
+    );
+
+    // Send score available notification (fire-and-forget)
+    if (result.overall_score) {
+      await this.notificationsService
+        .sendScoreAvailableNotification(employeeId, cycleId, result.overall_score)
+        .catch((err) =>
+          console.error('Failed to send score notification:', err),
+        );
+    }
+
+    return result;
+  }
+
+  /**
+   * Calculate final scores for all employees in a cycle.
+   * Uses 4 total DB queries regardless of employee count (vs N*4 previously).
+   */
+  async calculateAllScores(
+    cycleId: string,
+    companyId: string,
+  ): Promise<AllScoresResponse> {
+    console.log(`🧮 Calculating all scores for cycle ${cycleId}`);
+
+    const cycle = await this.prisma.reviewCycle.findFirst({
+      where: { id: cycleId, companyId },
+    });
+    if (!cycle) {
+      throw new NotFoundException('Review cycle not found or access denied');
+    }
+
+    // Batch load everything in parallel — 3 queries total
+    const [employees, allReviews, ratingQuestions] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { companyId, role: 'EMPLOYEE' },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.review.findMany({
+        where: {
+          reviewCycleId: cycleId,
+          status: 'SUBMITTED',
+          reviewCycle: { companyId },
+        },
+        include: { answers: { include: { question: true } } },
+      }),
+      this.prisma.question.findMany({
+        where: { companyId, type: 'RATING' },
+        orderBy: { order: 'asc' },
+      }),
+    ]);
+
+    console.log(`👥 Found ${employees.length} employees`);
+
+    // Group reviews by employeeId for O(1) lookup
+    const reviewsByEmployee = new Map<string, any[]>();
+    for (const review of allReviews) {
+      const list = reviewsByEmployee.get(review.employeeId) ?? [];
+      list.push(review);
+      reviewsByEmployee.set(review.employeeId, list);
+    }
+
+    // Calculate all scores in memory — no additional DB calls
+    const scores: FinalScoreResponse[] = [];
+    for (const employee of employees) {
+      try {
+        const empReviews = reviewsByEmployee.get(employee.id) ?? [];
+        scores.push(
+          this.calculateScoreFromData(
+            employee,
+            cycle,
+            empReviews,
+            ratingQuestions,
+          ),
+        );
+      } catch (err: any) {
+        console.error(
+          `Error calculating score for ${employee.name}:`,
+          err.message,
+        );
+      }
+    }
+
+    // Fire-and-forget score notifications
+    for (const score of scores) {
+      if (score.overall_score) {
+        this.notificationsService
+          .sendScoreAvailableNotification(
+            score.employeeId,
+            cycleId,
+            score.overall_score,
+          )
+          .catch((err) =>
+            console.error('Failed to send score notification:', err),
+          );
+      }
+    }
+
+    return {
+      cycleId: cycle.id,
+      cycleName: cycle.name,
+      calculatedAt: new Date(),
+      scores,
+    };
+  }
+
+  // ============================================================================
+  // Private Helpers
+  // ============================================================================
+
+  /**
+   * Pure in-memory score calculation from pre-loaded data.
+   * No DB calls — safe to call in a loop without performance concern.
+   */
+  private calculateScoreFromData(
+    employee: { id: string; name: string },
+    cycle: { id: string; name: string },
+    reviews: any[],
+    ratingQuestions: any[],
+  ): FinalScoreResponse {
     const selfReview = reviews.find((r) => r.reviewType === 'SELF');
     const managerReviews = reviews.filter((r) => r.reviewType === 'MANAGER');
     const peerReviews = reviews.filter((r) => r.reviewType === 'PEER');
 
     const warnings: string[] = [];
 
-    // Get all rating questions for this company
-    const ratingQuestions = await this.prisma.question.findMany({
-      where: {
-        companyId,
-        type: 'RATING',
-      },
-      orderBy: { order: 'asc' },
-    });
-
     // Calculate per-question scores
     const byQuestion: QuestionScore[] = ratingQuestions.map((question) => {
-      // Get self score
       const selfAnswer = selfReview?.answers.find(
-        (a) => a.questionId === question.id,
+        (a: any) => a.questionId === question.id,
       );
       const selfScore = selfAnswer?.rating || null;
 
-      // Get manager scores
       const managerScores = managerReviews
-        .map((review) => {
+        .map((review: any) => {
           const answer = review.answers.find(
-            (a) => a.questionId === question.id,
+            (a: any) => a.questionId === question.id,
           );
           return answer?.rating;
         })
-        .filter((score): score is number => score !== null && score !== undefined);
+        .filter(
+          (score: any): score is number =>
+            score !== null && score !== undefined,
+        );
 
-      // Get peer scores
       const peerScores = peerReviews
-        .map((review) => {
+        .map((review: any) => {
           const answer = review.answers.find(
-            (a) => a.questionId === question.id,
+            (a: any) => a.questionId === question.id,
           );
           return answer?.rating;
         })
-        .filter((score): score is number => score !== null && score !== undefined);
+        .filter(
+          (score: any): score is number =>
+            score !== null && score !== undefined,
+        );
 
-      // Calculate averages
       const managerAvg =
         managerScores.length > 0
-          ? managerScores.reduce((sum, s) => sum + s, 0) / managerScores.length
+          ? managerScores.reduce((sum: number, s: number) => sum + s, 0) /
+            managerScores.length
           : null;
 
       const peerAvg =
         peerScores.length > 0
-          ? peerScores.reduce((sum, s) => sum + s, 0) / peerScores.length
+          ? peerScores.reduce((sum: number, s: number) => sum + s, 0) /
+            peerScores.length
           : null;
 
-      // Calculate overall average for this question
       const scores = [selfScore, managerAvg, peerAvg].filter(
         (s): s is number => s !== null,
       );
@@ -228,19 +333,17 @@ export class ScoringService {
         ? peerAvgs.reduce((sum, s) => sum + s, 0) / peerAvgs.length
         : null;
 
-    // Calculate final overall score with fallback logic
+    // Final overall score with fallback logic
     let overallScore: number | null = null;
     const availableScores = [selfAvg, managerOverallAvg, peerOverallAvg].filter(
       (s): s is number => s !== null,
     );
 
     if (availableScores.length === 3) {
-      // Ideal case: all three types available
       overallScore =
         availableScores.reduce((sum, s) => sum + s, 0) /
         availableScores.length;
     } else if (availableScores.length === 2) {
-      // Fallback: two types available
       overallScore =
         availableScores.reduce((sum, s) => sum + s, 0) /
         availableScores.length;
@@ -250,7 +353,6 @@ export class ScoringService {
         warnings.push('No peer reviews available - using self and manager only');
       }
     } else if (availableScores.length === 1) {
-      // Only self-review available
       overallScore = selfAvg;
       warnings.push(
         'Only self-review available - final score may not be representative',
@@ -259,7 +361,7 @@ export class ScoringService {
       warnings.push('No reviews available to calculate score');
     }
 
-    const result = {
+    return {
       employeeId: employee.id,
       employeeName: employee.name,
       cycleId: cycle.id,
@@ -279,77 +381,6 @@ export class ScoringService {
         peer_reviews: peerReviews.length,
       },
       warnings,
-    };
-
-    // Send score available notification to employee
-    if (overallScore) {
-      await this.notificationsService
-        .sendScoreAvailableNotification(employeeId, cycleId, overallScore)
-        .catch((err) =>
-          console.error('Failed to send score notification:', err),
-        );
-    }
-
-    return result;
-  }
-
-  /**
-   * Calculate final scores for all employees in a cycle
-   * Useful for batch processing and reports
-   */
-  async calculateAllScores(
-    cycleId: string,
-    companyId: string,
-  ): Promise<AllScoresResponse> {
-    console.log(`🧮 Calculating all scores for cycle ${cycleId}`);
-
-    // Verify cycle exists and belongs to company
-    const cycle = await this.prisma.reviewCycle.findFirst({
-      where: {
-        id: cycleId,
-        companyId,
-      },
-    });
-
-    if (!cycle) {
-      throw new NotFoundException('Review cycle not found or access denied');
-    }
-
-    // Get all employees in this company
-    const employees = await this.prisma.user.findMany({
-      where: {
-        companyId,
-        role: 'EMPLOYEE', // Only calculate for employees
-      },
-      orderBy: { name: 'asc' },
-    });
-
-    console.log(`👥 Found ${employees.length} employees`);
-
-    // Calculate score for each employee
-    const scores: FinalScoreResponse[] = [];
-    for (const employee of employees) {
-      try {
-        const score = await this.calculateFinalScore(
-          employee.id,
-          cycleId,
-          companyId,
-        );
-        scores.push(score);
-      } catch (err: any) {
-        console.error(
-          `Error calculating score for ${employee.name}:`,
-          err.message,
-        );
-        // Continue with other employees
-      }
-    }
-
-    return {
-      cycleId: cycle.id,
-      cycleName: cycle.name,
-      calculatedAt: new Date(),
-      scores,
     };
   }
 }

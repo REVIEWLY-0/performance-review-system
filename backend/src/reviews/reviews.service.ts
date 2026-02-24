@@ -464,29 +464,27 @@ export class ReviewsService {
       },
     });
 
-    // For each assigned employee, get their manager review status
-    const employeesToReview: EmployeeToReview[] = await Promise.all(
-      assignments.map(async (assignment) => {
-        // Find the manager's review for this employee
-        const managerReview = await this.prisma.review.findFirst({
-          where: {
-            reviewCycleId: cycleId,
-            employeeId: assignment.employeeId,
-            reviewerId: managerId,
-            reviewType: 'MANAGER',
-          },
-        });
+    // Batch fetch all manager reviews for this reviewer in one query
+    const existingReviews = await this.prisma.review.findMany({
+      where: {
+        reviewCycleId: cycleId,
+        reviewerId: managerId,
+        reviewType: 'MANAGER',
+      },
+      select: { employeeId: true, status: true },
+    });
 
-        return {
-          id: assignment.employee.id,
-          name: assignment.employee.name,
-          email: assignment.employee.email,
-          reviewStatus: managerReview?.status || 'NOT_STARTED',
-        };
-      }),
+    // Build lookup map for O(1) access per assignment
+    const reviewStatusMap = new Map(
+      existingReviews.map((r) => [r.employeeId, r.status]),
     );
 
-    return employeesToReview;
+    return assignments.map((assignment) => ({
+      id: assignment.employee.id,
+      name: assignment.employee.name,
+      email: assignment.employee.email,
+      reviewStatus: reviewStatusMap.get(assignment.employeeId) ?? 'NOT_STARTED',
+    }));
   }
 
   /**
@@ -842,29 +840,27 @@ export class ReviewsService {
       },
     });
 
-    // For each assigned employee, get their peer review status
-    const employeesToReview: EmployeeToReview[] = await Promise.all(
-      assignments.map(async (assignment) => {
-        // Find the peer's review for this employee
-        const peerReview = await this.prisma.review.findFirst({
-          where: {
-            reviewCycleId: cycleId,
-            employeeId: assignment.employeeId,
-            reviewerId: peerId,
-            reviewType: 'PEER',
-          },
-        });
+    // Batch fetch all peer reviews for this reviewer in one query
+    const existingReviews = await this.prisma.review.findMany({
+      where: {
+        reviewCycleId: cycleId,
+        reviewerId: peerId,
+        reviewType: 'PEER',
+      },
+      select: { employeeId: true, status: true },
+    });
 
-        return {
-          id: assignment.employee.id,
-          name: assignment.employee.name,
-          email: assignment.employee.email,
-          reviewStatus: peerReview?.status || 'NOT_STARTED',
-        };
-      }),
+    // Build lookup map for O(1) access per assignment
+    const reviewStatusMap = new Map(
+      existingReviews.map((r) => [r.employeeId, r.status]),
     );
 
-    return employeesToReview;
+    return assignments.map((assignment) => ({
+      id: assignment.employee.id,
+      name: assignment.employee.name,
+      email: assignment.employee.email,
+      reviewStatus: reviewStatusMap.get(assignment.employeeId) ?? 'NOT_STARTED',
+    }));
   }
 
   /**

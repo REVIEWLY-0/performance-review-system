@@ -90,27 +90,57 @@ export class AnalyticsService {
       throw new NotFoundException('Review cycle not found or access denied');
     }
 
-    // Get all employees
-    const allEmployees = await this.prisma.user.findMany({
-      where: { companyId, role: 'EMPLOYEE' },
-    });
-
-    // Get all reviews for this cycle
-    const allReviews = await this.prisma.review.findMany({
-      where: {
-        reviewCycleId: cycleId,
-        reviewCycle: { companyId },
-      },
-      include: {
-        answers: {
-          include: {
-            question: true,
-          },
+    // Fetch employees and review status counts in parallel (count queries, no heavy includes)
+    const [
+      allEmployees,
+      submitted,
+      draft,
+      selfPending,
+      managerPending,
+      peerPending,
+    ] = await Promise.all([
+      this.prisma.user.findMany({ where: { companyId, role: 'EMPLOYEE' } }),
+      this.prisma.review.count({
+        where: {
+          reviewCycleId: cycleId,
+          reviewCycle: { companyId },
+          status: 'SUBMITTED',
         },
-      },
-    });
+      }),
+      this.prisma.review.count({
+        where: {
+          reviewCycleId: cycleId,
+          reviewCycle: { companyId },
+          status: 'DRAFT',
+        },
+      }),
+      this.prisma.review.count({
+        where: {
+          reviewCycleId: cycleId,
+          reviewCycle: { companyId },
+          reviewType: 'SELF',
+          status: { not: 'SUBMITTED' },
+        },
+      }),
+      this.prisma.review.count({
+        where: {
+          reviewCycleId: cycleId,
+          reviewCycle: { companyId },
+          reviewType: 'MANAGER',
+          status: { not: 'SUBMITTED' },
+        },
+      }),
+      this.prisma.review.count({
+        where: {
+          reviewCycleId: cycleId,
+          reviewCycle: { companyId },
+          reviewType: 'PEER',
+          status: { not: 'SUBMITTED' },
+        },
+      }),
+    ]);
 
-    // Calculate scores for all employees
+    // Calculate scores using a single batch query internally
     const employeeScores = await this.calculateAllEmployeeScores(
       cycleId,
       companyId,
@@ -123,31 +153,15 @@ export class AnalyticsService {
         ? validScores.reduce((sum, e) => sum + e.score!, 0) / validScores.length
         : null;
 
-    // Top performers
     const topPerformers = [...employeeScores]
       .filter((e) => e.score !== null)
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 5);
 
-    // Review progress
-    const submitted = allReviews.filter((r) => r.status === 'SUBMITTED').length;
-    const draft = allReviews.filter((r) => r.status === 'DRAFT').length;
-    const expectedReviews = allEmployees.length * 3; // Self + Manager + Peers (approximate)
+    const expectedReviews = allEmployees.length * 3; // Self + Manager + Peers (approx)
     const notStarted = Math.max(0, expectedReviews - submitted - draft);
-
     const completionRate =
       expectedReviews > 0 ? (submitted / expectedReviews) * 100 : 0;
-
-    // Pending reviews by type
-    const selfReviews = allReviews.filter(
-      (r) => r.reviewType === 'SELF' && r.status !== 'SUBMITTED',
-    ).length;
-    const managerReviews = allReviews.filter(
-      (r) => r.reviewType === 'MANAGER' && r.status !== 'SUBMITTED',
-    ).length;
-    const peerReviews = allReviews.filter(
-      (r) => r.reviewType === 'PEER' && r.status !== 'SUBMITTED',
-    ).length;
 
     return {
       totalEmployees: allEmployees.length,
@@ -156,9 +170,9 @@ export class AnalyticsService {
       averageScore: averageScore ? Number(averageScore.toFixed(2)) : null,
       topPerformers,
       pendingReviews: {
-        selfReviews,
-        managerReviews,
-        peerReviews,
+        selfReviews: selfPending,
+        managerReviews: managerPending,
+        peerReviews: peerPending,
       },
       reviewProgress: {
         submitted,
@@ -178,7 +192,6 @@ export class AnalyticsService {
   ): Promise<ManagerAnalytics> {
     console.log(`📊 Getting manager analytics for manager ${managerId}`);
 
-    // Verify cycle
     const cycle = await this.prisma.reviewCycle.findFirst({
       where: { id: cycleId, companyId },
     });
@@ -195,43 +208,80 @@ export class AnalyticsService {
         reviewerType: 'MANAGER',
         reviewCycle: { companyId },
       },
-      include: {
-        employee: true,
-      },
+      include: { employee: true },
     });
 
     const teamMemberIds = assignments.map((a) => a.employeeId);
 
-    // Calculate scores for team members
-    const teamScores = await Promise.all(
-      assignments.map(async (assignment) => {
-        const score = await this.calculateEmployeeScore(
-          assignment.employeeId,
-          cycleId,
-          companyId,
-        );
-
-        // Count reviews completed for this employee
-        const reviews = await this.prisma.review.findMany({
+    // Batch load all team reviews + company employees + pending count in parallel
+    const [allTeamReviews, allSubmittedReviews, allEmployees, pendingReviews] =
+      await Promise.all([
+        // Lightweight review count tracking
+        this.prisma.review.findMany({
           where: {
             reviewCycleId: cycleId,
-            employeeId: assignment.employeeId,
+            employeeId: { in: teamMemberIds },
           },
-        });
+          select: { employeeId: true, status: true },
+        }),
+        // Submitted reviews with answers for score calculation
+        this.prisma.review.findMany({
+          where: {
+            reviewCycleId: cycleId,
+            employeeId: { in: teamMemberIds },
+            status: 'SUBMITTED',
+            reviewCycle: { companyId },
+          },
+          include: { answers: { include: { question: true } } },
+        }),
+        this.prisma.user.findMany({ where: { companyId, role: 'EMPLOYEE' } }),
+        this.prisma.review.count({
+          where: {
+            reviewCycleId: cycleId,
+            reviewerId: managerId,
+            reviewType: 'MANAGER',
+            status: { not: 'SUBMITTED' },
+          },
+        }),
+      ]);
 
-        const completed = reviews.filter((r) => r.status === 'SUBMITTED').length;
-        const total = reviews.length;
+    // Group by employeeId for O(1) lookup
+    const reviewCountMap = new Map<
+      string,
+      { total: number; completed: number }
+    >();
+    for (const review of allTeamReviews) {
+      const curr = reviewCountMap.get(review.employeeId) ?? {
+        total: 0,
+        completed: 0,
+      };
+      curr.total++;
+      if (review.status === 'SUBMITTED') curr.completed++;
+      reviewCountMap.set(review.employeeId, curr);
+    }
 
-        return {
-          id: assignment.employee.id,
-          name: assignment.employee.name,
-          email: assignment.employee.email,
-          score,
-          reviewsCompleted: completed,
-          reviewsTotal: total,
-        };
-      }),
-    );
+    const submittedByEmployee = new Map<string, any[]>();
+    for (const review of allSubmittedReviews) {
+      const list = submittedByEmployee.get(review.employeeId) ?? [];
+      list.push(review);
+      submittedByEmployee.set(review.employeeId, list);
+    }
+
+    const teamScores = assignments.map((assignment) => {
+      const counts = reviewCountMap.get(assignment.employeeId) ?? {
+        total: 0,
+        completed: 0,
+      };
+      const empReviews = submittedByEmployee.get(assignment.employeeId) ?? [];
+      return {
+        id: assignment.employee.id,
+        name: assignment.employee.name,
+        email: assignment.employee.email,
+        score: this.scoreFromReviews(empReviews),
+        reviewsCompleted: counts.completed,
+        reviewsTotal: counts.total,
+      };
+    });
 
     // Team average
     const validTeamScores = teamScores.filter((t) => t.score !== null);
@@ -241,10 +291,7 @@ export class AnalyticsService {
           validTeamScores.length
         : null;
 
-    // Company average for comparison
-    const allEmployees = await this.prisma.user.findMany({
-      where: { companyId, role: 'EMPLOYEE' },
-    });
+    // Company average (uses batched calculateAllEmployeeScores)
     const companyScores = await this.calculateAllEmployeeScores(
       cycleId,
       companyId,
@@ -256,16 +303,6 @@ export class AnalyticsService {
         ? validCompanyScores.reduce((sum, e) => sum + e.score!, 0) /
           validCompanyScores.length
         : null;
-
-    // Pending manager reviews
-    const pendingReviews = await this.prisma.review.count({
-      where: {
-        reviewCycleId: cycleId,
-        reviewerId: managerId,
-        reviewType: 'MANAGER',
-        status: { not: 'SUBMITTED' },
-      },
-    });
 
     return {
       teamSize: teamMemberIds.length,
@@ -290,7 +327,6 @@ export class AnalyticsService {
   ): Promise<EmployeeAnalytics> {
     console.log(`📊 Getting employee analytics for employee ${employeeId}`);
 
-    // Verify cycle
     const cycle = await this.prisma.reviewCycle.findFirst({
       where: { id: cycleId, companyId },
     });
@@ -299,55 +335,52 @@ export class AnalyticsService {
       throw new NotFoundException('Review cycle not found or access denied');
     }
 
-    // Get personal reviews
-    const reviews = await this.prisma.review.findMany({
-      where: {
-        reviewCycleId: cycleId,
-        employeeId,
-      },
-      include: {
-        answers: {
-          include: {
-            question: true,
+    // Load personal reviews, peer assignment counts, and company employees in parallel
+    const [reviews, peerAssignments, completedPeerReviews, allEmployees] =
+      await Promise.all([
+        this.prisma.review.findMany({
+          where: { reviewCycleId: cycleId, employeeId },
+          include: { answers: { include: { question: true } } },
+        }),
+        this.prisma.reviewerAssignment.count({
+          where: {
+            reviewCycleId: cycleId,
+            reviewerId: employeeId,
+            reviewerType: 'PEER',
           },
-        },
-      },
-    });
+        }),
+        this.prisma.review.count({
+          where: {
+            reviewCycleId: cycleId,
+            reviewerId: employeeId,
+            reviewType: 'PEER',
+            status: 'SUBMITTED',
+          },
+        }),
+        this.prisma.user.findMany({ where: { companyId, role: 'EMPLOYEE' } }),
+      ]);
 
-    // Calculate personal score
-    const personalScore = await this.calculateEmployeeScore(
-      employeeId,
-      cycleId,
-      companyId,
-    );
+    // Use pre-loaded reviews for score calculation (no extra DB call)
+    const submittedReviews = reviews.filter((r) => r.status === 'SUBMITTED');
+    const personalScore = this.scoreFromReviews(submittedReviews);
 
-    // Calculate breakdown
-    const selfReview = reviews.find(
-      (r) => r.reviewType === 'SELF' && r.status === 'SUBMITTED',
+    const selfReview = submittedReviews.find((r) => r.reviewType === 'SELF');
+    const managerReviews = submittedReviews.filter(
+      (r) => r.reviewType === 'MANAGER',
     );
-    const managerReviews = reviews.filter(
-      (r) => r.reviewType === 'MANAGER' && r.status === 'SUBMITTED',
-    );
-    const peerReviews = reviews.filter(
-      (r) => r.reviewType === 'PEER' && r.status === 'SUBMITTED',
-    );
+    const peerReviews = submittedReviews.filter((r) => r.reviewType === 'PEER');
 
     const breakdown = {
-      self: selfReview ? await this.calculateReviewAverage(selfReview) : null,
+      self: selfReview ? this.ratingAvgFromAnswers(selfReview.answers) : null,
       manager:
         managerReviews.length > 0
-          ? await this.calculateMultipleReviewsAverage(managerReviews)
+          ? this.multiReviewRatingAvg(managerReviews)
           : null,
       peer:
-        peerReviews.length > 0
-          ? await this.calculateMultipleReviewsAverage(peerReviews)
-          : null,
+        peerReviews.length > 0 ? this.multiReviewRatingAvg(peerReviews) : null,
     };
 
-    // Company average
-    const allEmployees = await this.prisma.user.findMany({
-      where: { companyId, role: 'EMPLOYEE' },
-    });
+    // Company average uses batched calculateAllEmployeeScores
     const companyScores = await this.calculateAllEmployeeScores(
       cycleId,
       companyId,
@@ -359,34 +392,18 @@ export class AnalyticsService {
         ? validScores.reduce((sum, e) => sum + e.score!, 0) / validScores.length
         : null;
 
-    // Pending tasks
     const hasSelfReview = reviews.some(
       (r) => r.reviewType === 'SELF' && r.status === 'SUBMITTED',
     );
-
-    const peerAssignments = await this.prisma.reviewerAssignment.count({
-      where: {
-        reviewCycleId: cycleId,
-        reviewerId: employeeId,
-        reviewerType: 'PEER',
-      },
-    });
-
-    const completedPeerReviews = await this.prisma.review.count({
-      where: {
-        reviewCycleId: cycleId,
-        reviewerId: employeeId,
-        reviewType: 'PEER',
-        status: 'SUBMITTED',
-      },
-    });
 
     return {
       personalScore,
       companyAverage: companyAverage ? Number(companyAverage.toFixed(2)) : null,
       scoreBreakdown: {
         self: breakdown.self ? Number(breakdown.self.toFixed(2)) : null,
-        manager: breakdown.manager ? Number(breakdown.manager.toFixed(2)) : null,
+        manager: breakdown.manager
+          ? Number(breakdown.manager.toFixed(2))
+          : null,
         peer: breakdown.peer ? Number(breakdown.peer.toFixed(2)) : null,
       },
       pendingTasks: {
@@ -405,6 +422,10 @@ export class AnalyticsService {
   // Helper Methods
   // ============================================================================
 
+  /**
+   * Single-employee score calculation — used when a pre-loaded batch is unavailable.
+   * For bulk use, prefer calculateAllEmployeeScores which batches the DB load.
+   */
   private async calculateEmployeeScore(
     employeeId: string,
     cycleId: string,
@@ -417,15 +438,51 @@ export class AnalyticsService {
         status: 'SUBMITTED',
         reviewCycle: { companyId },
       },
-      include: {
-        answers: {
-          include: {
-            question: true,
-          },
-        },
-      },
+      include: { answers: { include: { question: true } } },
     });
 
+    return this.scoreFromReviews(reviews);
+  }
+
+  /**
+   * Batch calculate scores for multiple employees.
+   * Issues a single DB query regardless of employee count.
+   */
+  private async calculateAllEmployeeScores(
+    cycleId: string,
+    companyId: string,
+    employees: any[],
+  ): Promise<EmployeeScore[]> {
+    if (employees.length === 0) return [];
+
+    // Single batch query for all submitted reviews across all employees
+    const allReviews = await this.prisma.review.findMany({
+      where: {
+        reviewCycleId: cycleId,
+        status: 'SUBMITTED',
+        reviewCycle: { companyId },
+      },
+      include: { answers: { include: { question: true } } },
+    });
+
+    // Group by employeeId for O(1) lookup
+    const reviewsByEmployee = new Map<string, any[]>();
+    for (const review of allReviews) {
+      const list = reviewsByEmployee.get(review.employeeId) ?? [];
+      list.push(review);
+      reviewsByEmployee.set(review.employeeId, list);
+    }
+
+    return employees.map((emp) => ({
+      id: emp.id,
+      name: emp.name,
+      email: emp.email,
+      score: this.scoreFromReviews(reviewsByEmployee.get(emp.id) ?? []),
+    }));
+  }
+
+  /** Pure in-memory score calculation from pre-loaded submitted reviews. No DB calls. */
+  private scoreFromReviews(reviews: any[]): number | null {
     if (reviews.length === 0) return null;
 
     const selfReview = reviews.find((r) => r.reviewType === 'SELF');
@@ -433,65 +490,39 @@ export class AnalyticsService {
     const peerReviews = reviews.filter((r) => r.reviewType === 'PEER');
 
     const scores: number[] = [];
-
     if (selfReview) {
-      const avg = await this.calculateReviewAverage(selfReview);
+      const avg = this.ratingAvgFromAnswers(selfReview.answers);
       if (avg !== null) scores.push(avg);
     }
-
     if (managerReviews.length > 0) {
-      const avg = await this.calculateMultipleReviewsAverage(managerReviews);
+      const avg = this.multiReviewRatingAvg(managerReviews);
       if (avg !== null) scores.push(avg);
     }
-
     if (peerReviews.length > 0) {
-      const avg = await this.calculateMultipleReviewsAverage(peerReviews);
+      const avg = this.multiReviewRatingAvg(peerReviews);
       if (avg !== null) scores.push(avg);
     }
 
-    if (scores.length === 0) return null;
-
-    return scores.reduce((sum, s) => sum + s, 0) / scores.length;
+    return scores.length > 0
+      ? scores.reduce((sum, s) => sum + s, 0) / scores.length
+      : null;
   }
 
-  private async calculateReviewAverage(review: any): Promise<number | null> {
-    const ratings = review.answers
-      .filter((a: any) => a.question.type === 'RATING' && a.rating !== null)
-      .map((a: any) => a.rating);
-
-    if (ratings.length === 0) return null;
-
-    return ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length;
+  private ratingAvgFromAnswers(answers: any[]): number | null {
+    const ratings = answers
+      .filter((a) => a.question.type === 'RATING' && a.rating !== null)
+      .map((a: any) => a.rating as number);
+    return ratings.length > 0
+      ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+      : null;
   }
 
-  private async calculateMultipleReviewsAverage(
-    reviews: any[],
-  ): Promise<number | null> {
-    const averages = await Promise.all(
-      reviews.map((r) => this.calculateReviewAverage(r)),
-    );
-
-    const validAverages = averages.filter((a) => a !== null) as number[];
-
-    if (validAverages.length === 0) return null;
-
-    return (
-      validAverages.reduce((sum, a) => sum + a, 0) / validAverages.length
-    );
-  }
-
-  private async calculateAllEmployeeScores(
-    cycleId: string,
-    companyId: string,
-    employees: any[],
-  ): Promise<EmployeeScore[]> {
-    return Promise.all(
-      employees.map(async (emp) => ({
-        id: emp.id,
-        name: emp.name,
-        email: emp.email,
-        score: await this.calculateEmployeeScore(emp.id, cycleId, companyId),
-      })),
-    );
+  private multiReviewRatingAvg(reviews: any[]): number | null {
+    const avgs = reviews
+      .map((r) => this.ratingAvgFromAnswers(r.answers))
+      .filter((a): a is number => a !== null);
+    return avgs.length > 0
+      ? avgs.reduce((sum, a) => sum + a, 0) / avgs.length
+      : null;
   }
 }
