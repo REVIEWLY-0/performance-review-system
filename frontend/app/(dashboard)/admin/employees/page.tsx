@@ -25,6 +25,8 @@ export default function EmployeesPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'>('ALL');
 
   useEffect(() => {
     async function loadData() {
@@ -273,9 +275,71 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      {/* Employee List */}
-      <EmployeeList employees={employees} />
-      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+      {/* Search & Filter */}
+      {(() => {
+        const isFiltered = search !== '' || roleFilter !== 'ALL';
+        const filteredEmployees = employees.filter(emp => {
+          const matchesSearch =
+            !search ||
+            emp.name.toLowerCase().includes(search.toLowerCase()) ||
+            emp.email.toLowerCase().includes(search.toLowerCase());
+          const matchesRole = roleFilter === 'ALL' || emp.role === roleFilter;
+          return matchesSearch && matchesRole;
+        });
+
+        return (
+          <>
+            <div className="mb-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <div className="flex-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search by name or email…"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <select
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}
+                className="block w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="ALL">All roles</option>
+                <option value="ADMIN">Admin</option>
+                <option value="MANAGER">Manager</option>
+                <option value="EMPLOYEE">Employee</option>
+              </select>
+              {isFiltered && (
+                <button
+                  onClick={() => { setSearch(''); setRoleFilter('ALL'); }}
+                  className="text-sm text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+
+            {isFiltered && (
+              <p className="text-xs text-gray-500 mb-2">
+                {filteredEmployees.length === 0
+                  ? 'No employees match your filters on this page'
+                  : `Showing ${filteredEmployees.length} of ${employees.length} on this page`}
+              </p>
+            )}
+
+            <EmployeeList employees={filteredEmployees} />
+            {!isFiltered && (
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

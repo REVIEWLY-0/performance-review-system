@@ -74,11 +74,27 @@ export default function ReviewCycleList({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading review cycles...</p>
-        </div>
+      <div className="grid gap-4 animate-pulse">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-5 bg-gray-200 rounded w-48" />
+                  <div className="h-5 bg-gray-200 rounded w-20" />
+                </div>
+                <div className="flex gap-4">
+                  <div className="h-4 bg-gray-200 rounded w-40" />
+                  <div className="h-4 bg-gray-200 rounded w-28" />
+                </div>
+              </div>
+              <div className="flex gap-2 ml-4">
+                <div className="h-9 bg-gray-200 rounded-md w-14" />
+                <div className="h-9 bg-gray-200 rounded-md w-28" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

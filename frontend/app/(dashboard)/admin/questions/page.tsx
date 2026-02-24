@@ -158,10 +158,35 @@ export default function QuestionsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading questions...</p>
+      <div className="px-4 py-6 sm:px-0">
+        <div className="mb-6 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-36 mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-7 bg-gray-200 rounded w-48" />
+              <div className="h-4 bg-gray-200 rounded w-72" />
+            </div>
+            <div className="flex gap-2">
+              <div className="h-9 bg-gray-200 rounded-md w-28" />
+              <div className="h-9 bg-gray-200 rounded-md w-32" />
+            </div>
+          </div>
+        </div>
+        <div className="border-b border-gray-200 mb-6">
+          <div className="flex space-x-8 pb-1 animate-pulse">
+            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-gray-200 rounded w-28" />)}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-white shadow rounded-lg p-4">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+          <div className="bg-white shadow rounded-lg h-48" />
         </div>
       </div>
     );
