@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { getEmployeesToReview, EmployeeToReview } from '@/lib/reviews';
+import SkeletonTable from '@/components/skeletons/SkeletonTable';
 
 export default function ManagerReviewsPage() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function ManagerReviewsPage() {
   const loadCycles = async () => {
     try {
       setLoading(true);
-      const activeCycles = await reviewCyclesApi.getAll('ACTIVE');
+      const { data: activeCycles } = await reviewCyclesApi.getAll('ACTIVE');
       setCycles(activeCycles);
 
       // If cycleId in query param, use it; otherwise use first cycle
@@ -100,12 +101,16 @@ export default function ManagerReviewsPage() {
   if (loading) {
     return (
       <div className="px-4 py-6 sm:px-0">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
+        <div className="mb-6 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
+          <div className="h-7 bg-gray-200 rounded w-48 mb-1" />
+          <div className="h-4 bg-gray-200 rounded w-64" />
         </div>
+        <div className="mb-6 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
+          <div className="h-10 bg-gray-200 rounded w-80" />
+        </div>
+        <SkeletonTable rows={4} />
       </div>
     );
   }

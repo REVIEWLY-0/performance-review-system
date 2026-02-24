@@ -205,10 +205,30 @@ export default function SelfReviewPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading review...</p>
+      <div className="px-4 py-6 max-w-4xl mx-auto">
+        <div className="mb-6 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
+          <div className="h-7 bg-gray-200 rounded w-40 mb-1" />
+          <div className="h-4 bg-gray-200 rounded w-64" />
+        </div>
+        <div className="mb-6 bg-white rounded-lg shadow p-6 animate-pulse">
+          <div className="flex items-center justify-between mb-2">
+            <div className="h-4 bg-gray-200 rounded w-48" />
+            <div className="h-6 bg-gray-200 rounded w-12" />
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5" />
+        </div>
+        <div className="space-y-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4" />
+              <div className="flex gap-3">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <div key={n} className="flex-1 h-16 bg-gray-200 rounded-lg" />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

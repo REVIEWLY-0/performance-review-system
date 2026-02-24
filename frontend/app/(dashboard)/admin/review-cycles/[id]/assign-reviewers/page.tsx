@@ -12,6 +12,7 @@ import AssignmentCard from '@/components/reviewer-assignments/AssignmentCard';
 import BulkUploadModal from '@/components/reviewer-assignments/BulkUploadModal';
 import AssignmentSummary from '@/components/reviewer-assignments/AssignmentSummary';
 import BackButton from '@/components/BackButton';
+import { useToast } from '@/components/ToastProvider';
 
 export default function AssignReviewersPage({
   params,
@@ -26,7 +27,7 @@ export default function AssignReviewersPage({
   const [assignments, setAssignments] = useState<EmployeeAssignments[]>([]);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     loadData();
@@ -78,8 +79,7 @@ export default function AssignReviewersPage({
         assignments: assignmentsDto,
       });
 
-      setSuccessMessage('Assignments saved successfully');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      toast.success('Assignments saved');
 
       // Reload assignments
       const updatedAssignments = await reviewerAssignmentsApi.getByCycle(
@@ -96,18 +96,31 @@ export default function AssignReviewersPage({
   const handleBulkUploadSuccess = async () => {
     setShowBulkUpload(false);
     await loadData();
-    setSuccessMessage('Bulk upload completed successfully');
-    setTimeout(() => setSuccessMessage(''), 3000);
+    toast.success('Bulk upload completed');
   };
 
   if (loading) {
     return (
       <div className="px-4 py-6 sm:px-0">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
+        <div className="mb-6 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
+          <div className="h-7 bg-gray-200 rounded w-56 mb-1" />
+          <div className="h-4 bg-gray-200 rounded w-72" />
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white shadow rounded-lg p-6 animate-pulse">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-full bg-gray-200" />
+                <div>
+                  <div className="h-4 bg-gray-200 rounded w-32 mb-1" />
+                  <div className="h-3 bg-gray-200 rounded w-48" />
+                </div>
+              </div>
+              <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
+              <div className="h-8 bg-gray-200 rounded w-full" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -143,26 +156,6 @@ export default function AssignReviewersPage({
           📄 Bulk Upload (CSV)
         </button>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="mb-4 rounded-md bg-green-50 p-4">
-          <div className="flex">
-            <svg
-              className="h-5 w-5 text-green-400"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <p className="ml-3 text-sm text-green-700">{successMessage}</p>
-          </div>
-        </div>
-      )}
 
       {/* Error Message */}
       {error && (
