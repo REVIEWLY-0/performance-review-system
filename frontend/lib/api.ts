@@ -1,5 +1,15 @@
 import { getSession } from './auth'
 
+export interface PaginatedResponse<T> {
+  data: T[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 export interface User {
   id: string
   email: string
@@ -80,7 +90,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
 // User API
 export const usersApi = {
-  getAll: async (): Promise<User[]> => {
+  getAll: async (): Promise<PaginatedResponse<User>> => {
     return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users`)
   },
 

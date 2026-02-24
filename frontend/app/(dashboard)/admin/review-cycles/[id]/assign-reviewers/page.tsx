@@ -43,7 +43,7 @@ export default function AssignReviewersPage({
       ]);
 
       setCycle(cycleData);
-      setAllUsers(usersData);
+      setAllUsers(usersData.data);
       setAssignments(assignmentsData);
     } catch (err: any) {
       setError(err.message || 'Failed to load data');

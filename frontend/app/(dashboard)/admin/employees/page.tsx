@@ -6,6 +6,7 @@ import { getCurrentUser, User } from '@/lib/auth';
 import { usersApi, UserStats } from '@/lib/api';
 import EmployeeList from '@/components/employees/EmployeeList';
 import CreateEmployeeButton from '@/components/employees/CreateEmployeeButton';
+import CsvImportModal from '@/components/employees/CsvImportModal';
 import BackButton from '@/components/BackButton';
 
 export default function EmployeesPage() {
@@ -18,6 +19,7 @@ export default function EmployeesPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -45,17 +47,17 @@ export default function EmployeesPage() {
 
         // Fetch data
         console.log('📡 Fetching employees and stats...');
-        const [employeesData, statsData] = await Promise.all([
+        const [employeesResponse, statsData] = await Promise.all([
           usersApi.getAll(),
           usersApi.getStats(),
         ]);
 
         console.log('✅ Data loaded:', {
-          employees: employeesData.length,
+          employees: employeesResponse.data.length,
           stats: statsData.total,
         });
 
-        setEmployees(employeesData);
+        setEmployees(employeesResponse.data);
         setStats(statsData);
       } catch (err: any) {
         console.error('❌ Error loading employees page:', err);
@@ -103,8 +105,30 @@ export default function EmployeesPage() {
             Manage your company's employees and their roles
           </p>
         </div>
-        <CreateEmployeeButton />
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <svg className="mr-2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Import CSV
+          </button>
+          <CreateEmployeeButton />
+        </div>
       </div>
+
+      {showImportModal && (
+        <CsvImportModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            setShowImportModal(false);
+            window.location.reload();
+          }}
+        />
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-4 mb-6">
