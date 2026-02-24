@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth'
 import Logo from '@/components/Logo'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface User {
   id: string
@@ -14,6 +15,7 @@ interface User {
 
 export default function DashboardNav({ user }: { user: User }) {
   const router = useRouter()
+  const { theme, toggle } = useTheme()
 
   const handleSignOut = async () => {
     await signOut()
@@ -21,22 +23,45 @@ export default function DashboardNav({ user }: { user: User }) {
   }
 
   return (
-    <nav className="bg-white shadow-sm">
+    <nav className="bg-white dark:bg-gray-800 shadow-sm dark:shadow-gray-900/50 border-b border-transparent dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-2">
             <Logo size={32} />
-            <span className="text-xl font-bold text-gray-900">Reviewly</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">Reviewly</span>
           </div>
 
           <div className="flex items-center space-x-4">
             <div className="text-sm">
-              <p className="font-medium text-gray-900">{user.name}</p>
-              <p className="text-gray-500">{user.role} • {user.companyName}</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
+              <p className="text-gray-500 dark:text-gray-400">{user.role} • {user.companyName}</p>
             </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggle}
+              className="inline-flex items-center p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? (
+                /* Sun icon */
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                </svg>
+              ) : (
+                /* Moon icon */
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+
             <button
               onClick={() => router.push('/settings')}
-              className="inline-flex items-center p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+              className="inline-flex items-center p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
               title="Settings"
             >
               <svg
@@ -61,7 +86,7 @@ export default function DashboardNav({ user }: { user: User }) {
             </button>
             <button
               onClick={handleSignOut}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
             >
               Sign out
             </button>
