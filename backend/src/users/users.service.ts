@@ -79,29 +79,46 @@ export class UsersService {
   /**
    * CRITICAL: Find all users - MUST filter by companyId
    */
-  async findAll(companyId: string) {
-    return this.prisma.user.findMany({
-      where: { companyId },
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+  async findAll(companyId: string, page = 1, limit = 50) {
+    const safeLimit = Math.min(limit, 200);
+    const skip = (page - 1) * safeLimit;
+
+    const where = { companyId };
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        include: {
+          manager: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          directReports: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-        directReports: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: safeLimit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit),
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    };
   }
 
   /**
@@ -269,6 +286,7 @@ export class UsersService {
 
   /**
    * Get all managers in company (for dropdown)
+   * Hard cap at 200 — dropdown doesn't need pagination
    */
   async getManagers(companyId: string) {
     return this.prisma.user.findMany({
@@ -287,6 +305,7 @@ export class UsersService {
       orderBy: {
         name: 'asc',
       },
+      take: 200,
     });
   }
 

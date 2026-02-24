@@ -89,23 +89,39 @@ export class ReviewCyclesService {
    * Get all review cycles for a company, optionally filtered by status
    * CRITICAL: Always filter by companyId for multi-tenancy
    */
-  async findAll(companyId: string, status?: ReviewCycleStatus) {
+  async findAll(companyId: string, status?: ReviewCycleStatus, page = 1, limit = 50) {
     console.log(
       `📋 Fetching review cycles for company: ${companyId}, status: ${status || 'all'}`,
     );
 
-    return this.prisma.reviewCycle.findMany({
-      where: {
-        companyId,
-        ...(status && { status }),
-      },
-      include: {
-        reviewConfigs: {
-          orderBy: { stepNumber: 'asc' },
+    const safeLimit = Math.min(limit, 200);
+    const skip = (page - 1) * safeLimit;
+    const where = { companyId, ...(status && { status }) };
+
+    const [data, total] = await Promise.all([
+      this.prisma.reviewCycle.findMany({
+        where,
+        include: {
+          reviewConfigs: {
+            orderBy: { stepNumber: 'asc' },
+          },
         },
+        orderBy: [{ createdAt: 'desc' }],
+        skip,
+        take: safeLimit,
+      }),
+      this.prisma.reviewCycle.count({ where }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit),
       },
-      orderBy: [{ createdAt: 'desc' }],
-    });
+    };
   }
 
   /**

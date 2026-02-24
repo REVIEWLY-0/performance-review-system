@@ -62,20 +62,36 @@ export class QuestionsService {
    * Get all questions for a company, optionally filtered by review type
    * CRITICAL: Always filter by companyId for multi-tenancy
    */
-  async findAll(companyId: string, reviewType?: ReviewType) {
+  async findAll(companyId: string, reviewType?: ReviewType, page = 1, limit = 100) {
     console.log(`📋 Fetching questions for company: ${companyId}, type: ${reviewType || 'all'}`);
 
-    return this.prisma.question.findMany({
-      where: {
-        companyId,
-        ...(reviewType && { reviewType }),
+    const safeLimit = Math.min(limit, 500);
+    const skip = (page - 1) * safeLimit;
+    const where = { companyId, ...(reviewType && { reviewType }) };
+
+    const [data, total] = await Promise.all([
+      this.prisma.question.findMany({
+        where,
+        orderBy: [
+          { reviewType: 'asc' },
+          { order: 'asc' },
+          { createdAt: 'asc' },
+        ],
+        skip,
+        take: safeLimit,
+      }),
+      this.prisma.question.count({ where }),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit),
       },
-      orderBy: [
-        { reviewType: 'asc' },
-        { order: 'asc' },
-        { createdAt: 'asc' },
-      ],
-    });
+    };
   }
 
   /**
@@ -207,7 +223,7 @@ export class QuestionsService {
   async findGroupedByType(companyId: string) {
     console.log(`📊 Fetching grouped questions for company ${companyId}`);
 
-    const questions = await this.findAll(companyId);
+    const { data: questions } = await this.findAll(companyId, undefined, 1, 500);
 
     // Group by review type
     const grouped = {

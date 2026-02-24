@@ -25,7 +25,7 @@ export class ReviewCyclesController {
   constructor(private readonly reviewCyclesService: ReviewCyclesService) {}
 
   /**
-   * GET /review-cycles?status=DRAFT
+   * GET /review-cycles?status=DRAFT&page=1&limit=50
    * List all review cycles for the authenticated user's company
    * Optionally filter by status
    */
@@ -33,8 +33,10 @@ export class ReviewCyclesController {
   async findAll(
     @CompanyId() companyId: string,
     @Query('status') status?: ReviewCycleStatus,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
   ) {
-    return this.reviewCyclesService.findAll(companyId, status);
+    return this.reviewCyclesService.findAll(companyId, status, +page, +limit);
   }
 
   /**

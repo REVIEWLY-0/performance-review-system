@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService, CreateUserDto, UpdateUserDto, ImportUsersBodyDto } from './users.service';
@@ -23,9 +24,13 @@ export class UsersController {
    * Get all users in company
    */
   @Get()
-  async findAll(@CurrentUser() user: any) {
+  async findAll(
+    @CurrentUser() user: any,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
+  ) {
     // CRITICAL: Always filter by company_id
-    return this.usersService.findAll(user.companyId);
+    return this.usersService.findAll(user.companyId, +page, +limit);
   }
 
   /**

@@ -24,8 +24,10 @@ export class QuestionsController {
   async findAll(
     @CompanyId() companyId: string,
     @Query('reviewType') reviewType?: ReviewType,
+    @Query('page') page = 1,
+    @Query('limit') limit = 100,
   ) {
-    return this.questionsService.findAll(companyId, reviewType);
+    return this.questionsService.findAll(companyId, reviewType, +page, +limit);
   }
 
   /**
