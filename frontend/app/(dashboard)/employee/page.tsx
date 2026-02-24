@@ -6,6 +6,7 @@ import { getCurrentUser, User } from '@/lib/auth';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { getEmployeeAnalytics, EmployeeAnalytics } from '@/lib/analytics';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend } from 'recharts';
+import SkeletonCard from '@/components/skeletons/SkeletonCard';
 
 export default function EmployeeDashboard() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function EmployeeDashboard() {
 
       setUser(currentUser);
 
-      const allCycles = await reviewCyclesApi.getAll();
+      const { data: allCycles } = await reviewCyclesApi.getAll();
       setCycles(allCycles);
 
       // Select first active cycle or first cycle
@@ -68,10 +69,20 @@ export default function EmployeeDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+      <div className="px-4 py-6 sm:px-0">
+        <div className="mb-6 animate-pulse">
+          <div className="h-7 bg-gray-200 rounded w-48" />
+          <div className="mt-2 h-4 bg-gray-200 rounded w-72" />
+        </div>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
+          <div className="bg-white shadow rounded-lg h-72" />
+          <div className="bg-white shadow rounded-lg h-72" />
         </div>
       </div>
     );

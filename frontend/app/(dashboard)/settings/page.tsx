@@ -8,6 +8,8 @@ import {
   updateNotificationPreferences,
   NotificationPreferences,
 } from '@/lib/notifications';
+import { useToast } from '@/components/ToastProvider';
+import BackButton from '@/components/BackButton';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -20,7 +22,7 @@ export default function SettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     loadData();
@@ -54,15 +56,12 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    setSuccessMessage('');
-
     try {
       await updateNotificationPreferences(preferences);
-      setSuccessMessage('Notification preferences saved successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      toast.success('Notification preferences saved');
     } catch (err: any) {
       console.error('Error saving preferences:', err);
-      alert('Failed to save preferences');
+      toast.error(err.message || 'Failed to save preferences');
     } finally {
       setSaving(false);
     }
@@ -70,10 +69,37 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading settings...</p>
+      <div className="px-4 py-6 sm:px-0">
+        <div className="mb-6 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
+          <div className="h-7 bg-gray-200 rounded w-24 mb-1" />
+          <div className="h-4 bg-gray-200 rounded w-72" />
+        </div>
+        <div className="bg-white shadow rounded-lg p-6 mb-6 animate-pulse">
+          <div className="h-5 bg-gray-200 rounded w-44 mb-4" />
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex justify-between">
+                <div className="h-4 bg-gray-200 rounded w-16" />
+                <div className="h-4 bg-gray-200 rounded w-40" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white shadow rounded-lg p-6 animate-pulse">
+          <div className="h-5 bg-gray-200 rounded w-40 mb-2" />
+          <div className="h-4 bg-gray-200 rounded w-64 mb-6" />
+          <div className="space-y-5">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="h-4 bg-gray-200 rounded w-32" />
+                  <div className="h-3 bg-gray-200 rounded w-52" />
+                </div>
+                <div className="h-6 w-11 bg-gray-200 rounded-full" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -85,52 +111,12 @@ export default function SettingsPage() {
     <div className="px-4 py-6 sm:px-0">
       {/* Header */}
       <div className="mb-6">
-        <button
-          onClick={() => router.push(`/${user.role.toLowerCase()}`)}
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
-        >
-          <svg
-            className="h-4 w-4 mr-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Back to Dashboard
-        </button>
+        <BackButton href={`/${user.role.toLowerCase()}`} label="Back to Dashboard" />
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="mt-1 text-sm text-gray-600">
           Manage your account settings and notification preferences
         </p>
       </div>
-
-      {/* Success Message */}
-      {successMessage && (
-        <div className="mb-6 rounded-md bg-green-50 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-green-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <p className="ml-3 text-sm text-green-700">{successMessage}</p>
-          </div>
-        </div>
-      )}
 
       {/* User Info */}
       <div className="bg-white shadow rounded-lg p-6 mb-6">
