@@ -14,10 +14,10 @@ import { CompanyId } from '../common/decorators/company-id.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { ReviewCycleStatus } from '@prisma/client';
-import type {
+import {
   CreateReviewCycleDto,
   UpdateReviewCycleDto,
-  ReviewConfigDto,
+  UpdateConfigsBodyDto,
 } from './review-cycles.service';
 
 @Controller('review-cycles')
@@ -88,7 +88,7 @@ export class ReviewCyclesController {
   async updateConfigs(
     @Param('id') id: string,
     @CompanyId() companyId: string,
-    @Body() body: { configs: ReviewConfigDto[] },
+    @Body() body: UpdateConfigsBodyDto,
   ) {
     return this.reviewCyclesService.updateConfigs(
       id,

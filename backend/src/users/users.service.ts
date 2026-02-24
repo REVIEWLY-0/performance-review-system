@@ -2,26 +2,71 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../common/services/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UserRole } from '@prisma/client';
+import {
+  IsEmail, IsString, IsEnum, IsOptional, IsArray, ValidateNested,
+  MinLength, MaxLength,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export interface CreateUserDto {
-  email: string;
-  name: string;
-  role: UserRole;
+export class CreateUserDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  name!: string;
+
+  @IsEnum(UserRole)
+  role!: UserRole;
+
+  @IsOptional()
+  @IsString()
   managerId?: string;
 }
 
-export interface UpdateUserDto {
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
   name?: string;
+
+  @IsOptional()
+  @IsEmail()
   email?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
   role?: UserRole;
+
+  @IsOptional()
+  @IsString()
   managerId?: string;
 }
 
-export interface ImportUserDto {
-  email: string;
-  name: string;
-  role: string;
+export class ImportUserDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  name!: string;
+
+  @IsString()
+  role!: string;
+
+  @IsOptional()
+  @IsEmail()
   managerEmail?: string;
+}
+
+export class ImportUsersBodyDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImportUserDto)
+  users!: ImportUserDto[];
 }
 
 @Injectable()

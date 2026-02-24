@@ -8,25 +8,73 @@ import {
 import { PrismaService } from '../common/services/prisma.service';
 import { ReviewCycleStatus, ReviewType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
+import {
+  IsString, IsEnum, IsOptional, IsNumber, IsArray, IsDateString,
+  ValidateNested, MinLength, MaxLength, Min, Max, ArrayMinSize, ArrayMaxSize,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export interface CreateReviewCycleDto {
-  name: string;
-  startDate: string; // ISO date string
-  endDate: string;
-  reviewConfigs: ReviewConfigDto[];
+// Defined before CreateReviewCycleDto so @Type(() => ReviewConfigDto) resolves correctly
+export class ReviewConfigDto {
+  @IsNumber()
+  @Min(1)
+  @Max(3)
+  stepNumber!: number;
+
+  @IsEnum(ReviewType)
+  reviewType!: ReviewType;
+
+  @IsDateString()
+  startDate!: string;
+
+  @IsDateString()
+  endDate!: string;
 }
 
-export interface ReviewConfigDto {
-  stepNumber: number;
-  reviewType: ReviewType;
-  startDate: string;
-  endDate: string;
+export class CreateReviewCycleDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(200)
+  name!: string;
+
+  @IsDateString()
+  startDate!: string;
+
+  @IsDateString()
+  endDate!: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ReviewConfigDto)
+  @ArrayMinSize(1)
+  @ArrayMaxSize(3)
+  reviewConfigs!: ReviewConfigDto[];
 }
 
-export interface UpdateReviewCycleDto {
+export class UpdateReviewCycleDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(200)
   name?: string;
+
+  @IsOptional()
+  @IsDateString()
   startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
   endDate?: string;
+}
+
+// Wrapper for PUT /review-cycles/:id/configs body
+export class UpdateConfigsBodyDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ReviewConfigDto)
+  @ArrayMinSize(1)
+  @ArrayMaxSize(3)
+  configs!: ReviewConfigDto[];
 }
 
 @Injectable()

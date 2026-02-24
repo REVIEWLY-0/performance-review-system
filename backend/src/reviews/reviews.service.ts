@@ -10,18 +10,39 @@ import { ReviewStatus, ReviewType } from '@prisma/client';
 // DTOs
 // ============================================================================
 
-export interface AnswerDto {
-  questionId: string;
+import {
+  IsString, IsOptional, IsNumber, IsArray, ValidateNested, MaxLength, Min, Max,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class AnswerDto {
+  @IsString()
+  questionId!: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
   rating?: number | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10000)
   textAnswer?: string | null;
 }
 
-export interface SaveDraftDto {
-  answers: AnswerDto[];
+export class SaveDraftDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AnswerDto)
+  answers!: AnswerDto[];
 }
 
-export interface SubmitReviewDto {
-  answers: AnswerDto[];
+export class SubmitReviewDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AnswerDto)
+  answers!: AnswerDto[];
 }
 
 // Response DTOs

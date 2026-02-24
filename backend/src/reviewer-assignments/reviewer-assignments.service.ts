@@ -5,22 +5,60 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { ReviewerType } from '@prisma/client';
+import {
+  IsString, IsEnum, IsEmail, IsArray, ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export interface CreateAssignmentDto {
-  reviewerId: string;
-  reviewerType: ReviewerType;
+export class CreateAssignmentDto {
+  @IsString()
+  reviewerId!: string;
+
+  @IsEnum(ReviewerType)
+  reviewerType!: ReviewerType;
 }
 
-export interface BulkCreateAssignmentsDto {
-  reviewCycleId: string;
-  employeeId: string;
-  assignments: CreateAssignmentDto[];
+export class BulkCreateAssignmentsDto {
+  @IsString()
+  reviewCycleId!: string;
+
+  @IsString()
+  employeeId!: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateAssignmentDto)
+  assignments!: CreateAssignmentDto[];
 }
 
-export interface ImportAssignmentDto {
-  employeeEmail: string;
-  reviewerEmail: string;
-  reviewerType: string;
+export class ImportAssignmentDto {
+  @IsEmail()
+  employeeEmail!: string;
+
+  @IsEmail()
+  reviewerEmail!: string;
+
+  @IsString()
+  reviewerType!: string;
+}
+
+// Wrapper for POST /reviewer-assignments/bulk body
+export class BulkUpsertBodyDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BulkCreateAssignmentsDto)
+  assignments!: BulkCreateAssignmentsDto[];
+}
+
+// Wrapper for POST /reviewer-assignments/import body
+export class ImportAssignmentsBodyDto {
+  @IsString()
+  reviewCycleId!: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImportAssignmentDto)
+  assignments!: ImportAssignmentDto[];
 }
 
 @Injectable()

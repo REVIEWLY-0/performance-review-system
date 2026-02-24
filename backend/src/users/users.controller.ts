@@ -8,7 +8,7 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService, CreateUserDto, UpdateUserDto, ImportUserDto } from './users.service';
+import { UsersService, CreateUserDto, UpdateUserDto, ImportUsersBodyDto } from './users.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -70,7 +70,7 @@ export class UsersController {
   @Post('import')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  async importUsers(@Body() body: { users: ImportUserDto[] }, @CurrentUser() user: any) {
+  async importUsers(@Body() body: ImportUsersBodyDto, @CurrentUser() user: any) {
     // CRITICAL: All imports scoped to company_id
     return this.usersService.importUsers(user.companyId, body.users);
   }

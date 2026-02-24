@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 
 async function bootstrap() {
@@ -30,6 +31,19 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+
+  // Global validation pipe — validates all @Body() DTOs automatically.
+  // whitelist: strips unknown properties silently (prevents mass-assignment).
+  // forbidNonWhitelisted: false — don't throw on extra fields (safe for existing clients).
+  // transform: true — auto-instantiate DTO classes from plain request bodies.
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
 
   // Global prefix for all routes (except health check)
   app.setGlobalPrefix('api');

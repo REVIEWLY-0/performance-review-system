@@ -1,20 +1,56 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { QuestionType, ReviewType } from '@prisma/client';
+import {
+  IsString, IsEnum, IsOptional, IsNumber, MinLength, MaxLength, Min,
+} from 'class-validator';
 
-export interface CreateQuestionDto {
-  reviewType: ReviewType;
-  type: QuestionType;
-  text: string;
+export class CreateQuestionDto {
+  @IsEnum(ReviewType)
+  reviewType!: ReviewType;
+
+  @IsEnum(QuestionType)
+  type!: QuestionType;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
+  text!: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
   maxChars?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   order?: number;
 }
 
-export interface UpdateQuestionDto {
+export class UpdateQuestionDto {
+  @IsOptional()
+  @IsEnum(ReviewType)
   reviewType?: ReviewType;
+
+  @IsOptional()
+  @IsEnum(QuestionType)
   type?: QuestionType;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
   text?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
   maxChars?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   order?: number;
 }
 

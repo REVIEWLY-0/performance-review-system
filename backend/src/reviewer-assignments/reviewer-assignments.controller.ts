@@ -12,9 +12,10 @@ import { ReviewerAssignmentsService } from './reviewer-assignments.service';
 import { CompanyId } from '../common/decorators/company-id.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
-import type {
+import {
   BulkCreateAssignmentsDto,
-  ImportAssignmentDto,
+  BulkUpsertBodyDto,
+  ImportAssignmentsBodyDto,
 } from './reviewer-assignments.service';
 
 @Controller('reviewer-assignments')
@@ -64,7 +65,7 @@ export class ReviewerAssignmentsController {
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   async bulkUpsert(
-    @Body() body: { assignments: BulkCreateAssignmentsDto[] },
+    @Body() body: BulkUpsertBodyDto,
     @CompanyId() companyId: string,
   ) {
     return this.reviewerAssignmentsService.bulkUpsert(
@@ -82,8 +83,7 @@ export class ReviewerAssignmentsController {
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   async importAssignments(
-    @Body()
-    body: { reviewCycleId: string; assignments: ImportAssignmentDto[] },
+    @Body() body: ImportAssignmentsBodyDto,
     @CompanyId() companyId: string,
   ) {
     return this.reviewerAssignmentsService.importAssignments(
