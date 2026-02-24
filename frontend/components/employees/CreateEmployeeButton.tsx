@@ -2,9 +2,15 @@
 
 import { useState } from 'react'
 import CreateEmployeeModal from './CreateEmployeeModal'
+import { useToast } from '@/components/ToastProvider'
 
-export default function CreateEmployeeButton() {
+interface CreateEmployeeButtonProps {
+  onCreated?: () => void;
+}
+
+export default function CreateEmployeeButton({ onCreated }: CreateEmployeeButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const toast = useToast()
 
   return (
     <>
@@ -33,8 +39,8 @@ export default function CreateEmployeeButton() {
           onClose={() => setIsModalOpen(false)}
           onSuccess={() => {
             setIsModalOpen(false)
-            // Refresh the page to show new employee
-            window.location.reload()
+            toast.success('Employee created successfully')
+            onCreated?.()
           }}
         />
       )}

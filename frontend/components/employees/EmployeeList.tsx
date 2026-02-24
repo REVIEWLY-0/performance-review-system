@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { User } from '@/lib/api'
 import EditEmployeeModal from './EditEmployeeModal'
 import DeleteEmployeeModal from './DeleteEmployeeModal'
+import { useToast } from '@/components/ToastProvider'
 
 interface EmployeeListProps {
   employees: User[]
@@ -13,6 +14,7 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
   const [employees, setEmployees] = useState(initialEmployees)
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null)
   const [deletingEmployee, setDeletingEmployee] = useState<User | null>(null)
+  const toast = useToast()
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -30,11 +32,13 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
   const handleEmployeeUpdated = (updatedEmployee: User) => {
     setEmployees(employees.map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp))
     setEditingEmployee(null)
+    toast.success('Employee updated successfully')
   }
 
   const handleEmployeeDeleted = (deletedId: string) => {
     setEmployees(employees.filter(emp => emp.id !== deletedId))
     setDeletingEmployee(null)
+    toast.success('Employee deleted')
   }
 
   if (employees.length === 0) {

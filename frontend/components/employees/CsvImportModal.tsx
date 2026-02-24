@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { usersApi } from '@/lib/api';
+import { useToast } from '@/components/ToastProvider';
 
 interface CsvImportModalProps {
   onClose: () => void;
@@ -65,6 +66,7 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -101,6 +103,7 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
 
   const handleDone = () => {
     if (result && result.successful > 0) {
+      toast.success(`${result.successful} employee${result.successful !== 1 ? 's' : ''} imported successfully`);
       onSuccess();
     } else {
       onClose();

@@ -138,7 +138,7 @@ export default function EmployeesPage() {
             </svg>
             Import CSV
           </button>
-          <CreateEmployeeButton />
+          <CreateEmployeeButton onCreated={() => handlePageChange(page)} />
         </div>
       </div>
 
@@ -147,7 +147,7 @@ export default function EmployeesPage() {
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
             setShowImportModal(false);
-            window.location.reload();
+            handlePageChange(page);
           }}
         />
       )}

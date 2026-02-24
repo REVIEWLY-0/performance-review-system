@@ -16,6 +16,7 @@ import {
 import QuestionForm from '@/components/questions/QuestionForm';
 import QuestionList from '@/components/questions/QuestionList';
 import QuestionPreview from '@/components/questions/QuestionPreview';
+import { useToast } from '@/components/ToastProvider';
 
 export default function QuestionsPage() {
   const [questions, setQuestions] = useState<{
@@ -34,6 +35,7 @@ export default function QuestionsPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [error, setError] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     loadQuestions();
@@ -58,6 +60,7 @@ export default function QuestionsPage() {
       await loadQuestions();
       setShowForm(false);
       setError('');
+      toast.success('Question created');
     } catch (err: any) {
       setError(err.message || 'Failed to create question');
       throw err;
@@ -71,6 +74,7 @@ export default function QuestionsPage() {
       setShowForm(false);
       setEditingQuestion(null);
       setError('');
+      toast.success('Question updated');
     } catch (err: any) {
       setError(err.message || 'Failed to update question');
       throw err;
@@ -85,6 +89,7 @@ export default function QuestionsPage() {
     try {
       await deleteQuestion(id);
       await loadQuestions();
+      toast.success('Question deleted');
     } catch (err: any) {
       setError(err.message || 'Failed to delete question');
     }
@@ -94,6 +99,7 @@ export default function QuestionsPage() {
     try {
       await duplicateQuestion(id);
       await loadQuestions();
+      toast.success('Question duplicated');
     } catch (err: any) {
       setError(err.message || 'Failed to duplicate question');
     }
