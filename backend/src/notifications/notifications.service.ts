@@ -84,8 +84,11 @@ export class NotificationsService {
     userName: string,
     cycleName: string,
     endDate: string,
-  ): string {
-    return `
+  ): { html: string; text: string } {
+    const deadline = new Date(endDate).toLocaleDateString();
+    const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee`;
+
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -107,17 +110,35 @@ export class NotificationsService {
             <p>Hi ${userName},</p>
             <p>A new performance review cycle has started:</p>
             <p><strong>${cycleName}</strong></p>
-            <p>Deadline: <strong>${new Date(endDate).toLocaleDateString()}</strong></p>
+            <p>Deadline: <strong>${deadline}</strong></p>
             <p>Please complete your self-review and any assigned peer reviews before the deadline.</p>
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee" class="button">Go to Dashboard</a>
+            <a href="${dashboardUrl}" class="button">Go to Dashboard</a>
           </div>
           <div class="footer">
-            <p>This is an automated message from the Performance Review System.</p>
+            <p>This is an automated message from Reviewly.</p>
           </div>
         </div>
       </body>
       </html>
     `;
+
+    const text = `
+New Review Cycle Started
+
+Hi ${userName},
+
+A new performance review cycle has started: ${cycleName}
+
+Deadline: ${deadline}
+
+Please complete your self-review and any assigned peer reviews before the deadline.
+
+Go to your dashboard: ${dashboardUrl}
+
+This is an automated message from Reviewly.
+    `;
+
+    return { html, text: text.trim() };
   }
 
   private reviewAssignedTemplate(
@@ -125,9 +146,11 @@ export class NotificationsService {
     employeeName: string,
     reviewType: string,
     cycleName: string,
-  ): string {
+  ): { html: string; text: string } {
     const type = reviewType === 'MANAGER' ? 'manager review' : 'peer review';
-    return `
+    const reviewsUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/manager/reviews`;
+
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -149,15 +172,31 @@ export class NotificationsService {
             <p>Hi ${reviewerName},</p>
             <p>You have been assigned a ${type} for <strong>${employeeName}</strong> in the <strong>${cycleName}</strong> cycle.</p>
             <p>Please complete the review at your earliest convenience.</p>
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/manager/reviews" class="button">Complete Review</a>
+            <a href="${reviewsUrl}" class="button">Complete Review</a>
           </div>
           <div class="footer">
-            <p>This is an automated message from the Performance Review System.</p>
+            <p>This is an automated message from Reviewly.</p>
           </div>
         </div>
       </body>
       </html>
     `;
+
+    const text = `
+Review Assigned
+
+Hi ${reviewerName},
+
+You have been assigned a ${type} for ${employeeName} in the ${cycleName} cycle.
+
+Please complete the review at your earliest convenience.
+
+Complete your review: ${reviewsUrl}
+
+This is an automated message from Reviewly.
+    `;
+
+    return { html, text: text.trim() };
   }
 
   private reminderTemplate(
@@ -165,8 +204,10 @@ export class NotificationsService {
     pendingCount: number,
     cycleName: string,
     daysLeft: number,
-  ): string {
-    return `
+  ): { html: string; text: string } {
+    const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee`;
+
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -192,23 +233,43 @@ export class NotificationsService {
             </div>
             <p>Deadline in <strong>${daysLeft} days</strong>!</p>
             <p>Please complete your pending reviews to ensure timely feedback.</p>
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee" class="button">Complete Reviews</a>
+            <a href="${dashboardUrl}" class="button">Complete Reviews</a>
           </div>
           <div class="footer">
-            <p>This is an automated message from the Performance Review System.</p>
+            <p>This is an automated message from Reviewly.</p>
           </div>
         </div>
       </body>
       </html>
     `;
+
+    const text = `
+Review Deadline Approaching
+
+Hi ${userName},
+
+Reminder: You have ${pendingCount} pending review(s) in the ${cycleName} cycle.
+
+Deadline in ${daysLeft} days!
+
+Please complete your pending reviews to ensure timely feedback.
+
+Complete your reviews: ${dashboardUrl}
+
+This is an automated message from Reviewly.
+    `;
+
+    return { html, text: text.trim() };
   }
 
   private scoreAvailableTemplate(
     employeeName: string,
     score: number,
     cycleName: string,
-  ): string {
-    return `
+  ): { html: string; text: string } {
+    const scoresUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee/scores`;
+
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -236,15 +297,33 @@ export class NotificationsService {
               <div>out of 5.00</div>
             </div>
             <p>View your detailed feedback and score breakdown in your dashboard.</p>
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee/scores" class="button">View Details</a>
+            <a href="${scoresUrl}" class="button">View Details</a>
           </div>
           <div class="footer">
-            <p>This is an automated message from the Performance Review System.</p>
+            <p>This is an automated message from Reviewly.</p>
           </div>
         </div>
       </body>
       </html>
     `;
+
+    const text = `
+Your Review Score is Ready
+
+Hi ${employeeName},
+
+Your performance review score for ${cycleName} is now available!
+
+Score: ${score.toFixed(2)} out of 5.00
+
+View your detailed feedback and score breakdown in your dashboard.
+
+View details: ${scoresUrl}
+
+This is an automated message from Reviewly.
+    `;
+
+    return { html, text: text.trim() };
   }
 
   // ============================================================================
@@ -281,14 +360,16 @@ export class NotificationsService {
         continue;
       }
 
+      const cycleTemplate = this.cycleStartedTemplate(
+        employee.name,
+        cycle.name,
+        cycle.endDate.toISOString(),
+      );
       await this.sendEmail({
         to: employee.email,
         subject: `New Review Cycle: ${cycle.name}`,
-        html: this.cycleStartedTemplate(
-          employee.name,
-          cycle.name,
-          cycle.endDate.toISOString(),
-        ),
+        html: cycleTemplate.html,
+        text: cycleTemplate.text,
       });
     }
   }
@@ -320,15 +401,17 @@ export class NotificationsService {
       return;
     }
 
+    const assignedTemplate = this.reviewAssignedTemplate(
+      reviewer.name,
+      employee.name,
+      reviewType,
+      cycle.name,
+    );
     await this.sendEmail({
       to: reviewer.email,
       subject: `Review Assigned: ${employee.name}`,
-      html: this.reviewAssignedTemplate(
-        reviewer.name,
-        employee.name,
-        reviewType,
-        cycle.name,
-      ),
+      html: assignedTemplate.html,
+      text: assignedTemplate.text,
     });
   }
 
@@ -390,15 +473,17 @@ export class NotificationsService {
             continue;
           }
 
+          const reminderTpl = this.reminderTemplate(
+            user.name,
+            pendingCount,
+            cycle.name,
+            daysLeft,
+          );
           await this.sendEmail({
             to: user.email,
             subject: `Reminder: ${pendingCount} Pending Reviews`,
-            html: this.reminderTemplate(
-              user.name,
-              pendingCount,
-              cycle.name,
-              daysLeft,
-            ),
+            html: reminderTpl.html,
+            text: reminderTpl.text,
           });
         }
       }
@@ -430,10 +515,12 @@ export class NotificationsService {
       return;
     }
 
+    const scoreTemplate = this.scoreAvailableTemplate(employee.name, score, cycle.name);
     await this.sendEmail({
       to: employee.email,
       subject: `Your Review Score for ${cycle.name}`,
-      html: this.scoreAvailableTemplate(employee.name, score, cycle.name),
+      html: scoreTemplate.html,
+      text: scoreTemplate.text,
     });
   }
 
