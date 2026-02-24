@@ -1,4 +1,5 @@
 import { getSession } from './auth'
+import { getCached, setCache, invalidateCache } from './cache'
 
 export interface PaginatedResponse<T> {
   data: T[]
@@ -90,8 +91,10 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
 // User API
 export const usersApi = {
-  getAll: async (): Promise<PaginatedResponse<User>> => {
-    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users`)
+  getAll: async (page = 1, limit = 50): Promise<PaginatedResponse<User>> => {
+    return fetchWithAuth(
+      `${process.env.NEXT_PUBLIC_API_URL}/users?page=${page}&limit=${limit}`,
+    )
   },
 
   getOne: async (id: string): Promise<User> => {
@@ -99,37 +102,55 @@ export const usersApi = {
   },
 
   create: async (data: CreateUserDto): Promise<User> => {
-    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
       method: 'POST',
       body: JSON.stringify(data),
     })
+    invalidateCache('users:')
+    return result
   },
 
   update: async (id: string, data: UpdateUserDto): Promise<User> => {
-    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     })
+    invalidateCache('users:')
+    return result
   },
 
   delete: async (id: string): Promise<void> => {
-    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
       method: 'DELETE',
     })
+    invalidateCache('users:')
+    return result
   },
 
   getManagers: async (): Promise<User[]> => {
-    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/managers`)
+    const key = 'users:managers'
+    const cached = getCached<User[]>(key)
+    if (cached) return cached
+    const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/managers`)
+    setCache(key, data, 120_000) // 2 min — managers list rarely changes
+    return data
   },
 
   getStats: async (): Promise<UserStats> => {
-    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/stats`)
+    const key = 'users:stats'
+    const cached = getCached<UserStats>(key)
+    if (cached) return cached
+    const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/stats`)
+    setCache(key, data, 60_000) // 1 min TTL
+    return data
   },
 
   importUsers: async (users: any[]): Promise<{ successful: number; failed: number; errors: string[] }> => {
-    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/import`, {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/import`, {
       method: 'POST',
       body: JSON.stringify({ users }),
     })
+    invalidateCache('users:')
+    return result
   },
 }

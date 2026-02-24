@@ -1,4 +1,5 @@
-import { fetchWithAuth } from './api';
+import { fetchWithAuth, PaginatedResponse } from './api';
+import { getCached, setCache, invalidateCache } from './cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -46,11 +47,16 @@ export const reviewCyclesApi = {
   /**
    * Get all review cycles, optionally filtered by status
    */
-  getAll: async (status?: ReviewCycleStatus): Promise<ReviewCycle[]> => {
+  getAll: async (status?: ReviewCycleStatus): Promise<PaginatedResponse<ReviewCycle>> => {
+    const key = `cycles:all:${status ?? 'all'}`;
+    const cached = getCached<PaginatedResponse<ReviewCycle>>(key);
+    if (cached) return cached;
     const url = status
-      ? `${API_URL}/review-cycles?status=${status}`
-      : `${API_URL}/review-cycles`;
-    return fetchWithAuth(url);
+      ? `${API_URL}/review-cycles?status=${status}&limit=200`
+      : `${API_URL}/review-cycles?limit=200`;
+    const data = await fetchWithAuth(url);
+    setCache(key, data, 30_000); // 30s TTL — cycles change infrequently
+    return data;
   },
 
   /**

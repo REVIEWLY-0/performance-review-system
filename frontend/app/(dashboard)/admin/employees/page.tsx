@@ -8,6 +8,9 @@ import EmployeeList from '@/components/employees/EmployeeList';
 import CreateEmployeeButton from '@/components/employees/CreateEmployeeButton';
 import CsvImportModal from '@/components/employees/CsvImportModal';
 import BackButton from '@/components/BackButton';
+import SkeletonCard from '@/components/skeletons/SkeletonCard';
+import SkeletonTable from '@/components/skeletons/SkeletonTable';
+import Pagination from '@/components/Pagination';
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -20,6 +23,8 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     async function loadData() {
@@ -48,7 +53,7 @@ export default function EmployeesPage() {
         // Fetch data
         console.log('📡 Fetching employees and stats...');
         const [employeesResponse, statsData] = await Promise.all([
-          usersApi.getAll(),
+          usersApi.getAll(1, 50),
           usersApi.getStats(),
         ]);
 
@@ -58,6 +63,7 @@ export default function EmployeesPage() {
         });
 
         setEmployees(employeesResponse.data);
+        setTotalPages(employeesResponse.pagination.totalPages);
         setStats(statsData);
       } catch (err: any) {
         console.error('❌ Error loading employees page:', err);
@@ -72,15 +78,31 @@ export default function EmployeesPage() {
     loadData();
   }, [router]);
 
+  const handlePageChange = async (newPage: number) => {
+    setPage(newPage);
+    try {
+      const response = await usersApi.getAll(newPage, 50);
+      setEmployees(response.data);
+      setTotalPages(response.pagination.totalPages);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="px-4 py-6 sm:px-0">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading employees...</p>
-          </div>
+        <div className="mb-6">
+          <div className="h-7 bg-gray-200 rounded w-48 animate-pulse" />
+          <div className="mt-2 h-4 bg-gray-200 rounded w-72 animate-pulse" />
         </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-4 mb-6">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+        <SkeletonTable rows={8} />
       </div>
     );
   }
@@ -253,6 +275,7 @@ export default function EmployeesPage() {
 
       {/* Employee List */}
       <EmployeeList employees={employees} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
     </div>
   );
 }
