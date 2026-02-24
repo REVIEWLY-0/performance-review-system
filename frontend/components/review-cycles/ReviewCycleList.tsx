@@ -4,12 +4,37 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ReviewCycle, reviewCyclesApi, formatDate } from '@/lib/review-cycles';
 import StatusBadge from './StatusBadge';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useToast } from '@/components/ToastProvider';
 
 interface ReviewCycleListProps {
   cycles: ReviewCycle[];
   loading: boolean;
   onRefresh: () => void;
 }
+
+type ActionType = 'activate' | 'complete' | 'delete';
+
+const DIALOG: Record<ActionType, { title: string; message: string; confirmLabel: string; variant: 'default' | 'danger' }> = {
+  activate: {
+    title: 'Activate review cycle',
+    message: 'Once activated, employees will be notified and reviews can begin. You cannot revert this to draft.',
+    confirmLabel: 'Activate',
+    variant: 'default',
+  },
+  complete: {
+    title: 'Complete review cycle',
+    message: 'This will close all open reviews and trigger final score calculations.',
+    confirmLabel: 'Complete',
+    variant: 'default',
+  },
+  delete: {
+    title: 'Delete review cycle',
+    message: 'This action cannot be undone. All configuration and data for this cycle will be permanently lost.',
+    confirmLabel: 'Delete',
+    variant: 'danger',
+  },
+};
 
 export default function ReviewCycleList({
   cycles,
@@ -18,57 +43,30 @@ export default function ReviewCycleList({
 }: ReviewCycleListProps) {
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [pendingAction, setPendingAction] = useState<{ type: ActionType; id: string } | null>(null);
+  const toast = useToast();
 
-  const handleActivate = async (id: string) => {
-    if (!confirm('Are you sure you want to activate this review cycle?')) {
-      return;
-    }
-
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return;
+    const { type, id } = pendingAction;
     try {
       setActioningId(id);
       setError('');
-      await reviewCyclesApi.activate(id);
+      if (type === 'activate') {
+        await reviewCyclesApi.activate(id);
+        toast.success('Review cycle activated');
+      } else if (type === 'complete') {
+        await reviewCyclesApi.complete(id);
+        toast.success('Review cycle completed');
+      } else {
+        await reviewCyclesApi.delete(id);
+        toast.success('Review cycle deleted');
+      }
+      setPendingAction(null);
       onRefresh();
     } catch (err: any) {
-      setError(err.message || 'Failed to activate cycle');
-    } finally {
-      setActioningId(null);
-    }
-  };
-
-  const handleComplete = async (id: string) => {
-    if (!confirm('Are you sure you want to complete this review cycle?')) {
-      return;
-    }
-
-    try {
-      setActioningId(id);
-      setError('');
-      await reviewCyclesApi.complete(id);
-      onRefresh();
-    } catch (err: any) {
-      setError(err.message || 'Failed to complete cycle');
-    } finally {
-      setActioningId(null);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (
-      !confirm(
-        'Are you sure you want to delete this review cycle? This action cannot be undone.',
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setActioningId(id);
-      setError('');
-      await reviewCyclesApi.delete(id);
-      onRefresh();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete cycle');
+      setError(err.message || `Failed to ${type} cycle`);
+      setPendingAction(null);
     } finally {
       setActioningId(null);
     }
@@ -213,7 +211,7 @@ export default function ReviewCycleList({
                 {/* Activate button - only for DRAFT */}
                 {cycle.status === 'DRAFT' && (
                   <button
-                    onClick={() => handleActivate(cycle.id)}
+                    onClick={() => setPendingAction({ type: 'activate', id: cycle.id })}
                     disabled={actioningId === cycle.id}
                     className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
                   >
@@ -224,7 +222,7 @@ export default function ReviewCycleList({
                 {/* Complete button - only for ACTIVE */}
                 {cycle.status === 'ACTIVE' && (
                   <button
-                    onClick={() => handleComplete(cycle.id)}
+                    onClick={() => setPendingAction({ type: 'complete', id: cycle.id })}
                     disabled={actioningId === cycle.id}
                     className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
                   >
@@ -235,7 +233,7 @@ export default function ReviewCycleList({
                 {/* Delete button - only for DRAFT */}
                 {cycle.status === 'DRAFT' && (
                   <button
-                    onClick={() => handleDelete(cycle.id)}
+                    onClick={() => setPendingAction({ type: 'delete', id: cycle.id })}
                     disabled={actioningId === cycle.id}
                     className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
                   >
@@ -247,6 +245,14 @@ export default function ReviewCycleList({
           </div>
         ))}
       </div>
+
+      {pendingAction && (
+        <ConfirmDialog
+          {...DIALOG[pendingAction.type]}
+          onConfirm={handleConfirmAction}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
     </>
   );
 }

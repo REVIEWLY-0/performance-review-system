@@ -17,6 +17,8 @@ import QuestionForm from '@/components/questions/QuestionForm';
 import QuestionList from '@/components/questions/QuestionList';
 import QuestionPreview from '@/components/questions/QuestionPreview';
 import { useToast } from '@/components/ToastProvider';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import BackButton from '@/components/BackButton';
 
 export default function QuestionsPage() {
   const [questions, setQuestions] = useState<{
@@ -35,6 +37,7 @@ export default function QuestionsPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [error, setError] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -81,17 +84,20 @@ export default function QuestionsPage() {
     }
   };
 
-  const handleDeleteQuestion = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this question?')) {
-      return;
-    }
+  const handleDeleteQuestion = (id: string) => {
+    setConfirmDeleteId(id);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteId) return;
     try {
-      await deleteQuestion(id);
+      await deleteQuestion(confirmDeleteId);
       await loadQuestions();
+      setConfirmDeleteId(null);
       toast.success('Question deleted');
     } catch (err: any) {
       setError(err.message || 'Failed to delete question');
+      setConfirmDeleteId(null);
     }
   };
 
@@ -165,12 +171,7 @@ export default function QuestionsPage() {
     <div className="px-4 py-6 sm:px-0">
       {/* Header */}
       <div className="mb-6">
-        <button
-          onClick={() => window.location.href = '/admin'}
-          className="text-sm text-indigo-600 hover:text-indigo-800 mb-2"
-        >
-          ← Back to Admin Dashboard
-        </button>
+        <BackButton href="/admin" label="Back to Admin Dashboard" />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Question Builder</h1>
@@ -324,6 +325,17 @@ export default function QuestionsPage() {
           )}
         </div>
       </div>
+
+      {confirmDeleteId && (
+        <ConfirmDialog
+          title="Delete question"
+          message="This question will be permanently removed from this review type. This action cannot be undone."
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
     </div>
   );
 }
