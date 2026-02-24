@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth'
+import Logo from '@/components/Logo'
 
 interface User {
   id: string
@@ -23,10 +24,9 @@ export default function DashboardNav({ user }: { user: User }) {
     <nav className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <h1 className="text-xl font-bold text-gray-900">
-              Performance Review System
-            </h1>
+          <div className="flex items-center space-x-2">
+            <Logo size={32} />
+            <span className="text-xl font-bold text-gray-900">Reviewly</span>
           </div>
 
           <div className="flex items-center space-x-4">
