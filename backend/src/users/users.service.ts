@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UserRole } from '@prisma/client';
 
 export interface CreateUserDto {
@@ -25,7 +26,10 @@ export interface ImportUserDto {
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   /**
    * CRITICAL: Find all users - MUST filter by companyId
@@ -127,7 +131,7 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email,
         name,
@@ -146,6 +150,13 @@ export class UsersService {
         },
       },
     });
+
+    // Fire welcome email — non-blocking, a failure must not roll back user creation
+    this.notificationsService
+      .sendWelcomeEmail(user.id)
+      .catch((err) => console.error('Welcome email failed for new user:', err));
+
+    return user;
   }
 
   /**
@@ -284,6 +295,11 @@ export class UsersService {
 
         createdUsers.set(userData.email, user.id);
         results.successful++;
+
+        // Fire welcome email — non-blocking, failure must not affect import results
+        this.notificationsService
+          .sendWelcomeEmail(user.id)
+          .catch(() => { /* welcome email failure is silent during bulk import */ });
       } catch (error: any) {
         results.failed++;
         results.errors.push(`Error creating ${userData.email}: ${error.message}`);

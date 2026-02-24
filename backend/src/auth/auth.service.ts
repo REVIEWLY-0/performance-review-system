@@ -1,12 +1,16 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../common/services/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
   private supabase: SupabaseClient;
 
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -100,6 +104,11 @@ export class AuthService {
         },
       });
       console.log('✅ User created in database:', user.id);
+
+      // Send welcome email — non-blocking, a failure must not break signup
+      this.notificationsService
+        .sendWelcomeEmail(user.id)
+        .catch((err) => console.error('Welcome email failed after signup:', err));
 
       // 5) Sign in the newly created user to get a session
       const { data: signInData, error: signInError } = await this.supabase.auth.signInWithPassword({
