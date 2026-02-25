@@ -23,6 +23,11 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   managerId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  department?: string;
 }
 
 export class UpdateUserDto {
@@ -43,6 +48,11 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   managerId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  department?: string;
 }
 
 export class ImportUserDto {
@@ -165,7 +175,7 @@ export class UsersService {
    * Create new user - automatically assigns companyId
    */
   async create(companyId: string, createUserDto: CreateUserDto) {
-    const { email, name, role, managerId } = createUserDto;
+    const { email, name, role, managerId, department } = createUserDto;
 
     // Check if email already exists in company
     const existingUser = await this.prisma.user.findFirst({
@@ -200,6 +210,7 @@ export class UsersService {
         role,
         companyId,
         managerId,
+        department,
         password: '', // Password managed by Supabase
       },
       include: {

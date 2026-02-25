@@ -19,6 +19,7 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
     email: employee.email,
     role: employee.role,
     managerId: employee.managerId || '',
+    department: employee.department || '',
   })
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
       const updated = await usersApi.update(employee.id, {
         ...formData,
         managerId: formData.managerId || undefined,
+        department: formData.department || undefined,
       })
       onSuccess(updated)
     } catch (err: any) {
@@ -130,6 +132,20 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
                         </option>
                       ))}
                   </select>
+                </div>
+
+                <div>
+                  <label htmlFor="department" className="block text-sm font-medium text-gray-700">
+                    Department (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="department"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g. Engineering, Sales, Marketing"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  />
                 </div>
               </div>
             </div>

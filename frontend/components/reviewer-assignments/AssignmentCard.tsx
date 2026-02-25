@@ -56,6 +56,20 @@ export default function AssignmentCard({
     setIsDirty(true);
   };
 
+  // Managers: only MANAGER role, same dept if employee has one
+  const managerOptions = availableUsers.filter(
+    (u) =>
+      u.role === 'MANAGER' &&
+      (!employee.department || u.department === employee.department),
+  );
+
+  // Peers: non-managers only, same dept if employee has one
+  const peerOptions = availableUsers.filter(
+    (u) =>
+      u.role === 'EMPLOYEE' &&
+      (!employee.department || u.department === employee.department),
+  );
+
   const hasValidAssignment =
     managerIds.length >= 1 && peerIds.length >= 3 && peerIds.length <= 5;
 
@@ -67,6 +81,11 @@ export default function AssignmentCard({
             {employee.name}
           </h3>
           <p className="text-sm text-gray-500">{employee.email}</p>
+          {employee.department && (
+            <span className="mt-1 inline-block text-xs bg-indigo-50 text-indigo-700 rounded px-2 py-0.5">
+              {employee.department}
+            </span>
+          )}
         </div>
         {isDirty && (
           <button
@@ -87,7 +106,7 @@ export default function AssignmentCard({
           </label>
           <ReviewerMultiSelect
             selectedIds={managerIds}
-            availableUsers={availableUsers}
+            availableUsers={managerOptions}
             onChange={handleManagerChange}
             placeholder="Select managers..."
           />
@@ -105,7 +124,7 @@ export default function AssignmentCard({
           </label>
           <ReviewerMultiSelect
             selectedIds={peerIds}
-            availableUsers={availableUsers}
+            availableUsers={peerOptions}
             onChange={handlePeerChange}
             placeholder="Select peers..."
           />

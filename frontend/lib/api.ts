@@ -18,6 +18,7 @@ export interface User {
   role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
   companyId: string
   managerId?: string
+  department?: string
   manager?: {
     id: string
     name: string
@@ -37,6 +38,7 @@ export interface CreateUserDto {
   name: string
   role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
   managerId?: string
+  department?: string
 }
 
 export interface UpdateUserDto {
@@ -44,6 +46,7 @@ export interface UpdateUserDto {
   email?: string
   role?: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
   managerId?: string
+  department?: string
 }
 
 export interface UserStats {

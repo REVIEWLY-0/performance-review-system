@@ -23,6 +23,7 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
     email: '',
     role: 'EMPLOYEE' as 'ADMIN' | 'MANAGER' | 'EMPLOYEE',
     managerId: '',
+    department: '',
   })
 
   const [fieldErrors, setFieldErrors] = useState({
@@ -102,6 +103,7 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
       await usersApi.create({
         ...formData,
         managerId: formData.managerId || undefined,
+        department: formData.department || undefined,
       })
       onSuccess()
     } catch (err: any) {
@@ -210,6 +212,20 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label htmlFor="department" className="block text-sm font-medium text-gray-700">
+                    Department (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="department"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g. Engineering, Sales, Marketing"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  />
                 </div>
               </div>
             </div>
