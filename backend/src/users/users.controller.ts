@@ -13,7 +13,7 @@ import { UsersService, CreateUserDto, UpdateUserDto, ImportUsersBodyDto } from '
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CompanyId } from '../common/decorators/company-id.decorator';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -25,37 +25,35 @@ export class UsersController {
    */
   @Get()
   async findAll(
-    @CurrentUser() user: any,
+    @CompanyId() companyId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 50,
   ) {
-    // CRITICAL: Always filter by company_id
-    return this.usersService.findAll(user.companyId, +page, +limit);
+    return this.usersService.findAll(companyId, +page, +limit);
   }
 
   /**
    * Get user statistics
    */
   @Get('stats')
-  async getStats(@CurrentUser() user: any) {
-    return this.usersService.getStats(user.companyId);
+  async getStats(@CompanyId() companyId: string) {
+    return this.usersService.getStats(companyId);
   }
 
   /**
    * Get all managers (for dropdown)
    */
   @Get('managers')
-  async getManagers(@CurrentUser() user: any) {
-    return this.usersService.getManagers(user.companyId);
+  async getManagers(@CompanyId() companyId: string) {
+    return this.usersService.getManagers(companyId);
   }
 
   /**
    * Get specific user
    */
   @Get(':id')
-  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    // CRITICAL: Filter by company_id to prevent cross-company access
-    return this.usersService.findOne(id, user.companyId);
+  async findOne(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.usersService.findOne(id, companyId);
   }
 
   /**
@@ -64,9 +62,8 @@ export class UsersController {
   @Post()
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  async create(@Body() createUserDto: CreateUserDto, @CurrentUser() user: any) {
-    // CRITICAL: Auto-assign company_id from authenticated user
-    return this.usersService.create(user.companyId, createUserDto);
+  async create(@Body() createUserDto: CreateUserDto, @CompanyId() companyId: string) {
+    return this.usersService.create(companyId, createUserDto);
   }
 
   /**
@@ -75,9 +72,8 @@ export class UsersController {
   @Post('import')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  async importUsers(@Body() body: ImportUsersBodyDto, @CurrentUser() user: any) {
-    // CRITICAL: All imports scoped to company_id
-    return this.usersService.importUsers(user.companyId, body.users);
+  async importUsers(@Body() body: ImportUsersBodyDto, @CompanyId() companyId: string) {
+    return this.usersService.importUsers(companyId, body.users);
   }
 
   /**
@@ -89,10 +85,9 @@ export class UsersController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @CurrentUser() user: any,
+    @CompanyId() companyId: string,
   ) {
-    // CRITICAL: Verify user belongs to company
-    return this.usersService.update(id, user.companyId, updateUserDto);
+    return this.usersService.update(id, companyId, updateUserDto);
   }
 
   /**
@@ -101,8 +96,7 @@ export class UsersController {
   @Delete(':id')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    // CRITICAL: Verify user belongs to company before deletion
-    return this.usersService.remove(id, user.companyId);
+  async remove(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.usersService.remove(id, companyId);
   }
 }
