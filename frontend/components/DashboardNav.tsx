@@ -29,6 +29,14 @@ export default function DashboardNav({ user }: { user: User }) {
           <div className="flex items-center space-x-2">
             <Logo size={32} />
             <span className="text-xl font-bold text-gray-900 dark:text-white">Reviewly</span>
+            {user.companyName && (
+              <>
+                <span className="text-gray-300 dark:text-gray-600 select-none">|</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[160px]">
+                  {user.companyName}
+                </span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">

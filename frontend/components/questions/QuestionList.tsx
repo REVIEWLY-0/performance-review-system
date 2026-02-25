@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Question, ReviewType } from '@/lib/questions';
 
 interface QuestionListProps {
@@ -23,10 +23,10 @@ export default function QuestionList({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [localQuestions, setLocalQuestions] = useState<Question[]>(questions);
 
-  // Update local questions when props change
-  useState(() => {
+  // Sync local list when parent passes a new tab's questions or reloads after mutation
+  useEffect(() => {
     setLocalQuestions(questions);
-  });
+  }, [questions]);
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);

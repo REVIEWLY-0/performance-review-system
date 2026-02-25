@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { User } from '@/lib/api'
 import EditEmployeeModal from './EditEmployeeModal'
 import DeleteEmployeeModal from './DeleteEmployeeModal'
@@ -13,6 +13,11 @@ interface EmployeeListProps {
 export default function EmployeeList({ employees: initialEmployees }: EmployeeListProps) {
   const [employees, setEmployees] = useState(initialEmployees)
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null)
+
+  // Sync when parent passes updated or filtered list
+  useEffect(() => {
+    setEmployees(initialEmployees)
+  }, [initialEmployees])
   const [deletingEmployee, setDeletingEmployee] = useState<User | null>(null)
   const toast = useToast()
 
