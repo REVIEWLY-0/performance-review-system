@@ -19,18 +19,15 @@ export default function DashboardLayout({
 
     async function checkAuth() {
       try {
-        console.log('🔍 Dashboard layout: checking auth...')
         const currentUser = await getCurrentUser()
 
         if (!mounted) return
 
         if (!currentUser) {
-          console.log('⚠️  No user in layout, redirecting to login')
           router.push('/login')
           return
         }
 
-        console.log('✅ User authenticated in layout:', currentUser.email)
         setUser(currentUser)
       } catch (error) {
         console.error('❌ Layout auth check failed:', error)
@@ -49,7 +46,8 @@ export default function DashboardLayout({
     return () => {
       mounted = false
     }
-  }, [router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (loading) {
     return (

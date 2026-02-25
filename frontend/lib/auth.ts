@@ -9,8 +9,15 @@ export interface User {
   companyName: string
 }
 
+// Module-level caches — survive re-renders, cleared on sign-out
+let _sessionCache: { session: any; expires: number } | null = null
+let _userCache: { user: User; expires: number } | null = null
+
 export async function getSession() {
-  console.log('📱 Getting session from Supabase...')
+  // Return cached session if still valid (avoids repeated Supabase storage reads)
+  if (_sessionCache && Date.now() < _sessionCache.expires) {
+    return _sessionCache.session
+  }
 
   try {
     const { data: { session }, error } = await supabase.auth.getSession()
@@ -21,10 +28,9 @@ export async function getSession() {
     }
 
     if (session) {
-      console.log('✅ Session found:', session.user.email)
-      console.log('   Token expires at:', new Date(session.expires_at! * 1000).toLocaleString())
+      _sessionCache = { session, expires: Date.now() + 30_000 } // 30s cache
     } else {
-      console.log('⚠️  No session found in storage')
+      _sessionCache = null
     }
 
     return session
@@ -35,22 +41,22 @@ export async function getSession() {
 }
 
 export async function getCurrentUser(retries = 2): Promise<User | null> {
-  console.log('👤 Getting current user...')
+  // Return cached user if still valid (avoids /auth/me round-trip on every navigation)
+  if (_userCache && Date.now() < _userCache.expires) {
+    return _userCache.user
+  }
+
   const session = await getSession()
   if (!session) {
-    console.log('❌ No session, cannot get user')
     return null
   }
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       if (attempt > 0) {
-        console.log(`🔄 Retry attempt ${attempt}/${retries}`)
-        // Wait before retry
         await new Promise(resolve => setTimeout(resolve, 500 * attempt))
       }
 
-      console.log('📡 Fetching user from API...')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -60,16 +66,12 @@ export async function getCurrentUser(retries = 2): Promise<User | null> {
       if (!response.ok) {
         if (response.status === 401) {
           console.error('❌ Unauthorized - session invalid')
-          // Clear session on 401
           await supabase.auth.signOut()
+          _sessionCache = null
+          _userCache = null
           return null
         }
 
-        console.error('❌ API returned error:', response.status, response.statusText)
-        const errorText = await response.text()
-        console.error('Error body:', errorText)
-
-        // Retry on 5xx errors
         if (response.status >= 500 && attempt < retries) {
           continue
         }
@@ -77,7 +79,7 @@ export async function getCurrentUser(retries = 2): Promise<User | null> {
       }
 
       const user = await response.json()
-      console.log('✅ User fetched successfully:', user.email)
+      _userCache = { user, expires: Date.now() + 60_000 } // 60s cache
       return user
     } catch (error) {
       console.error(`❌ Error fetching user (attempt ${attempt + 1}):`, error)
@@ -191,5 +193,7 @@ export async function signUp(email: string, password: string, name: string, comp
 }
 
 export async function signOut() {
+  _sessionCache = null
+  _userCache = null
   await supabase.auth.signOut()
 }
