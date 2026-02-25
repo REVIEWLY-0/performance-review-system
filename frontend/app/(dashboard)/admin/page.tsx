@@ -96,13 +96,16 @@ export default function AdminDashboard() {
 
   if (!user) return null;
 
-  const chartData = analytics
+  const allChartData = analytics
     ? [
         { name: 'Submitted', value: analytics.reviewProgress.submitted, color: '#10b981' },
         { name: 'Draft', value: analytics.reviewProgress.draft, color: '#f59e0b' },
         { name: 'Not Started', value: analytics.reviewProgress.notStarted, color: '#6b7280' },
       ]
     : [];
+  // Only pass non-zero slices to Recharts — zero-value entries cause label overlap
+  const chartData = allChartData.filter((d) => d.value > 0);
+  const chartEmpty = analytics !== null && chartData.length === 0;
 
   return (
     <div className="px-4 py-6 sm:px-0">
@@ -336,26 +339,36 @@ export default function AdminDashboard() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Review Progress
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.value}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            {chartEmpty ? (
+              <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
+                <svg className="h-12 w-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+                <p className="text-sm">No reviews started yet</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.name}: ${entry.value}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Top Performers */}
