@@ -8,9 +8,20 @@
   --background-rgb: 255, 255, 255;
 }
 
+html,
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
+}
+
+/* Prevent white flash on overscroll/bounce (iOS, macOS) */
+html {
+  background-color: rgb(243 244 246); /* gray-100 — matches dashboard bg */
+}
+
+.dark html,
+html.dark {
+  background-color: rgb(17 24 39); /* gray-900 — matches dark dashboard bg */
 }
 
 /* ── Dark mode: tell the browser we handle it ── */
