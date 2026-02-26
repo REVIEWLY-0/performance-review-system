@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../common/services/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UserRole } from '@prisma/client';
@@ -81,10 +82,17 @@ export class ImportUsersBodyDto {
 
 @Injectable()
 export class UsersService {
+  private supabase: SupabaseClient;
+
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
-  ) {}
+  ) {
+    this.supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+  }
 
   /**
    * CRITICAL: Find all users - MUST filter by companyId
@@ -203,8 +211,43 @@ export class UsersService {
       }
     }
 
+    // Provision Supabase auth account so the employee can sign in
+    let supabaseId: string | undefined;
+    let setupLink: string | undefined;
+
+    const { data: authData, error: authError } = await this.supabase.auth.admin.createUser({
+      email,
+      email_confirm: true, // Skip confirmation email — we send our own
+    });
+
+    if (authError) {
+      // If account already exists in Supabase, fetch their existing UUID
+      if (authError.message?.toLowerCase().includes('already registered') || authError.code === 'email_exists') {
+        const { data: listData } = await this.supabase.auth.admin.listUsers();
+        const existing = listData?.users?.find((u) => u.email === email);
+        supabaseId = existing?.id;
+      } else {
+        console.error('Supabase auth creation failed for new user:', authError.message);
+      }
+    } else {
+      supabaseId = authData.user?.id;
+    }
+
+    // Generate a password-setup link so the employee can log in for the first time
+    if (supabaseId) {
+      const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email,
+      });
+      if (!linkError && linkData?.properties?.action_link) {
+        setupLink = linkData.properties.action_link;
+      }
+    }
+
     const user = await this.prisma.user.create({
       data: {
+        // Use Supabase UUID so sign-in can find this record; fall back to cuid
+        ...(supabaseId ? { id: supabaseId } : {}),
         email,
         name,
         role,
@@ -224,9 +267,9 @@ export class UsersService {
       },
     });
 
-    // Fire welcome email — non-blocking, a failure must not roll back user creation
+    // Fire welcome email with setup link — non-blocking
     this.notificationsService
-      .sendWelcomeEmail(user.id)
+      .sendWelcomeEmail(user.id, setupLink)
       .catch((err) => console.error('Welcome email failed for new user:', err));
 
     return user;
@@ -357,9 +400,40 @@ export class UsersService {
           continue;
         }
 
+        // Provision Supabase auth account (non-fatal — import must not abort on auth errors)
+        let importSupabaseId: string | undefined;
+        let importSetupLink: string | undefined;
+
+        const { data: importAuthData, error: importAuthError } = await this.supabase.auth.admin.createUser({
+          email: userData.email,
+          email_confirm: true,
+        });
+
+        if (importAuthError) {
+          if (importAuthError.message?.toLowerCase().includes('already registered') || importAuthError.code === 'email_exists') {
+            const { data: listData } = await this.supabase.auth.admin.listUsers();
+            const existingAuth = listData?.users?.find((u) => u.email === userData.email);
+            importSupabaseId = existingAuth?.id;
+          }
+          // else: log silently and continue without a Supabase ID
+        } else {
+          importSupabaseId = importAuthData.user?.id;
+        }
+
+        if (importSupabaseId) {
+          const { data: linkData } = await this.supabase.auth.admin.generateLink({
+            type: 'recovery',
+            email: userData.email,
+          });
+          if (linkData?.properties?.action_link) {
+            importSetupLink = linkData.properties.action_link;
+          }
+        }
+
         // Create user without manager first
         const user = await this.prisma.user.create({
           data: {
+            ...(importSupabaseId ? { id: importSupabaseId } : {}),
             email: userData.email,
             name: userData.name,
             role: userData.role.toUpperCase() as UserRole,
@@ -371,9 +445,9 @@ export class UsersService {
         createdUsers.set(userData.email, user.id);
         results.successful++;
 
-        // Fire welcome email — non-blocking, failure must not affect import results
+        // Fire welcome email with setup link — non-blocking, failure must not affect import results
         this.notificationsService
-          .sendWelcomeEmail(user.id)
+          .sendWelcomeEmail(user.id, importSetupLink)
           .catch(() => { /* welcome email failure is silent during bulk import */ });
       } catch (error: any) {
         results.failed++;

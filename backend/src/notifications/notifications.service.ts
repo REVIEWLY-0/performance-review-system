@@ -580,7 +580,7 @@ This is an automated message from Reviewly.
   // Welcome Email
   // ============================================================================
 
-  private welcomeEmailTemplate(userName: string, companyName: string): { html: string; text: string } {
+  private welcomeEmailTemplate(userName: string, companyName: string, setupLink?: string): { html: string; text: string } {
     const html = `
       <!DOCTYPE html>
       <html>
@@ -613,8 +613,13 @@ This is an automated message from Reviewly.
               <li>View your performance scores and feedback</li>
               <li>Track your progress over time</li>
             </ul>
-            <p>Get started by logging in to your dashboard:</p>
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login" class="button">Go to Dashboard</a>
+            ${setupLink
+              ? `<p>Set up your password to get started:</p>
+            <a href="${setupLink}" class="button">Set Up Password</a>
+            <p style="margin-top:12px;font-size:13px;color:#6b7280;">After setting your password you can sign in at <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login">${process.env.FRONTEND_URL || 'http://localhost:3000'}/login</a></p>`
+              : `<p>Get started by logging in to your dashboard:</p>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login" class="button">Go to Dashboard</a>`
+            }
           </div>
           <div class="footer">
             <p>Questions? Contact your HR administrator.</p>
@@ -640,8 +645,10 @@ What you can do:
 - View your performance scores and feedback
 - Track your progress over time
 
-Get started by logging in to your dashboard:
-${process.env.FRONTEND_URL || 'http://localhost:3000'}/login
+${setupLink
+      ? `Set up your password to get started:\n${setupLink}\n\nAfter setting your password, sign in at:\n${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`
+      : `Get started by logging in to your dashboard:\n${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`
+    }
 
 Questions? Contact your HR administrator.
 This is an automated message from Reviewly.
@@ -650,7 +657,7 @@ This is an automated message from Reviewly.
     return { html, text: text.trim() };
   }
 
-  async sendWelcomeEmail(userId: string): Promise<void> {
+  async sendWelcomeEmail(userId: string, setupLink?: string): Promise<void> {
     this.logger.log(`Sending welcome email to user ${userId}`);
 
     const user = await this.prisma.user.findUnique({
@@ -663,7 +670,7 @@ This is an automated message from Reviewly.
       return;
     }
 
-    const template = this.welcomeEmailTemplate(user.name, user.company.name);
+    const template = this.welcomeEmailTemplate(user.name, user.company.name, setupLink);
 
     await this.sendEmail({
       to: user.email,
