@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
 import { PrismaService } from '../common/services/prisma.service';
 import { LoggerService } from '../common/services/logger.service';
 
@@ -28,21 +28,28 @@ export interface NotificationPreferences {
 @Injectable()
 export class NotificationsService {
   private readonly logger: LoggerService;
-  private resend: Resend | null = null;
+  private transporter: nodemailer.Transporter | null = null;
   private readonly fromEmail: string;
 
   constructor(private prisma: PrismaService) {
     this.logger = new LoggerService();
     this.logger.setContext('NotificationsService');
 
-    const apiKey = process.env.EMAIL_SERVICE_KEY;
+    const host = process.env.MAILTRAP_HOST;
+    const port = process.env.MAILTRAP_PORT;
+    const user = process.env.MAILTRAP_USER;
+    const pass = process.env.MAILTRAP_PASS;
     this.fromEmail = process.env.EMAIL_FROM || 'noreply@reviewly.com';
 
-    if (apiKey) {
-      this.resend = new Resend(apiKey);
-      this.logger.log('Email service initialized with Resend');
+    if (host && user && pass) {
+      this.transporter = nodemailer.createTransport({
+        host,
+        port: port ? parseInt(port, 10) : 587,
+        auth: { user, pass },
+      });
+      this.logger.log('Email service initialized with Mailtrap (Nodemailer)');
     } else {
-      this.logger.warn('EMAIL_SERVICE_KEY not set - emails will be logged only');
+      this.logger.warn('MAILTRAP credentials not set — emails will be logged to console only');
     }
   }
 
@@ -51,17 +58,17 @@ export class NotificationsService {
   // ============================================================================
 
   private async sendEmail(notification: EmailNotification): Promise<void> {
-    try {
-      if (!this.resend) {
-        this.logger.log(`[DEV MODE] Email to ${notification.to}`);
-        this.logger.log(`Subject: ${notification.subject}`);
-        if (notification.text) {
-          this.logger.log(`Plain text: ${notification.text.substring(0, 150)}...`);
-        }
-        return;
+    if (!this.transporter) {
+      this.logger.log(`[DEV MODE] Email to ${notification.to}`);
+      this.logger.log(`Subject: ${notification.subject}`);
+      if (notification.text) {
+        this.logger.log(`Body: ${notification.text.substring(0, 200)}`);
       }
+      return;
+    }
 
-      const { data, error } = await this.resend.emails.send({
+    try {
+      const info = await this.transporter.sendMail({
         from: this.fromEmail,
         to: notification.to,
         subject: notification.subject,
@@ -69,11 +76,7 @@ export class NotificationsService {
         text: notification.text,
       });
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      this.logger.log(`Email sent to ${notification.to}: ${notification.subject} (id: ${data?.id})`);
+      this.logger.log(`Email sent to ${notification.to}: ${notification.subject} (messageId: ${info.messageId})`);
     } catch (error: any) {
       this.logger.error(`Failed to send email to ${notification.to}: ${error.message}`);
       throw error;
@@ -690,10 +693,10 @@ This is an automated message from Reviewly.
 
   async sendTestEmail(toEmail: string): Promise<{ success: boolean; message: string }> {
     try {
-      if (!this.resend) {
+      if (!this.transporter) {
         return {
           success: false,
-          message: 'Email service not configured. Set EMAIL_SERVICE_KEY environment variable.',
+          message: 'Email service not configured. Set MAILTRAP_HOST, MAILTRAP_USER, and MAILTRAP_PASS environment variables.',
         };
       }
 
