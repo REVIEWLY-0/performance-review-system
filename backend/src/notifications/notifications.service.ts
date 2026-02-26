@@ -61,7 +61,7 @@ export class NotificationsService {
         return;
       }
 
-      await this.resend.emails.send({
+      const { data, error } = await this.resend.emails.send({
         from: this.fromEmail,
         to: notification.to,
         subject: notification.subject,
@@ -69,7 +69,11 @@ export class NotificationsService {
         text: notification.text,
       });
 
-      this.logger.log(`Email sent to ${notification.to}: ${notification.subject}`);
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      this.logger.log(`Email sent to ${notification.to}: ${notification.subject} (id: ${data?.id})`);
     } catch (error: any) {
       this.logger.error(`Failed to send email to ${notification.to}: ${error.message}`);
       throw error;
