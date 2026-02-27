@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn, signUp } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import {
   validateEmail,
   validatePassword,
@@ -20,6 +21,56 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Password-setup mode — triggered when employee clicks the invite link
+  const [isSetPassword, setIsSetPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+
+  useEffect(() => {
+    // Parse the URL hash that Supabase appends: #access_token=...&type=recovery
+    const hash = window.location.hash.substring(1)
+    const params = new URLSearchParams(hash)
+    if (params.get('type') === 'recovery' && params.get('access_token')) {
+      const accessToken = params.get('access_token')!
+      const refreshToken = params.get('refresh_token') ?? ''
+      // Establish the session so updateUser works
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(() => {
+          // Clean the hash from the URL without triggering a reload
+          window.history.replaceState(null, '', window.location.pathname)
+          setIsSetPassword(true)
+        })
+        .catch(() => setError('Invalid or expired setup link. Please ask your admin to resend the invite.'))
+    }
+  }, [])
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+      if (updateError) throw new Error(updateError.message)
+
+      setSuccess('Password set! Signing you in…')
+      setTimeout(() => router.push('/employee'), 1500)
+    } catch (err: any) {
+      setError(err.message || 'Failed to set password.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const [formData, setFormData] = useState({
     email: '',
@@ -175,6 +226,77 @@ export default function LoginPage() {
       default:
         return '/employee'
     }
+  }
+
+  if (isSetPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="flex flex-col items-center">
+            <div className="h-12 w-12 rounded-xl bg-indigo-600 flex items-center justify-center mb-3">
+              <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-indigo-600">Reviewly</h1>
+            <h2 className="mt-2 text-xl font-semibold text-gray-900">Set your password</h2>
+            <p className="mt-1 text-sm text-gray-500">Choose a password to activate your account</p>
+          </div>
+
+          <form className="mt-8 space-y-4" onSubmit={handleSetPassword}>
+            <div>
+              <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
+                New Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="new-password"
+                type="password"
+                required
+                autoComplete="new-password"
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Minimum 8 characters"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="confirm-new-password" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="confirm-new-password"
+                type="password"
+                required
+                autoComplete="new-password"
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Re-enter your password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-md bg-red-50 p-4">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+            {success && (
+              <div className="rounded-md bg-green-50 p-4">
+                <p className="text-sm text-green-700">{success}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:opacity-50"
+            >
+              {loading ? 'Saving…' : 'Set Password & Sign In'}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
   }
 
   return (
