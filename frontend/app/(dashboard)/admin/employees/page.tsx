@@ -12,6 +12,19 @@ import SkeletonCard from '@/components/skeletons/SkeletonCard';
 import SkeletonTable from '@/components/skeletons/SkeletonTable';
 import Pagination from '@/components/Pagination';
 
+function downloadCsvTemplate() {
+  const headers = ['name', 'email', 'role', 'department', 'manager_email'];
+  const sample = ['Jane Smith', 'jane.smith@company.com', 'EMPLOYEE', 'Engineering', 'manager@company.com'];
+  const csv = [headers.join(','), sample.join(',')].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'employee_import_template.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function EmployeesPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -130,6 +143,16 @@ export default function EmployeesPage() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={downloadCsvTemplate}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <svg className="mr-2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download Template
+          </button>
           <button
             onClick={() => setShowImportModal(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
