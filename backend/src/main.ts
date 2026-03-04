@@ -3,9 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const compression = require('compression');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Gzip compression — reduces JSON response payload by 60-80%
+  app.use(compression());
 
   // Security headers with Helmet
   app.use(

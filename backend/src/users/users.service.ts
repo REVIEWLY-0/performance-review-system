@@ -221,11 +221,19 @@ export class UsersService {
     });
 
     if (authError) {
-      // If account already exists in Supabase, fetch their existing UUID
+      // If account already exists in Supabase, look up by email directly (avoids fetching all users)
       if (authError.message?.toLowerCase().includes('already registered') || authError.code === 'email_exists') {
-        const { data: listData } = await this.supabase.auth.admin.listUsers();
-        const existing = listData?.users?.find((u) => u.email === email);
-        supabaseId = existing?.id;
+        const { data: existingData } = await this.supabase.auth.admin.listUsers({ perPage: 1 });
+        // Use getUserByEmail via filter — fall back to searching with email filter
+        const { data: byEmail } = await (this.supabase.auth.admin as any).getUserByEmail?.(email)
+          ?? { data: null };
+        if (byEmail?.user?.id) {
+          supabaseId = byEmail.user.id;
+        } else {
+          // Last resort: targeted search (page 1, small set)
+          const { data: listData } = await this.supabase.auth.admin.listUsers({ perPage: 1000 });
+          supabaseId = listData?.users?.find((u) => u.email === email)?.id;
+        }
       } else {
         console.error('Supabase auth creation failed for new user:', authError.message);
       }
@@ -411,9 +419,15 @@ export class UsersService {
 
         if (importAuthError) {
           if (importAuthError.message?.toLowerCase().includes('already registered') || importAuthError.code === 'email_exists') {
-            const { data: listData } = await this.supabase.auth.admin.listUsers();
-            const existingAuth = listData?.users?.find((u) => u.email === userData.email);
-            importSupabaseId = existingAuth?.id;
+            // Targeted lookup — avoid fetching all Supabase users on every collision
+            const { data: byEmail } = await (this.supabase.auth.admin as any).getUserByEmail?.(userData.email)
+              ?? { data: null };
+            if (byEmail?.user?.id) {
+              importSupabaseId = byEmail.user.id;
+            } else {
+              const { data: listData } = await this.supabase.auth.admin.listUsers({ perPage: 1000 });
+              importSupabaseId = listData?.users?.find((u) => u.email === userData.email)?.id;
+            }
           }
           // else: log silently and continue without a Supabase ID
         } else {
