@@ -71,7 +71,7 @@ export default function AssignmentCard({
   );
 
   const hasValidAssignment =
-    managerIds.length >= 1 && peerIds.length >= 3 && peerIds.length <= 5;
+    managerIds.length >= 1 && peerIds.length >= 1;
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
@@ -120,7 +120,7 @@ export default function AssignmentCard({
         {/* Peer Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Peers (3-5) <span className="text-red-500">*</span>
+            Peers (1+) <span className="text-red-500">*</span>
           </label>
           <ReviewerMultiSelect
             selectedIds={peerIds}
@@ -128,9 +128,9 @@ export default function AssignmentCard({
             onChange={handlePeerChange}
             placeholder="Select peers..."
           />
-          {(peerIds.length < 3 || peerIds.length > 5) && (
+          {peerIds.length === 0 && (
             <p className="mt-1 text-xs text-red-600">
-              Must select 3-5 peers (currently {peerIds.length})
+              At least one peer required
             </p>
           )}
         </div>
