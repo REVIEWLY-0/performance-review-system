@@ -6,11 +6,11 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
-import { ReviewCycleStatus, ReviewType } from '@prisma/client';
+import { ReviewCycleStatus, ReviewType, ReviewStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   IsString, IsEnum, IsOptional, IsNumber, IsArray, IsDateString,
-  ValidateNested, MinLength, MaxLength, Min, Max, ArrayMinSize, ArrayMaxSize,
+  ValidateNested, MinLength, MaxLength, Min, ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -18,7 +18,6 @@ import { Type } from 'class-transformer';
 export class ReviewConfigDto {
   @IsNumber()
   @Min(1)
-  @Max(3)
   stepNumber!: number;
 
   @IsEnum(ReviewType)
@@ -47,7 +46,6 @@ export class CreateReviewCycleDto {
   @ValidateNested({ each: true })
   @Type(() => ReviewConfigDto)
   @ArrayMinSize(1)
-  @ArrayMaxSize(3)
   reviewConfigs!: ReviewConfigDto[];
 }
 
@@ -73,7 +71,6 @@ export class UpdateConfigsBodyDto {
   @ValidateNested({ each: true })
   @Type(() => ReviewConfigDto)
   @ArrayMinSize(1)
-  @ArrayMaxSize(3)
   configs!: ReviewConfigDto[];
 }
 
@@ -431,6 +428,131 @@ export class ReviewCyclesService {
   }
 
   /**
+   * Get HR insights for a cycle: completion status per employee, reviewer matrix, aggregate stats.
+   * Accessible by ADMIN/MANAGER for ACTIVE or COMPLETED cycles.
+   * CRITICAL: verifies companyId via findOne.
+   */
+  async getInsights(id: string, companyId: string) {
+    // Verify cycle belongs to company
+    const cycle = await this.findOne(id, companyId);
+
+    // Fetch assignments and reviews in parallel — 2 queries total
+    const [assignments, reviews] = await Promise.all([
+      this.prisma.reviewerAssignment.findMany({
+        where: { reviewCycleId: id },
+        include: {
+          employee: {
+            select: { id: true, name: true, email: true, department: true },
+          },
+          reviewer: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+        orderBy: [{ employee: { name: 'asc' } }, { reviewerType: 'asc' }],
+      }),
+      this.prisma.review.findMany({
+        where: { reviewCycleId: id },
+        select: {
+          employeeId: true,
+          reviewerId: true,
+          reviewType: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    // Build lookup: "employeeId:reviewerId:reviewType" → status
+    const reviewLookup = new Map<string, ReviewStatus>();
+    for (const r of reviews) {
+      reviewLookup.set(`${r.employeeId}:${r.reviewerId}:${r.reviewType}`, r.status);
+    }
+
+    // Build per-employee insights
+    type ReviewerStatusEntry = {
+      reviewer: { id: string; name: string; email: string };
+      status: ReviewStatus;
+    };
+    type EmployeeInsight = {
+      id: string;
+      name: string;
+      email: string;
+      department: string | null;
+      selfReviewStatus: ReviewStatus;
+      managerReviews: ReviewerStatusEntry[];
+      peerReviews: ReviewerStatusEntry[];
+    };
+
+    const employeeMap = new Map<string, EmployeeInsight>();
+
+    for (const a of assignments) {
+      if (!employeeMap.has(a.employeeId)) {
+        const selfStatus =
+          reviewLookup.get(`${a.employeeId}:${a.employeeId}:SELF`) ??
+          ReviewStatus.NOT_STARTED;
+        employeeMap.set(a.employeeId, {
+          id: a.employee.id,
+          name: a.employee.name,
+          email: a.employee.email,
+          department: a.employee.department ?? null,
+          selfReviewStatus: selfStatus,
+          managerReviews: [],
+          peerReviews: [],
+        });
+      }
+
+      const emp = employeeMap.get(a.employeeId)!;
+      const reviewType = a.reviewerType === 'MANAGER' ? ReviewType.MANAGER : ReviewType.PEER;
+      const reviewStatus =
+        reviewLookup.get(`${a.employeeId}:${a.reviewerId}:${reviewType}`) ??
+        ReviewStatus.NOT_STARTED;
+
+      const entry: ReviewerStatusEntry = {
+        reviewer: a.reviewer,
+        status: reviewStatus,
+      };
+      if (a.reviewerType === 'MANAGER') {
+        emp.managerReviews.push(entry);
+      } else {
+        emp.peerReviews.push(entry);
+      }
+    }
+
+    const employees = Array.from(employeeMap.values());
+
+    // Aggregate stats
+    let fullyComplete = 0;
+    let inProgress = 0;
+    let notStarted = 0;
+
+    for (const emp of employees) {
+      const allStatuses: ReviewStatus[] = [
+        emp.selfReviewStatus,
+        ...emp.managerReviews.map((r) => r.status),
+        ...emp.peerReviews.map((r) => r.status),
+      ];
+      const hasAny = allStatuses.some((s) => s !== ReviewStatus.NOT_STARTED);
+      const allDone =
+        allStatuses.length > 0 &&
+        allStatuses.every((s) => s === ReviewStatus.SUBMITTED);
+
+      if (allDone) fullyComplete++;
+      else if (hasAny) inProgress++;
+      else notStarted++;
+    }
+
+    return {
+      cycle,
+      stats: {
+        total: employees.length,
+        fullyComplete,
+        inProgress,
+        notStarted,
+      },
+      employees,
+    };
+  }
+
+  /**
    * VALIDATION HELPERS
    */
 
@@ -483,11 +605,6 @@ export class ReviewCyclesService {
     cycleEnd: Date,
     configs: ReviewConfigDto[],
   ) {
-    // Validate maximum 3 steps
-    if (configs.length > 3) {
-      throw new BadRequestException('Maximum 3 workflow steps allowed');
-    }
-
     // Validate no duplicate Self Review steps
     const selfReviewSteps = configs.filter((c) => c.reviewType === 'SELF');
     if (selfReviewSteps.length > 1) {

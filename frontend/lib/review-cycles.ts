@@ -42,6 +42,35 @@ export interface UpdateReviewCycleDto {
   endDate?: string;
 }
 
+// ── Insights types ────────────────────────────────────────────────────────────
+export type ReviewStatus = 'NOT_STARTED' | 'DRAFT' | 'SUBMITTED';
+
+export interface ReviewerStatus {
+  reviewer: { id: string; name: string; email: string };
+  status: ReviewStatus;
+}
+
+export interface EmployeeInsight {
+  id: string;
+  name: string;
+  email: string;
+  department: string | null;
+  selfReviewStatus: ReviewStatus;
+  managerReviews: ReviewerStatus[];
+  peerReviews: ReviewerStatus[];
+}
+
+export interface CycleInsights {
+  cycle: ReviewCycle;
+  stats: {
+    total: number;
+    fullyComplete: number;
+    inProgress: number;
+    notStarted: number;
+  };
+  employees: EmployeeInsight[];
+}
+
 // API functions
 export const reviewCyclesApi = {
   /**
@@ -127,6 +156,13 @@ export const reviewCyclesApi = {
     return fetchWithAuth(`${API_URL}/review-cycles/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  /**
+   * Get HR insights for a cycle: completion matrix, stats, per-employee status
+   */
+  getInsights: async (id: string): Promise<CycleInsights> => {
+    return fetchWithAuth(`${API_URL}/review-cycles/${id}/insights`);
   },
 };
 

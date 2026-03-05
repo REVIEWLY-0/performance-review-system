@@ -459,16 +459,6 @@ export class ReviewerAssignmentsService {
       reviewers.add(assignment.reviewerId);
     }
 
-    // Validate peer count (3-5 per PRD)
-    const peerCount = assignments.filter(
-      (a) => a.reviewerType === 'PEER',
-    ).length;
-    if (peerCount > 0 && (peerCount < 3 || peerCount > 5)) {
-      throw new BadRequestException(
-        'Each employee must have 3-5 peer reviewers',
-      );
-    }
-
     // Validate at least one manager
     const managerCount = assignments.filter(
       (a) => a.reviewerType === 'MANAGER',
