@@ -128,6 +128,12 @@ export default function QuestionsPage() {
     }
   };
 
+  // Reset preview whenever the active tab changes so each tab's preview is
+  // always explicitly requested and never stale.
+  useEffect(() => {
+    setShowPreview(false);
+  }, [selectedTab]);
+
   const handleEdit = (question: Question) => {
     setEditingQuestion(question);
     setShowForm(true);
