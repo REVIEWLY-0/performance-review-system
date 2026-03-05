@@ -81,15 +81,20 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
               <div className="px-4 py-4 flex items-center sm:px-6 hover:bg-gray-50">
                 <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center">
+                    <div className="flex items-center flex-wrap gap-1.5">
                       <p className="font-medium text-indigo-600 truncate">{employee.name}</p>
                       <span
-                        className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
                           employee.role
                         )}`}
                       >
                         {employee.role}
                       </span>
+                      {employee.employeeId && (
+                        <span className="px-2 py-0.5 text-xs font-mono font-medium rounded bg-gray-100 text-gray-600 border border-gray-200">
+                          {employee.employeeId}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-2 flex">
                       <div className="flex items-center text-sm text-gray-500">

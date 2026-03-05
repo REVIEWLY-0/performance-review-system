@@ -72,6 +72,12 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
               )}
 
               <div className="space-y-4">
+                {employee.employeeId && (
+                  <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex items-center gap-2">
+                    <span className="text-xs text-gray-500 font-medium">Employee ID</span>
+                    <span className="font-mono text-sm font-semibold text-gray-700">{employee.employeeId}</span>
+                  </div>
+                )}
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     Full Name *

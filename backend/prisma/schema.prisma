@@ -77,6 +77,7 @@ model User {
   role                     UserRole @default(EMPLOYEE)
   managerId                String?  @map("manager_id")
   department               String?  @map("department")
+  employeeId               String?  @map("employee_id") // HR employee ID, unique per company
   notificationPreferences  Json?    @map("notification_preferences")
   createdAt                DateTime @default(now()) @map("created_at")
   updatedAt                DateTime @updatedAt @map("updated_at")
@@ -92,6 +93,7 @@ model User {
   assignmentsAsReviewer ReviewerAssignment[] @relation("ReviewerAssignments")
 
   @@unique([companyId, email])
+  @@unique([companyId, employeeId])
   @@index([companyId])
   @@index([managerId])
   @@index([email])

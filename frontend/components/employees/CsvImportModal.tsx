@@ -15,6 +15,7 @@ interface ParsedRow {
   role: string;
   department: string;
   managerEmail?: string;
+  employeeId?: string;
   /** Row number in the CSV (1-based, excluding header) */
   rowNum: number;
   /** Validation warning shown in preview */
@@ -36,7 +37,7 @@ function parseCSV(text: string): ParsedRow[] {
 
   return lines.slice(1).map((line, idx) => {
     // Naive CSV split (no quoted-field support needed for this schema)
-    const [name = '', email = '', role = '', department = '', managerEmail = ''] = line
+    const [name = '', email = '', role = '', department = '', managerEmail = '', employeeId = ''] = line
       .split(',')
       .map((s) => s.trim());
 
@@ -46,6 +47,7 @@ function parseCSV(text: string): ParsedRow[] {
       role: role.toUpperCase() || 'EMPLOYEE',
       department,
       managerEmail: managerEmail || undefined,
+      employeeId: employeeId || undefined,
       rowNum: idx + 2, // +2 because header is row 1
     };
 
@@ -87,12 +89,13 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
   const handleImport = async () => {
     setImporting(true);
     try {
-      const payload = validRows.map(({ name, email, role, department, managerEmail }) => ({
+      const payload = validRows.map(({ name, email, role, department, managerEmail, employeeId }) => ({
         name,
         email,
         role,
         department,
         ...(managerEmail ? { managerEmail } : {}),
+        ...(employeeId ? { employeeId } : {}),
       }));
       const res = await usersApi.importUsers(payload);
       setResult(res);
@@ -149,16 +152,17 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
                 <div className="mb-4 p-4 bg-blue-50 rounded-md">
                   <h4 className="text-sm font-semibold text-blue-900 mb-1">CSV Format</h4>
                   <pre className="text-xs text-blue-800 font-mono whitespace-pre-wrap leading-relaxed">
-{`name,email,role,department,manager_email
-Alice Smith,alice@company.com,EMPLOYEE,Engineering,bob@company.com
-Bob Jones,bob@company.com,MANAGER,Engineering,
-Carol White,carol@company.com,ADMIN,Operations,`}
+{`name,email,role,department,manager_email,employee_id
+Alice Smith,alice@company.com,EMPLOYEE,Engineering,bob@company.com,EMP-001
+Bob Jones,bob@company.com,MANAGER,Engineering,,
+Carol White,carol@company.com,ADMIN,Operations,,`}
                   </pre>
                   <ul className="mt-2 text-xs text-blue-800 space-y-0.5">
                     <li>• First row is the header (required)</li>
                     <li>• <strong>role</strong> must be: <code>EMPLOYEE</code>, <code>MANAGER</code>, or <code>ADMIN</code></li>
                     <li>• <strong>department</strong> is <strong>required</strong> — e.g. Engineering, Sales, Marketing</li>
                     <li>• <strong>manager_email</strong> is optional — leave blank for top-level managers</li>
+                    <li>• <strong>employee_id</strong> is optional — leave blank to auto-generate (e.g. EMP-XK4J9R)</li>
                     <li>• All emails must be unique within your company</li>
                   </ul>
                 </div>

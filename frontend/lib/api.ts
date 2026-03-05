@@ -19,6 +19,7 @@ export interface User {
   companyId: string
   managerId?: string
   department?: string
+  employeeId?: string
   manager?: {
     id: string
     name: string

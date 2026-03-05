@@ -13,10 +13,10 @@ import SkeletonTable from '@/components/skeletons/SkeletonTable';
 import Pagination from '@/components/Pagination';
 
 function downloadCsvTemplate() {
-  const headers = ['name', 'email', 'role', 'department', 'manager_email'];
+  const headers = ['name', 'email', 'role', 'department', 'manager_email', 'employee_id'];
   const rows = [
-    ['Jane Smith', 'jane.smith@company.com', 'EMPLOYEE', 'Engineering', 'manager@company.com'],
-    ['John Manager', 'john.manager@company.com', 'MANAGER', 'Engineering', ''],
+    ['Jane Smith', 'jane.smith@company.com', 'EMPLOYEE', 'Engineering', 'manager@company.com', ''],
+    ['John Manager', 'john.manager@company.com', 'MANAGER', 'Engineering', '', ''],
   ];
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -308,7 +308,8 @@ export default function EmployeesPage() {
           const matchesSearch =
             !search ||
             emp.name.toLowerCase().includes(search.toLowerCase()) ||
-            emp.email.toLowerCase().includes(search.toLowerCase());
+            emp.email.toLowerCase().includes(search.toLowerCase()) ||
+            (emp.employeeId && emp.employeeId.toLowerCase().includes(search.toLowerCase()));
           const matchesRole = roleFilter === 'ALL' || emp.role === roleFilter;
           return matchesSearch && matchesRole;
         });
@@ -327,7 +328,7 @@ export default function EmployeesPage() {
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search by name or email…"
+                  placeholder="Search by name, email, or employee ID…"
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>

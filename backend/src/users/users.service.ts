@@ -29,6 +29,11 @@ export class CreateUserDto {
   @MinLength(1)
   @MaxLength(100)
   department!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  employeeId?: string;
 }
 
 export class UpdateUserDto {
@@ -74,6 +79,11 @@ export class ImportUserDto {
   department!: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  employeeId?: string;
+
+  @IsOptional()
   @IsEmail()
   managerEmail?: string;
 }
@@ -88,6 +98,36 @@ export class ImportUsersBodyDto {
 @Injectable()
 export class UsersService {
   private supabase: SupabaseClient;
+
+  /** Generate a human-readable HR employee ID — format: EMP-XXXXXX (uppercase alphanumeric) */
+  private generateEmployeeId(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let id = '';
+    for (let i = 0; i < 6; i++) {
+      id += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return `EMP-${id}`;
+  }
+
+  /** Return a unique employeeId for a company — retries up to 5x on collision */
+  private async resolveEmployeeId(companyId: string, requested?: string): Promise<string> {
+    if (requested) {
+      const existing = await this.prisma.user.findFirst({
+        where: { companyId, employeeId: requested },
+      });
+      if (existing) {
+        throw new BadRequestException(`Employee ID "${requested}" already exists in your company`);
+      }
+      return requested;
+    }
+    // Auto-generate, retrying on the rare collision
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const id = this.generateEmployeeId();
+      const existing = await this.prisma.user.findFirst({ where: { companyId, employeeId: id } });
+      if (!existing) return id;
+    }
+    throw new BadRequestException('Could not generate a unique employee ID — please try again');
+  }
 
   constructor(
     private prisma: PrismaService,
@@ -188,7 +228,7 @@ export class UsersService {
    * Create new user - automatically assigns companyId
    */
   async create(companyId: string, createUserDto: CreateUserDto) {
-    const { email, name, role, managerId, department } = createUserDto;
+    const { email, name, role, managerId, department, employeeId: requestedEmpId } = createUserDto;
 
     // Check if email already exists in company
     const existingUser = await this.prisma.user.findFirst({
@@ -246,6 +286,9 @@ export class UsersService {
       supabaseId = authData.user?.id;
     }
 
+    // Resolve (or generate) the HR employee ID
+    const resolvedEmpId = await this.resolveEmployeeId(companyId, requestedEmpId);
+
     // Generate a password-setup link so the employee can log in for the first time
     if (supabaseId) {
       const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
@@ -267,6 +310,7 @@ export class UsersService {
         companyId,
         managerId,
         department,
+        employeeId: resolvedEmpId,
         password: '', // Password managed by Supabase
       },
       include: {
@@ -449,6 +493,16 @@ export class UsersService {
           }
         }
 
+        // Resolve (or auto-generate) the HR employee ID
+        let importEmpId: string;
+        try {
+          importEmpId = await this.resolveEmployeeId(companyId, userData.employeeId);
+        } catch (err: any) {
+          results.failed++;
+          results.errors.push(`Row for ${userData.email}: ${err.message}`);
+          continue;
+        }
+
         // Create user without manager first
         const user = await this.prisma.user.create({
           data: {
@@ -458,6 +512,7 @@ export class UsersService {
             role: userData.role.toUpperCase() as UserRole,
             companyId,
             department: userData.department,
+            employeeId: importEmpId,
             password: '', // Managed by Supabase
           },
         });
