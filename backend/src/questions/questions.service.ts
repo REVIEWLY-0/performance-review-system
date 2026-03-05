@@ -1,9 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
-import { QuestionType, ReviewType } from '@prisma/client';
+import { Prisma, QuestionType, ReviewType } from '@prisma/client';
 import {
-  IsString, IsEnum, IsOptional, IsNumber, MinLength, MaxLength, Min,
+  IsString, IsEnum, IsOptional, IsNumber, IsBoolean, IsArray,
+  MinLength, MaxLength, Min, ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class TaskDefinitionDto {
+  @IsString()
+  id!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
+  label!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+
+  @IsBoolean()
+  required!: boolean;
+}
 
 export class CreateQuestionDto {
   @IsEnum(ReviewType)
@@ -21,6 +41,12 @@ export class CreateQuestionDto {
   @IsNumber()
   @Min(1)
   maxChars?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TaskDefinitionDto)
+  tasks?: TaskDefinitionDto[];
 
   @IsOptional()
   @IsNumber()
@@ -47,6 +73,12 @@ export class UpdateQuestionDto {
   @IsNumber()
   @Min(1)
   maxChars?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TaskDefinitionDto)
+  tasks?: TaskDefinitionDto[];
 
   @IsOptional()
   @IsNumber()
@@ -143,6 +175,7 @@ export class QuestionsService {
         type: dto.type,
         text: dto.text,
         maxChars: dto.maxChars,
+        tasks: dto.tasks ? (dto.tasks as unknown as Prisma.InputJsonValue) : Prisma.JsonNull,
         order,
       },
     });
@@ -160,7 +193,19 @@ export class QuestionsService {
 
     return this.prisma.question.update({
       where: { id },
-      data: dto,
+      data: {
+        ...(dto.reviewType !== undefined && { reviewType: dto.reviewType }),
+        ...(dto.type !== undefined && { type: dto.type }),
+        ...(dto.text !== undefined && { text: dto.text }),
+        ...(dto.maxChars !== undefined && { maxChars: dto.maxChars }),
+        ...(dto.order !== undefined && { order: dto.order }),
+        // tasks: null clears predefined tasks; undefined means no change
+        ...('tasks' in dto && {
+          tasks: dto.tasks
+            ? (dto.tasks as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
+        }),
+      },
     });
   }
 
@@ -262,6 +307,7 @@ export class QuestionsService {
         type: original.type,
         text: `${original.text} (Copy)`,
         maxChars: original.maxChars,
+        tasks: original.tasks !== null ? (original.tasks as Prisma.InputJsonValue) : Prisma.JsonNull,
         order: nextOrder,
       },
     });

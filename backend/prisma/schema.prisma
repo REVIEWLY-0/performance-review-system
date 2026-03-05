@@ -176,6 +176,7 @@ model Question {
   type       QuestionType @default(RATING)
   text       String
   maxChars   Int?         @map("max_chars")
+  tasks      Json?        @map("tasks") // For TASK_LIST: [{id,label,description?,required}]
   order      Int          @default(0)
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")

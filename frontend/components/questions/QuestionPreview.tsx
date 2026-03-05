@@ -133,26 +133,45 @@ export default function QuestionPreview({ questions, reviewType }: QuestionPrevi
 
               {/* Task List */}
               {question.type === 'TASK_LIST' && (
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        placeholder="Add a task or goal..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-sm text-indigo-600 hover:text-indigo-900 font-medium"
-                  >
-                    + Add another item
-                  </button>
+                <div className="space-y-2">
+                  {question.tasks && question.tasks.length > 0 ? (
+                    // Predefined tasks
+                    question.tasks.map((task) => (
+                      <label key={task.id} className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <div>
+                          <span className="text-sm text-gray-900">{task.label}</span>
+                          {task.required && <span className="ml-1 text-xs text-red-500">*</span>}
+                          {task.description && (
+                            <p className="text-xs text-gray-500">{task.description}</p>
+                          )}
+                        </div>
+                      </label>
+                    ))
+                  ) : (
+                    // Free-form fallback
+                    <>
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            placeholder="Add a task or goal..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+                      <button type="button" className="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
+                        + Add another item
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>

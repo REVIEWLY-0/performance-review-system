@@ -3,6 +3,13 @@ import { fetchWithAuth } from './api';
 export type QuestionType = 'RATING' | 'TEXT' | 'TASK_LIST';
 export type ReviewType = 'SELF' | 'MANAGER' | 'PEER';
 
+export interface TaskDefinition {
+  id: string;
+  label: string;
+  description?: string;
+  required: boolean;
+}
+
 export interface Question {
   id: string;
   companyId: string;
@@ -10,6 +17,7 @@ export interface Question {
   type: QuestionType;
   text: string;
   maxChars?: number;
+  tasks?: TaskDefinition[] | null;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -20,6 +28,7 @@ export interface CreateQuestionDto {
   type: QuestionType;
   text: string;
   maxChars?: number;
+  tasks?: TaskDefinition[];
   order?: number;
 }
 
@@ -28,6 +37,7 @@ export interface UpdateQuestionDto {
   type?: QuestionType;
   text?: string;
   maxChars?: number;
+  tasks?: TaskDefinition[] | null;
   order?: number;
 }
 

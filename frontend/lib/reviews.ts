@@ -12,12 +12,20 @@ export interface Answer {
   textAnswer?: string | null;
 }
 
+export interface TaskDefinition {
+  id: string;
+  label: string;
+  description?: string;
+  required: boolean;
+}
+
 export interface QuestionWithAnswer {
   id: string;
   reviewType: string;
   type: 'RATING' | 'TEXT' | 'TASK_LIST';
   text: string;
   maxChars: number | null;
+  tasks?: TaskDefinition[] | null;
   order: number;
   answer?: {
     id: string;

@@ -9,11 +9,20 @@ import {
   SelfReviewData,
   QuestionWithAnswer,
   Answer,
+  TaskDefinition,
 } from '@/lib/reviews';
 
-// Task list item structure
+// Free-form task item (employee-defined, no predefined tasks)
 interface TaskItem {
   text: string;
+  completed: boolean;
+}
+
+// Predefined task state (admin-defined)
+interface PredefinedTaskState {
+  id: string;
+  label: string;
+  description?: string;
   completed: boolean;
 }
 
@@ -145,6 +154,11 @@ export default function SelfReviewPage() {
     updateAnswer(questionId, { textAnswer });
   };
 
+  const handlePredefinedTaskChange = (questionId: string, tasks: PredefinedTaskState[]) => {
+    const textAnswer = JSON.stringify({ tasks });
+    updateAnswer(questionId, { textAnswer });
+  };
+
   // Calculate progress
   const calculateProgress = useCallback(() => {
     if (!reviewData) return { answered: 0, total: 0, percentage: 0 };
@@ -163,7 +177,17 @@ export default function SelfReviewPage() {
           answer.textAnswer.trim().length > 0) ||
         (q.type === 'TASK_LIST' &&
           typeof answer.textAnswer === 'string' &&
-          JSON.parse(answer.textAnswer).tasks.length > 0);
+          (() => {
+            try {
+              const parsed = JSON.parse(answer.textAnswer!);
+              const tasks = parsed.tasks || [];
+              // For predefined tasks: at least one checked
+              // For free-form tasks: at least one item exists
+              if (tasks.length === 0) return false;
+              if ('id' in tasks[0]) return tasks.some((t: any) => t.completed);
+              return tasks.length > 0;
+            } catch { return false; }
+          })());
 
       if (isAnswered) answered++;
     });
@@ -366,6 +390,7 @@ export default function SelfReviewPage() {
             onRatingChange={handleRatingChange}
             onTextChange={handleTextChange}
             onTaskListChange={handleTaskListChange}
+            onPredefinedTaskChange={handlePredefinedTaskChange}
             disabled={isSubmitted}
           />
         ))}
@@ -406,6 +431,7 @@ interface QuestionCardProps {
   onRatingChange: (questionId: string, rating: number) => void;
   onTextChange: (questionId: string, text: string) => void;
   onTaskListChange: (questionId: string, tasks: TaskItem[]) => void;
+  onPredefinedTaskChange: (questionId: string, tasks: PredefinedTaskState[]) => void;
   disabled: boolean;
 }
 
@@ -416,9 +442,40 @@ function QuestionCard({
   onRatingChange,
   onTextChange,
   onTaskListChange,
+  onPredefinedTaskChange,
   disabled,
 }: QuestionCardProps) {
+  const hasPredefined = question.tasks && question.tasks.length > 0;
+
+  // Predefined task state (initialized from saved answer or question definition)
+  const [predefinedTasks, setPredefinedTasks] = useState<PredefinedTaskState[]>(() => {
+    if (!hasPredefined) return [];
+    if (answer?.textAnswer) {
+      try {
+        const saved = JSON.parse(answer.textAnswer).tasks as PredefinedTaskState[];
+        // Merge saved completion state with current definition (in case tasks changed)
+        const savedMap = new Map(saved.map((t) => [t.id, t.completed]));
+        return question.tasks!.map((t) => ({
+          id: t.id,
+          label: t.label,
+          description: t.description,
+          completed: savedMap.get(t.id) ?? false,
+        }));
+      } catch {
+        // fall through to default
+      }
+    }
+    return question.tasks!.map((t) => ({
+      id: t.id,
+      label: t.label,
+      description: t.description,
+      completed: false,
+    }));
+  });
+
+  // Free-form task state
   const [tasks, setTasks] = useState<TaskItem[]>(() => {
+    if (hasPredefined) return [];
     if (question.type === 'TASK_LIST' && answer?.textAnswer) {
       try {
         return JSON.parse(answer.textAnswer).tasks || [];
@@ -428,6 +485,14 @@ function QuestionCard({
     }
     return [];
   });
+
+  const handlePredefinedToggle = (taskId: string, completed: boolean) => {
+    const updated = predefinedTasks.map((t) =>
+      t.id === taskId ? { ...t, completed } : t,
+    );
+    setPredefinedTasks(updated);
+    onPredefinedTaskChange(question.id, updated);
+  };
 
   const handleTaskUpdate = (newTasks: TaskItem[]) => {
     setTasks(newTasks);
@@ -443,11 +508,7 @@ function QuestionCard({
   };
 
   const updateTask = (taskIndex: number, updates: Partial<TaskItem>) => {
-    handleTaskUpdate(
-      tasks.map((task, i) =>
-        i === taskIndex ? { ...task, ...updates } : task,
-      ),
-    );
+    handleTaskUpdate(tasks.map((task, i) => (i === taskIndex ? { ...task, ...updates } : task)));
   };
 
   return (
@@ -458,9 +519,7 @@ function QuestionCard({
           <span className="text-red-500 ml-1">*</span>
         </label>
         {question.maxChars && (
-          <p className="text-sm text-gray-500">
-            Maximum {question.maxChars} characters
-          </p>
+          <p className="text-sm text-gray-500">Maximum {question.maxChars} characters</p>
         )}
       </div>
 
@@ -480,9 +539,7 @@ function QuestionCard({
                     : 'border-gray-300 hover:border-indigo-300 hover:bg-gray-50'
                 } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <span className="block text-xl font-semibold text-gray-900">
-                  {num}
-                </span>
+                <span className="block text-xl font-semibold text-gray-900">{num}</span>
               </button>
             ))}
           </div>
@@ -513,17 +570,43 @@ function QuestionCard({
         </div>
       )}
 
-      {/* Task List Question */}
-      {question.type === 'TASK_LIST' && (
+      {/* Task List — predefined tasks */}
+      {question.type === 'TASK_LIST' && hasPredefined && (
+        <div className="space-y-2">
+          {predefinedTasks.map((task) => (
+            <label key={task.id} className={`flex items-start gap-3 p-2 rounded-md transition-colors ${!disabled ? 'cursor-pointer hover:bg-gray-50' : ''}`}>
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={(e) => handlePredefinedToggle(task.id, e.target.checked)}
+                disabled={disabled}
+                className="mt-0.5 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+              />
+              <div>
+                <span className={`text-sm font-medium ${task.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                  {task.label}
+                </span>
+                {task.description && (
+                  <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>
+                )}
+              </div>
+            </label>
+          ))}
+          <p className="text-xs text-gray-400 pt-1">
+            {predefinedTasks.filter((t) => t.completed).length} / {predefinedTasks.length} completed
+          </p>
+        </div>
+      )}
+
+      {/* Task List — free-form (no predefined tasks) */}
+      {question.type === 'TASK_LIST' && !hasPredefined && (
         <div className="space-y-3">
           {tasks.map((task, taskIndex) => (
             <div key={taskIndex} className="flex items-start gap-3">
               <input
                 type="checkbox"
                 checked={task.completed}
-                onChange={(e) =>
-                  updateTask(taskIndex, { completed: e.target.checked })
-                }
+                onChange={(e) => updateTask(taskIndex, { completed: e.target.checked })}
                 disabled={disabled}
                 className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
               />
@@ -541,18 +624,9 @@ function QuestionCard({
                   onClick={() => removeTask(taskIndex)}
                   className="p-2 text-red-600 hover:bg-red-50 rounded"
                 >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}

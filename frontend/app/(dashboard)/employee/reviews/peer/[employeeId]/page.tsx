@@ -155,12 +155,17 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
         answered++;
       } else if (q.type === 'TASK_LIST' && answer.textAnswer) {
         try {
-          const tasks = JSON.parse(answer.textAnswer);
-          if (tasks.tasks && tasks.tasks.length > 0) {
+          const parsed = JSON.parse(answer.textAnswer);
+          const taskList = parsed.tasks || [];
+          // Predefined tasks: at least one checked; free-form: at least one item
+          const hasPredefined = q.tasks && q.tasks.length > 0;
+          if (hasPredefined) {
+            if (taskList.some((t: any) => t.completed)) answered++;
+          } else if (taskList.length > 0) {
             answered++;
           }
         } catch (e) {
-          // Invalid JSON, not answered
+          // Invalid JSON
         }
       }
     });
@@ -424,6 +429,7 @@ function QuestionCard({
         <TaskListInput
           value={answer?.textAnswer || ''}
           onChange={(value) => onUpdate(question.id, { textAnswer: value })}
+          predefinedTasks={question.tasks || null}
           disabled={disabled}
         />
       )}
@@ -435,28 +441,79 @@ function QuestionCard({
 function TaskListInput({
   value,
   onChange,
+  predefinedTasks,
   disabled,
 }: {
   value: string;
   onChange: (value: string) => void;
+  predefinedTasks: Array<{ id: string; label: string; description?: string; required: boolean }> | null;
   disabled: boolean;
 }) {
+  // ── Predefined tasks mode ──────────────────────────────────────────────────
+  if (predefinedTasks && predefinedTasks.length > 0) {
+    const saved: Array<{ id: string; label: string; completed: boolean }> = value
+      ? (() => {
+          try { return JSON.parse(value).tasks || []; } catch { return []; }
+        })()
+      : [];
+    const savedMap = new Map(saved.map((t) => [t.id, t.completed]));
+
+    const taskState = predefinedTasks.map((t) => ({
+      id: t.id,
+      label: t.label,
+      description: t.description,
+      completed: savedMap.get(t.id) ?? false,
+    }));
+
+    const toggle = (id: string, completed: boolean) => {
+      const updated = taskState.map((t) => (t.id === id ? { ...t, completed } : t));
+      onChange(JSON.stringify({ tasks: updated }));
+    };
+
+    const completedCount = taskState.filter((t) => t.completed).length;
+
+    return (
+      <div className="space-y-2">
+        {taskState.map((task) => (
+          <label
+            key={task.id}
+            className={`flex items-start gap-3 p-2 rounded-md transition-colors ${!disabled ? 'cursor-pointer hover:bg-purple-50' : ''}`}
+          >
+            <input
+              type="checkbox"
+              checked={task.completed}
+              onChange={(e) => toggle(task.id, e.target.checked)}
+              disabled={disabled}
+              className="mt-0.5 h-4 w-4 text-purple-600 border-gray-300 rounded disabled:opacity-50"
+            />
+            <div>
+              <span className={`text-sm font-medium ${task.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                {task.label}
+              </span>
+              {task.description && (
+                <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>
+              )}
+            </div>
+          </label>
+        ))}
+        <p className="text-xs text-gray-400 pt-1">
+          {completedCount} / {taskState.length} completed
+        </p>
+      </div>
+    );
+  }
+
+  // ── Free-form mode ─────────────────────────────────────────────────────────
   const tasks = value
-    ? JSON.parse(value).tasks
+    ? (() => { try { return JSON.parse(value).tasks; } catch { return [{ text: '', completed: false }]; } })()
     : [{ text: '', completed: false }];
 
   const updateTasks = (newTasks: any[]) => {
     onChange(JSON.stringify({ tasks: newTasks }));
   };
 
-  const addTask = () => {
-    updateTasks([...tasks, { text: '', completed: false }]);
-  };
-
-  const removeTask = (idx: number) => {
-    updateTasks(tasks.filter((_: any, i: number) => i !== idx));
-  };
-
+  const addTask = () => updateTasks([...tasks, { text: '', completed: false }]);
+  const removeTask = (idx: number) => updateTasks(tasks.filter((_: any, i: number) => i !== idx));
   const updateTask = (idx: number, updates: any) => {
     const newTasks = [...tasks];
     newTasks[idx] = { ...newTasks[idx], ...updates };
@@ -483,22 +540,14 @@ function TaskListInput({
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           {!disabled && tasks.length > 1 && (
-            <button
-              type="button"
-              onClick={() => removeTask(idx)}
-              className="text-red-600 hover:text-red-800 text-xl px-2"
-            >
-              ×
-            </button>
+            <button type="button" onClick={() => removeTask(idx)}
+              className="text-red-600 hover:text-red-800 text-xl px-2">×</button>
           )}
         </div>
       ))}
       {!disabled && (
-        <button
-          type="button"
-          onClick={addTask}
-          className="text-sm text-purple-600 hover:text-purple-800 font-medium"
-        >
+        <button type="button" onClick={addTask}
+          className="text-sm text-purple-600 hover:text-purple-800 font-medium">
           + Add task
         </button>
       )}
