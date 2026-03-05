@@ -13,6 +13,7 @@ interface ParsedRow {
   name: string;
   email: string;
   role: string;
+  department: string;
   managerEmail?: string;
   /** Row number in the CSV (1-based, excluding header) */
   rowNum: number;
@@ -35,7 +36,7 @@ function parseCSV(text: string): ParsedRow[] {
 
   return lines.slice(1).map((line, idx) => {
     // Naive CSV split (no quoted-field support needed for this schema)
-    const [name = '', email = '', role = '', managerEmail = ''] = line
+    const [name = '', email = '', role = '', department = '', managerEmail = ''] = line
       .split(',')
       .map((s) => s.trim());
 
@@ -43,12 +44,14 @@ function parseCSV(text: string): ParsedRow[] {
       name,
       email,
       role: role.toUpperCase() || 'EMPLOYEE',
+      department,
       managerEmail: managerEmail || undefined,
       rowNum: idx + 2, // +2 because header is row 1
     };
 
     if (!name) row.warning = 'Missing name';
     else if (!email) row.warning = 'Missing email';
+    else if (!department) row.warning = 'Missing department (required)';
     else if (!['ADMIN', 'MANAGER', 'EMPLOYEE'].includes(row.role)) {
       row.warning = `Unknown role "${role}"`;
     }
@@ -84,10 +87,11 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
   const handleImport = async () => {
     setImporting(true);
     try {
-      const payload = validRows.map(({ name, email, role, managerEmail }) => ({
+      const payload = validRows.map(({ name, email, role, department, managerEmail }) => ({
         name,
         email,
         role,
+        department,
         ...(managerEmail ? { managerEmail } : {}),
       }));
       const res = await usersApi.importUsers(payload);
@@ -145,14 +149,15 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
                 <div className="mb-4 p-4 bg-blue-50 rounded-md">
                   <h4 className="text-sm font-semibold text-blue-900 mb-1">CSV Format</h4>
                   <pre className="text-xs text-blue-800 font-mono whitespace-pre-wrap leading-relaxed">
-{`name,email,role,manager_email
-Alice Smith,alice@company.com,EMPLOYEE,bob@company.com
-Bob Jones,bob@company.com,MANAGER,
-Carol White,carol@company.com,ADMIN,`}
+{`name,email,role,department,manager_email
+Alice Smith,alice@company.com,EMPLOYEE,Engineering,bob@company.com
+Bob Jones,bob@company.com,MANAGER,Engineering,
+Carol White,carol@company.com,ADMIN,Operations,`}
                   </pre>
                   <ul className="mt-2 text-xs text-blue-800 space-y-0.5">
                     <li>• First row is the header (required)</li>
                     <li>• <strong>role</strong> must be: <code>EMPLOYEE</code>, <code>MANAGER</code>, or <code>ADMIN</code></li>
+                    <li>• <strong>department</strong> is <strong>required</strong> — e.g. Engineering, Sales, Marketing</li>
                     <li>• <strong>manager_email</strong> is optional — leave blank for top-level managers</li>
                     <li>• All emails must be unique within your company</li>
                   </ul>
@@ -202,6 +207,7 @@ Carol White,carol@company.com,ADMIN,`}
                         <th className="px-3 py-2 text-left font-semibold text-gray-600">Name</th>
                         <th className="px-3 py-2 text-left font-semibold text-gray-600">Email</th>
                         <th className="px-3 py-2 text-left font-semibold text-gray-600">Role</th>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Department</th>
                         <th className="px-3 py-2 text-left font-semibold text-gray-600">Manager email</th>
                       </tr>
                     </thead>
@@ -225,6 +231,9 @@ Carol White,carol@company.com,ADMIN,`}
                                 : 'bg-green-100 text-green-800'}`}>
                               {row.role}
                             </span>
+                          </td>
+                          <td className="px-3 py-1.5 text-gray-700">
+                            {row.department || <span className="text-red-400 italic">missing</span>}
                           </td>
                           <td className="px-3 py-1.5 text-gray-500">
                             {row.managerEmail || <span className="text-gray-300">—</span>}

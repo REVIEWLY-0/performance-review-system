@@ -156,4 +156,13 @@ export const usersApi = {
     invalidateCache('users:')
     return result
   },
+
+  getDepartments: async (): Promise<string[]> => {
+    const key = 'users:departments'
+    const cached = getCached<string[]>(key)
+    if (cached) return cached
+    const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/departments`)
+    setCache(key, data, 60_000) // 1 min TTL
+    return data
+  },
 }

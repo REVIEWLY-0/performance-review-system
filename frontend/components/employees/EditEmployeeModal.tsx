@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { usersApi } from '@/lib/api'
 import type { User } from '@/lib/api'
+import DepartmentCombobox from '@/components/DepartmentCombobox'
 
 interface EditEmployeeModalProps {
   employee: User
@@ -14,6 +15,8 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [managers, setManagers] = useState<User[]>([])
+  const [departments, setDepartments] = useState<string[]>([])
+  const [deptError, setDeptError] = useState('')
   const [formData, setFormData] = useState({
     name: employee.name,
     email: employee.email,
@@ -24,18 +27,23 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
 
   useEffect(() => {
     usersApi.getManagers().then(setManagers).catch(console.error)
+    usersApi.getDepartments().then(setDepartments).catch(console.error)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
 
+    if (!formData.department.trim()) {
+      setDeptError('Department is required')
+      return
+    }
+
+    setLoading(true)
     try {
       const updated = await usersApi.update(employee.id, {
         ...formData,
         managerId: formData.managerId || undefined,
-        department: formData.department || undefined,
       })
       onSuccess(updated)
     } catch (err: any) {
@@ -135,17 +143,23 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
                 </div>
 
                 <div>
-                  <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                    Department (Optional)
+                  <label className="block text-sm font-medium text-gray-700">
+                    Department <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    id="department"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="e.g. Engineering, Sales, Marketing"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  />
+                  <div className="mt-1">
+                    <DepartmentCombobox
+                      value={formData.department}
+                      onChange={(val) => {
+                        setFormData({ ...formData, department: val })
+                        if (val.trim()) setDeptError('')
+                      }}
+                      departments={departments}
+                      error={!!deptError}
+                    />
+                  </div>
+                  {deptError && (
+                    <p className="mt-1 text-sm text-red-600">{deptError}</p>
+                  )}
                 </div>
               </div>
             </div>

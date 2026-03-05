@@ -25,10 +25,10 @@ export class CreateUserDto {
   @IsString()
   managerId?: string;
 
-  @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(100)
-  department?: string;
+  department!: string;
 }
 
 export class UpdateUserDto {
@@ -67,6 +67,11 @@ export class ImportUserDto {
 
   @IsString()
   role!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  department!: string;
 
   @IsOptional()
   @IsEmail()
@@ -452,6 +457,7 @@ export class UsersService {
             name: userData.name,
             role: userData.role.toUpperCase() as UserRole,
             companyId,
+            department: userData.department,
             password: '', // Managed by Supabase
           },
         });
@@ -498,6 +504,20 @@ export class UsersService {
     }
 
     return results;
+  }
+
+  /**
+   * Get distinct department names for the company
+   * CRITICAL: Always filter by companyId for multi-tenancy
+   */
+  async getDepartments(companyId: string): Promise<string[]> {
+    const rows = await this.prisma.user.findMany({
+      where: { companyId, department: { not: null } },
+      select: { department: true },
+      distinct: ['department'],
+      orderBy: { department: 'asc' },
+    });
+    return rows.map((r) => r.department!).filter(Boolean);
   }
 
   /**

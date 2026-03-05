@@ -14,8 +14,11 @@ import Pagination from '@/components/Pagination';
 
 function downloadCsvTemplate() {
   const headers = ['name', 'email', 'role', 'department', 'manager_email'];
-  const sample = ['Jane Smith', 'jane.smith@company.com', 'EMPLOYEE', 'Engineering', 'manager@company.com'];
-  const csv = [headers.join(','), sample.join(',')].join('\n');
+  const rows = [
+    ['Jane Smith', 'jane.smith@company.com', 'EMPLOYEE', 'Engineering', 'manager@company.com'],
+    ['John Manager', 'john.manager@company.com', 'MANAGER', 'Engineering', ''],
+  ];
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

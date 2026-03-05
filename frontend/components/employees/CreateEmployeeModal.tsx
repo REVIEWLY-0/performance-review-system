@@ -8,6 +8,7 @@ import {
   validateName,
   getInputClassName,
 } from '@/lib/validation'
+import DepartmentCombobox from '@/components/DepartmentCombobox'
 
 interface CreateEmployeeModalProps {
   onClose: () => void
@@ -18,6 +19,7 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [managers, setManagers] = useState<User[]>([])
+  const [departments, setDepartments] = useState<string[]>([])
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -29,16 +31,18 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
   const [fieldErrors, setFieldErrors] = useState({
     name: '',
     email: '',
+    department: '',
   })
 
   const [touched, setTouched] = useState({
     name: false,
     email: false,
+    department: false,
   })
 
   useEffect(() => {
-    // Fetch managers for dropdown
     usersApi.getManagers().then(setManagers).catch(console.error)
+    usersApi.getDepartments().then(setDepartments).catch(console.error)
   }, [])
 
   // Validate individual field
@@ -48,6 +52,8 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
         return validateName(value, 'Full Name') || ''
       case 'email':
         return validateEmail(value) || ''
+      case 'department':
+        return value.trim().length === 0 ? 'Department is required' : ''
       default:
         return ''
     }
@@ -76,13 +82,11 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
     const errors = {
       name: validateField('name', formData.name),
       email: validateField('email', formData.email),
+      department: validateField('department', formData.department),
     }
 
     setFieldErrors(errors)
-    setTouched({
-      name: true,
-      email: true,
-    })
+    setTouched({ name: true, email: true, department: true })
 
     return !Object.values(errors).some((err) => err !== '')
   }
@@ -103,7 +107,6 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
       await usersApi.create({
         ...formData,
         managerId: formData.managerId || undefined,
-        department: formData.department || undefined,
       })
       onSuccess()
     } catch (err: any) {
@@ -215,17 +218,20 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
                 </div>
 
                 <div>
-                  <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                    Department (Optional)
+                  <label className="block text-sm font-medium text-gray-700">
+                    Department <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    id="department"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="e.g. Engineering, Sales, Marketing"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  />
+                  <div className="mt-1">
+                    <DepartmentCombobox
+                      value={formData.department}
+                      onChange={(val) => handleChange('department', val)}
+                      departments={departments}
+                      error={touched.department && !!fieldErrors.department}
+                    />
+                  </div>
+                  {touched.department && fieldErrors.department && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.department}</p>
+                  )}
                 </div>
               </div>
             </div>

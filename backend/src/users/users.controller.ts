@@ -49,6 +49,14 @@ export class UsersController {
   }
 
   /**
+   * Get distinct department names for the company
+   */
+  @Get('departments')
+  async getDepartments(@CompanyId() companyId: string) {
+    return this.usersService.getDepartments(companyId);
+  }
+
+  /**
    * Get specific user
    */
   @Get(':id')
