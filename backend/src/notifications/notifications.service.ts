@@ -688,6 +688,85 @@ This is an automated message from Reviewly.
   }
 
   // ============================================================================
+  // Password Reset Email
+  // ============================================================================
+
+  private passwordResetTemplate(userName: string, resetLink: string): { html: string; text: string } {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4f46e5; color: white; padding: 30px 20px; text-align: center; }
+          .content { padding: 30px 20px; background-color: #f9fafb; }
+          .button { display: inline-block; padding: 14px 28px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: 600; }
+          .notice { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 4px; margin: 20px 0; font-size: 13px; }
+          .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Reset Your Password</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${userName},</p>
+            <p>We received a request to reset your Reviewly password. Click the button below to choose a new password.</p>
+            <a href="${resetLink}" class="button">Reset Password</a>
+            <div class="notice">
+              <strong>Security notice:</strong> This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email — your password will not be changed.
+            </div>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from Reviewly.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const text = `
+Reset Your Password
+
+Hi ${userName},
+
+We received a request to reset your Reviewly password. Visit the link below to choose a new password:
+
+${resetLink}
+
+This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+
+This is an automated message from Reviewly.
+    `;
+
+    return { html, text: text.trim() };
+  }
+
+  async sendPasswordResetEmail(userId: string, resetLink: string): Promise<void> {
+    this.logger.log(`Sending password reset email to user ${userId}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true },
+    });
+
+    if (!user) {
+      this.logger.error('User not found for password reset email');
+      return;
+    }
+
+    const template = this.passwordResetTemplate(user.name, resetLink);
+    await this.sendEmail({
+      to: user.email,
+      subject: 'Reviewly — Reset Your Password',
+      html: template.html,
+      text: template.text,
+    });
+  }
+
+  // ============================================================================
   // Test Email
   // ============================================================================
 

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../common/services/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -232,6 +232,25 @@ export class AuthService {
       companyId: user.companyId,
       companyName: user.company.name,
     };
+  }
+
+  /**
+   * Generate a password reset link and send it to the user's email
+   */
+  async requestPasswordReset(userId: string, email: string): Promise<{ message: string }> {
+    const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+    });
+
+    if (linkError || !linkData?.properties?.action_link) {
+      console.error('Failed to generate password reset link:', linkError?.message);
+      throw new BadRequestException('Failed to generate password reset link. Please try again.');
+    }
+
+    await this.notificationsService.sendPasswordResetEmail(userId, linkData.properties.action_link);
+
+    return { message: `Password reset email sent to ${email}` };
   }
 
   /**

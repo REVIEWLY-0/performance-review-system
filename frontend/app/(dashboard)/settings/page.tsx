@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser, invalidateUserCache, User } from '@/lib/auth';
+import { getCurrentUser, invalidateUserCache, requestPasswordReset, User } from '@/lib/auth';
 import {
   getNotificationPreferences,
   updateNotificationPreferences,
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
   const [saving, setSaving] = useState(false);
   const toast = useToast();
 
@@ -74,6 +75,19 @@ export default function SettingsPage() {
       toast.error(err.message || 'Failed to save profile');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    setSendingReset(true);
+    try {
+      const result = await requestPasswordReset();
+      toast.success(result.message || 'Password reset email sent — check your inbox');
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      toast.error(err.message || 'Failed to send password reset email');
+    } finally {
+      setSendingReset(false);
     }
   };
 
@@ -197,6 +211,30 @@ export default function SettingsPage() {
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {savingProfile ? 'Saving...' : 'Save Profile'}
+          </button>
+        </div>
+      </div>
+
+      {/* Security */}
+      <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-1">Security</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Manage your password and account security
+        </p>
+
+        <div className="flex items-center justify-between py-3 border-t border-gray-100">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Password</h3>
+            <p className="text-sm text-gray-500">
+              We'll send a reset link to <span className="font-medium">{user.email}</span>
+            </p>
+          </div>
+          <button
+            onClick={handlePasswordReset}
+            disabled={sendingReset}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sendingReset ? 'Sending...' : 'Send Reset Email'}
           </button>
         </div>
       </div>

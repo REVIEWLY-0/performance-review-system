@@ -202,3 +202,31 @@ export async function signOut() {
 export function invalidateUserCache() {
   _userCache = null
 }
+
+/**
+ * Request a password reset email for the currently authenticated user.
+ * The backend generates a Supabase recovery link and sends it via the
+ * notifications service.
+ */
+export async function requestPasswordReset(): Promise<{ message: string }> {
+  const session = await getSession()
+  if (!session) throw new Error('Not authenticated')
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/request-password-reset`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+    },
+  )
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Request failed' }))
+    throw new Error(error.message || `HTTP ${response.status}`)
+  }
+
+  return response.json()
+}

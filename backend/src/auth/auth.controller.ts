@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Get, Headers, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Headers, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto, SignInDto } from './auth.dto';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -19,6 +21,17 @@ export class AuthController {
   @Post('signout')
   async signOut() {
     return this.authService.signOut();
+  }
+
+  /**
+   * Send a password reset email to the currently authenticated user
+   */
+  @Post('request-password-reset')
+  @UseGuards(AuthGuard)
+  async requestPasswordReset(
+    @CurrentUser() user: { id: string; email: string },
+  ) {
+    return this.authService.requestPasswordReset(user.id, user.email);
   }
 
   @Get('me')
