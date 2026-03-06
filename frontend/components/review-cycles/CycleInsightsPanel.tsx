@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CycleInsights,
   ReviewStatus,
   EmployeeInsight,
+  ReviewType,
 } from '@/lib/review-cycles';
 import StatusBadge from './StatusBadge';
 
@@ -19,16 +20,18 @@ function reviewStatusLabel(status: ReviewStatus): string {
   }
 }
 
-function ReviewPill({ status }: { status: ReviewStatus }) {
+function ReviewPill({ status, overdue }: { status: ReviewStatus; overdue?: boolean }) {
   const cls =
     status === 'SUBMITTED'
       ? 'bg-green-100 text-green-800'
+      : overdue
+      ? 'bg-red-100 text-red-700'
       : status === 'DRAFT'
       ? 'bg-yellow-100 text-yellow-800'
       : 'bg-gray-100 text-gray-500';
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
-      {reviewStatusLabel(status)}
+      {status === 'SUBMITTED' ? 'Submitted' : overdue ? 'Overdue' : reviewStatusLabel(status)}
     </span>
   );
 }
@@ -44,21 +47,52 @@ function employeeCompletionStatus(emp: EmployeeInsight): 'COMPLETE' | 'IN_PROGRE
   return 'NOT_STARTED';
 }
 
+/** Latest end date among steps of a given type; null if no such step exists. */
+function stepDeadline(
+  configs: CycleInsights['cycle']['reviewConfigs'],
+  type: ReviewType,
+): Date | null {
+  const dates = configs
+    .filter((c) => c.reviewType === type)
+    .map((c) => new Date(c.endDate));
+  if (dates.length === 0) return null;
+  return new Date(Math.max(...dates.map((d) => d.getTime())));
+}
+
+function isOverdue(deadline: Date | null): boolean {
+  if (!deadline) return false;
+  return deadline < new Date();
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function StatCard({
   label,
   value,
   colorClass,
+  total,
 }: {
   label: string;
   value: number;
   colorClass: string;
+  total?: number;
 }) {
+  const pct = total && total > 0 ? Math.round((value / total) * 100) : null;
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
       <p className="text-sm text-gray-500">{label}</p>
       <p className={`mt-1 text-2xl font-bold ${colorClass}`}>{value}</p>
+      {pct !== null && (
+        <div className="mt-2">
+          <div className="w-full bg-gray-100 rounded-full h-1.5">
+            <div
+              className={`h-1.5 rounded-full ${colorClass.replace('text-', 'bg-')}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="mt-0.5 text-xs text-gray-400">{pct}%</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -76,7 +110,28 @@ export default function CycleInsightsPanel({
   const { cycle, stats, employees } = insights;
 
   const [deptFilter, setDeptFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETE' | 'IN_PROGRESS' | 'NOT_STARTED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETE' | 'IN_PROGRESS' | 'NOT_STARTED' | 'OVERDUE'>('ALL');
+  const [search, setSearch] = useState('');
+
+  // Step deadlines (latest per type)
+  const selfDeadline    = useMemo(() => stepDeadline(cycle.reviewConfigs, 'SELF'),    [cycle]);
+  const managerDeadline = useMemo(() => stepDeadline(cycle.reviewConfigs, 'MANAGER'), [cycle]);
+  const peerDeadline    = useMemo(() => stepDeadline(cycle.reviewConfigs, 'PEER'),    [cycle]);
+
+  const selfOverdue    = isOverdue(selfDeadline);
+  const managerOverdue = isOverdue(managerDeadline);
+  const peerOverdue    = isOverdue(peerDeadline);
+
+  // Compute overdue employees: at least one review type is overdue AND not submitted
+  const overdueEmployees = useMemo(() =>
+    employees.filter((emp) => {
+      if (selfOverdue && emp.selfReviewStatus !== 'SUBMITTED') return true;
+      if (managerOverdue && emp.managerReviews.some((r) => r.status !== 'SUBMITTED')) return true;
+      if (peerOverdue && emp.peerReviews.some((r) => r.status !== 'SUBMITTED')) return true;
+      return false;
+    }),
+    [employees, selfOverdue, managerOverdue, peerOverdue],
+  );
 
   // Unique sorted departments
   const departments = Array.from(
@@ -84,15 +139,27 @@ export default function CycleInsightsPanel({
   ).sort();
 
   // Filtered list
-  const filtered = employees.filter((emp) => {
-    if (deptFilter !== 'ALL' && (emp.department ?? 'Unknown') !== deptFilter)
-      return false;
-    if (statusFilter !== 'ALL' && employeeCompletionStatus(emp) !== statusFilter)
-      return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return employees.filter((emp) => {
+      if (deptFilter !== 'ALL' && (emp.department ?? 'Unknown') !== deptFilter) return false;
+      const compStatus = employeeCompletionStatus(emp);
+      if (statusFilter === 'OVERDUE') {
+        if (!overdueEmployees.includes(emp)) return false;
+      } else if (statusFilter !== 'ALL' && compStatus !== statusFilter) {
+        return false;
+      }
+      if (q && !emp.name.toLowerCase().includes(q) && !emp.email.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [employees, deptFilter, statusFilter, search, overdueEmployees]);
 
-  const isFiltered = deptFilter !== 'ALL' || statusFilter !== 'ALL';
+  const isFiltered = deptFilter !== 'ALL' || statusFilter !== 'ALL' || search !== '';
+
+  // Step names for display
+  const stepsSummary = cycle.reviewConfigs
+    .map((c) => c.name || c.reviewType)
+    .join(' → ');
 
   return (
     <div className="px-4 py-6 sm:px-0">
@@ -157,20 +224,38 @@ export default function CycleInsightsPanel({
         </span>
         <span>
           <span className="font-medium text-gray-900">Steps: </span>
-          {cycle.reviewConfigs.map((c) => c.reviewType).join(' → ')}
+          {stepsSummary}
         </span>
       </div>
 
       {/* Stats cards */}
-      <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="mb-6 grid grid-cols-2 sm:grid-cols-5 gap-4">
         <StatCard label="Total Employees" value={stats.total} colorClass="text-gray-900" />
-        <StatCard label="Fully Complete" value={stats.fullyComplete} colorClass="text-green-600" />
-        <StatCard label="In Progress" value={stats.inProgress} colorClass="text-yellow-600" />
-        <StatCard label="Not Started" value={stats.notStarted} colorClass="text-red-500" />
+        <StatCard label="Fully Complete" value={stats.fullyComplete} colorClass="text-green-600" total={stats.total} />
+        <StatCard label="In Progress"    value={stats.inProgress}   colorClass="text-yellow-600" total={stats.total} />
+        <StatCard label="Not Started"    value={stats.notStarted}   colorClass="text-red-500" total={stats.total} />
+        <StatCard label="Overdue"        value={overdueEmployees.length} colorClass="text-orange-600" total={stats.total} />
       </div>
 
       {/* Filters */}
       <div className="mb-3 flex flex-wrap gap-3 items-center">
+        {/* Search */}
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email…"
+            className="block pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
@@ -191,11 +276,12 @@ export default function CycleInsightsPanel({
           <option value="COMPLETE">Complete</option>
           <option value="IN_PROGRESS">In Progress</option>
           <option value="NOT_STARTED">Not Started</option>
+          <option value="OVERDUE">Overdue</option>
         </select>
 
         {isFiltered && (
           <button
-            onClick={() => { setDeptFilter('ALL'); setStatusFilter('ALL'); }}
+            onClick={() => { setDeptFilter('ALL'); setStatusFilter('ALL'); setSearch(''); }}
             className="text-sm text-indigo-600 hover:text-indigo-800"
           >
             Clear filters
@@ -230,21 +316,39 @@ export default function CycleInsightsPanel({
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Self Review
+                    {selfDeadline && (
+                      <span className="ml-1 text-gray-400 normal-case font-normal">
+                        (due {selfDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
+                      </span>
+                    )}
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Manager Review(s)
+                    {managerDeadline && (
+                      <span className="ml-1 text-gray-400 normal-case font-normal">
+                        (due {managerDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
+                      </span>
+                    )}
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Peer Reviews
+                    {peerDeadline && (
+                      <span className="ml-1 text-gray-400 normal-case font-normal">
+                        (due {peerDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
+                      </span>
+                    )}
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
                 {filtered.map((emp) => {
                   const completionStatus = employeeCompletionStatus(emp);
+                  const empIsOverdue = overdueEmployees.includes(emp);
                   const rowBg =
                     completionStatus === 'COMPLETE'
                       ? 'bg-green-50/40'
+                      : empIsOverdue
+                      ? 'bg-orange-50/40'
                       : completionStatus === 'IN_PROGRESS'
                       ? 'bg-yellow-50/40'
                       : '';
@@ -256,8 +360,17 @@ export default function CycleInsightsPanel({
                     <tr key={emp.id} className={rowBg}>
                       {/* Employee */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{emp.name}</div>
-                        <div className="text-xs text-gray-400">{emp.email}</div>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{emp.name}</div>
+                            <div className="text-xs text-gray-400">{emp.email}</div>
+                          </div>
+                          {empIsOverdue && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                              Overdue
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Department */}
@@ -267,7 +380,10 @@ export default function CycleInsightsPanel({
 
                       {/* Self Review */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <ReviewPill status={emp.selfReviewStatus} />
+                        <ReviewPill
+                          status={emp.selfReviewStatus}
+                          overdue={selfOverdue && emp.selfReviewStatus !== 'SUBMITTED'}
+                        />
                       </td>
 
                       {/* Manager Reviews */}
@@ -281,7 +397,10 @@ export default function CycleInsightsPanel({
                                 <span className="text-xs text-gray-600 truncate max-w-[120px]" title={r.reviewer.name}>
                                   {r.reviewer.name}
                                 </span>
-                                <ReviewPill status={r.status} />
+                                <ReviewPill
+                                  status={r.status}
+                                  overdue={managerOverdue && r.status !== 'SUBMITTED'}
+                                />
                               </div>
                             ))}
                           </div>
@@ -298,6 +417,8 @@ export default function CycleInsightsPanel({
                               className={`text-sm font-medium ${
                                 peerSubmitted === peerTotal
                                   ? 'text-green-700'
+                                  : peerOverdue && peerSubmitted < peerTotal
+                                  ? 'text-orange-600'
                                   : peerSubmitted > 0
                                   ? 'text-yellow-700'
                                   : 'text-gray-500'
@@ -305,7 +426,9 @@ export default function CycleInsightsPanel({
                             >
                               {peerSubmitted}/{peerTotal}
                             </span>
-                            <span className="text-xs text-gray-400">submitted</span>
+                            <span className="text-xs text-gray-400">
+                              {peerOverdue && peerSubmitted < peerTotal ? 'overdue' : 'submitted'}
+                            </span>
                           </div>
                         )}
                       </td>
