@@ -23,6 +23,11 @@ export class ReviewConfigDto {
   @IsEnum(ReviewType)
   reviewType!: ReviewType;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  name?: string;
+
   @IsDateString()
   startDate!: string;
 
@@ -190,6 +195,7 @@ export class ReviewCyclesService {
           reviewCycleId: cycle.id,
           stepNumber: config.stepNumber,
           reviewType: config.reviewType,
+          name: config.name || null,
           startDate: new Date(config.startDate),
           endDate: new Date(config.endDate),
         })),
@@ -307,6 +313,7 @@ export class ReviewCyclesService {
           reviewCycleId: id,
           stepNumber: config.stepNumber,
           reviewType: config.reviewType,
+          name: config.name || null,
           startDate: new Date(config.startDate),
           endDate: new Date(config.endDate),
         })),

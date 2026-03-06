@@ -158,6 +158,7 @@ model ReviewConfig {
   reviewCycleId String     @map("review_cycle_id")
   stepNumber    Int        @map("step_number")
   reviewType    ReviewType @map("review_type")
+  name          String?    @map("name") // Optional step label, e.g. "Self Review Phase"
   startDate     DateTime   @map("start_date")
   endDate       DateTime   @map("end_date")
   createdAt     DateTime   @default(now()) @map("created_at")

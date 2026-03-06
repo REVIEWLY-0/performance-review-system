@@ -11,6 +11,7 @@ export interface ReviewConfig {
   id?: string;
   stepNumber: number;
   reviewType: ReviewType;
+  name?: string;
   startDate: string;
   endDate: string;
   createdAt?: string;

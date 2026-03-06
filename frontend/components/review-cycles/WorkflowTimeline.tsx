@@ -79,8 +79,8 @@ export default function WorkflowTimeline({
                   className={`absolute h-14 ${colorClass} rounded-lg flex items-center justify-center text-white text-sm font-medium shadow-md transition-all hover:shadow-lg`}
                   style={position}
                 >
-                  <span className="px-2 text-center">
-                    Step {step.stepNumber}: {step.reviewType}
+                  <span className="px-2 text-center leading-tight">
+                    {step.name || `Step ${step.stepNumber}: ${step.reviewType}`}
                   </span>
                 </div>
               </div>

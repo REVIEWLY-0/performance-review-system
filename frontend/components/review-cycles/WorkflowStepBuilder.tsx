@@ -15,10 +15,19 @@ export default function WorkflowStepBuilder({
   steps,
   onChange,
 }: WorkflowStepBuilderProps) {
+  const defaultNameForType = (type: ReviewType): string => {
+    switch (type) {
+      case 'SELF': return 'Self Review';
+      case 'MANAGER': return 'Manager Review';
+      case 'PEER': return 'Peer Review';
+    }
+  };
+
   const addStep = () => {
     const newStep: ReviewConfig = {
       stepNumber: steps.length + 1,
       reviewType: 'SELF',
+      name: defaultNameForType('SELF'),
       startDate: cycleStart || new Date().toISOString().split('T')[0],
       endDate: cycleEnd || new Date().toISOString().split('T')[0],
     };
@@ -85,7 +94,7 @@ export default function WorkflowStepBuilder({
           <p>No workflow steps yet. Click "Add Step" to begin.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
           {steps.map((step, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-start gap-4">
@@ -97,72 +106,93 @@ export default function WorkflowStepBuilder({
                 </div>
 
                 {/* Step Details */}
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex-1 space-y-3">
+                  {/* Name field — full width */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Review Type
+                      Step Label
                     </label>
-                    <select
-                      value={step.reviewType}
-                      onChange={(e) =>
-                        updateStep(
-                          index,
-                          'reviewType',
-                          e.target.value as ReviewType,
-                        )
-                      }
+                    <input
+                      type="text"
+                      value={step.name ?? ''}
+                      onChange={(e) => updateStep(index, 'name', e.target.value)}
+                      placeholder="e.g. Self Review, Manager Feedback Round 1…"
+                      maxLength={100}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      {reviewTypes.map((type) => (
-                        <option
-                          key={type.value}
-                          value={type.value}
-                          disabled={
-                            type.value === 'SELF' &&
-                            hasSelfReview &&
-                            step.reviewType !== 'SELF'
+                    />
+                  </div>
+
+                  {/* Type + dates row */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Review Type
+                      </label>
+                      <select
+                        value={step.reviewType}
+                        onChange={(e) => {
+                          const newType = e.target.value as ReviewType;
+                          const newSteps = [...steps];
+                          newSteps[index] = { ...newSteps[index], reviewType: newType };
+                          // Auto-update name only if it still matches the old default
+                          if (!newSteps[index].name || newSteps[index].name === defaultNameForType(step.reviewType)) {
+                            newSteps[index].name = defaultNameForType(newType);
                           }
-                        >
-                          {type.label}
-                          {type.value === 'SELF' &&
-                            hasSelfReview &&
-                            step.reviewType !== 'SELF' &&
-                            ' (already added)'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                          onChange(newSteps);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        {reviewTypes.map((type) => (
+                          <option
+                            key={type.value}
+                            value={type.value}
+                            disabled={
+                              type.value === 'SELF' &&
+                              hasSelfReview &&
+                              step.reviewType !== 'SELF'
+                            }
+                          >
+                            {type.label}
+                            {type.value === 'SELF' &&
+                              hasSelfReview &&
+                              step.reviewType !== 'SELF' &&
+                              ' (already added)'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={step.startDate}
-                      onChange={(e) =>
-                        updateStep(index, 'startDate', e.target.value)
-                      }
-                      min={cycleStart}
-                      max={cycleEnd}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={step.startDate}
+                        onChange={(e) =>
+                          updateStep(index, 'startDate', e.target.value)
+                        }
+                        min={cycleStart}
+                        max={cycleEnd}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      value={step.endDate}
-                      onChange={(e) =>
-                        updateStep(index, 'endDate', e.target.value)
-                      }
-                      min={cycleStart}
-                      max={cycleEnd}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={step.endDate}
+                        onChange={(e) =>
+                          updateStep(index, 'endDate', e.target.value)
+                        }
+                        min={cycleStart}
+                        max={cycleEnd}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
                   </div>
                 </div>
 
