@@ -48,6 +48,7 @@ export interface ManagerAnalytics {
 
 export interface EmployeeAnalytics {
   personalScore: number | null;
+  allReviewsComplete: boolean;
   companyAverage: number | null;
   scoreBreakdown: {
     self: number | null;

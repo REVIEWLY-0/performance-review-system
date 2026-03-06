@@ -188,7 +188,11 @@ export default function EmployeeDashboard() {
                     <dd className="text-lg font-semibold text-gray-900">
                       {analytics.personalScore !== null
                         ? analytics.personalScore.toFixed(2)
-                        : 'N/A'}
+                        : (
+                          <span className="text-sm font-medium text-orange-600">
+                            {analytics.allReviewsComplete ? 'N/A' : 'In Progress'}
+                          </span>
+                        )}
                     </dd>
                   </dl>
                 </div>
@@ -324,11 +328,18 @@ export default function EmployeeDashboard() {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-64">
-                <p className="text-gray-500 text-center">
-                  No score data available yet.
-                  <br />
-                  Complete your reviews to see your breakdown.
-                </p>
+                <div className="text-center">
+                  <svg className="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <p className="text-sm font-medium text-gray-700">Score not available yet</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {analytics.allReviewsComplete
+                      ? 'No rating questions have been answered.'
+                      : 'Your score will appear once all required reviews are complete.'}
+                  </p>
+                </div>
               </div>
             )}
           </div>

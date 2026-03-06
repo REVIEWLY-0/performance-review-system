@@ -47,6 +47,7 @@ export interface ManagerAnalytics {
 
 export interface EmployeeAnalytics {
   personalScore: number | null;
+  allReviewsComplete: boolean;
   companyAverage: number | null;
   scoreBreakdown: {
     self: number | null;
@@ -336,7 +337,7 @@ export class AnalyticsService {
     }
 
     // Load personal reviews, peer assignment counts, and company employees in parallel
-    const [reviews, peerAssignments, completedPeerReviews, allEmployees] =
+    const [reviews, peerAssignments, completedPeerReviews, allEmployees, assignedManagerReviewers, assignedPeerReviewers] =
       await Promise.all([
         this.prisma.review.findMany({
           where: { reviewCycleId: cycleId, employeeId },
@@ -358,6 +359,14 @@ export class AnalyticsService {
           },
         }),
         this.prisma.user.findMany({ where: { companyId, role: 'EMPLOYEE' } }),
+        // Incoming: how many manager reviewers are assigned to review this employee
+        this.prisma.reviewerAssignment.count({
+          where: { reviewCycleId: cycleId, employeeId, reviewerType: 'MANAGER' },
+        }),
+        // Incoming: how many peer reviewers are assigned to review this employee
+        this.prisma.reviewerAssignment.count({
+          where: { reviewCycleId: cycleId, employeeId, reviewerType: 'PEER' },
+        }),
       ]);
 
     // Use pre-loaded reviews for score calculation (no extra DB call)
@@ -396,8 +405,15 @@ export class AnalyticsService {
       (r) => r.reviewType === 'SELF' && r.status === 'SUBMITTED',
     );
 
+    // Score is only visible once all assigned review types have at least one submission
+    const allReviewsComplete =
+      hasSelfReview &&
+      (assignedManagerReviewers === 0 || managerReviews.length > 0) &&
+      (assignedPeerReviewers === 0 || peerReviews.length > 0);
+
     return {
-      personalScore,
+      personalScore: allReviewsComplete ? personalScore : null,
+      allReviewsComplete,
       companyAverage: companyAverage ? Number(companyAverage.toFixed(2)) : null,
       scoreBreakdown: {
         self: breakdown.self ? Number(breakdown.self.toFixed(2)) : null,
