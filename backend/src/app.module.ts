@@ -52,7 +52,7 @@ export class AppModule implements NestModule {
     // Apply tenant context middleware to all routes except auth and health
     consumer
       .apply(TenantContextMiddleware)
-      .exclude('auth/signin', 'auth/signup', 'health')
+      .exclude('auth/signin', 'auth/signup', 'health', 'notifications/unsubscribe')
       .forRoutes('*');
   }
 }

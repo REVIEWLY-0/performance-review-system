@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { createHmac, timingSafeEqual } from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { PrismaService } from '../common/services/prisma.service';
 import { LoggerService } from '../common/services/logger.service';
@@ -54,6 +55,74 @@ export class NotificationsService {
   }
 
   // ============================================================================
+  // Unsubscribe Token Helpers
+  // ============================================================================
+
+  private getUnsubscribeSecret(): string {
+    return (
+      process.env.UNSUBSCRIBE_SECRET ||
+      process.env.SUPABASE_JWT_SECRET ||
+      'reviewly-unsubscribe-fallback-secret'
+    );
+  }
+
+  /** Generate a stable HMAC-SHA256 token for one-click unsubscribe URLs */
+  generateUnsubscribeToken(userId: string): string {
+    return createHmac('sha256', this.getUnsubscribeSecret())
+      .update(userId)
+      .digest('base64url');
+  }
+
+  /** Constant-time comparison to prevent timing attacks */
+  verifyUnsubscribeToken(userId: string, token: string): boolean {
+    const expected = Buffer.from(this.generateUnsubscribeToken(userId));
+    const provided = Buffer.from(token);
+    if (expected.length !== provided.length) return false;
+    return timingSafeEqual(expected, provided);
+  }
+
+  /** Return the full unsubscribe URL to embed in emails */
+  getUnsubscribeUrl(userId: string): string {
+    const base =
+      process.env.BACKEND_URL ||
+      `http://localhost:${process.env.PORT || 4000}`;
+    const token = this.generateUnsubscribeToken(userId);
+    return `${base}/api/notifications/unsubscribe?userId=${encodeURIComponent(userId)}&token=${encodeURIComponent(token)}`;
+  }
+
+  /**
+   * Disable all notification preferences for a user (one-click unsubscribe).
+   * Token is verified before making any change.
+   */
+  async unsubscribeAll(userId: string, token: string): Promise<{ ok: boolean; reason?: string }> {
+    if (!this.verifyUnsubscribeToken(userId, token)) {
+      return { ok: false, reason: 'invalid_token' };
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!user) return { ok: false, reason: 'user_not_found' };
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        notificationPreferences: {
+          cycleStarted: false,
+          reviewAssigned: false,
+          reminders: false,
+          scoreAvailable: false,
+        },
+      },
+    });
+
+    this.logger.log(`User ${userId} unsubscribed from all notifications`);
+    return { ok: true };
+  }
+
+  // ============================================================================
   // Core Email Sending
   // ============================================================================
 
@@ -87,13 +156,27 @@ export class NotificationsService {
   // Email Templates
   // ============================================================================
 
+  /** Shared unsubscribe footer injected into every outgoing email */
+  private unsubscribeFooter(userId: string): { html: string; text: string } {
+    const url = this.getUnsubscribeUrl(userId);
+    const html = `
+      <div style="border-top: 1px solid #e5e7eb; margin-top: 24px; padding-top: 16px; text-align: center; color: #9ca3af; font-size: 11px;">
+        You received this email because you have an account on Reviewly.<br>
+        <a href="${url}" style="color: #6b7280; text-decoration: underline;">Unsubscribe from all emails</a>
+      </div>`;
+    const text = `\n---\nYou received this email because you have an account on Reviewly.\nTo unsubscribe from all emails, visit: ${url}`;
+    return { html, text };
+  }
+
   private cycleStartedTemplate(
     userName: string,
     cycleName: string,
     endDate: string,
+    userId: string,
   ): { html: string; text: string } {
     const deadline = new Date(endDate).toLocaleDateString();
     const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee`;
+    const unsub = this.unsubscribeFooter(userId);
 
     const html = `
       <!DOCTYPE html>
@@ -123,6 +206,7 @@ export class NotificationsService {
           </div>
           <div class="footer">
             <p>This is an automated message from Reviewly.</p>
+            ${unsub.html}
           </div>
         </div>
       </body>
@@ -142,7 +226,7 @@ Please complete your self-review and any assigned peer reviews before the deadli
 
 Go to your dashboard: ${dashboardUrl}
 
-This is an automated message from Reviewly.
+This is an automated message from Reviewly.${unsub.text}
     `;
 
     return { html, text: text.trim() };
@@ -153,9 +237,11 @@ This is an automated message from Reviewly.
     employeeName: string,
     reviewType: string,
     cycleName: string,
+    userId: string,
   ): { html: string; text: string } {
     const type = reviewType === 'MANAGER' ? 'manager review' : 'peer review';
     const reviewsUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/manager/reviews`;
+    const unsub = this.unsubscribeFooter(userId);
 
     const html = `
       <!DOCTYPE html>
@@ -183,6 +269,7 @@ This is an automated message from Reviewly.
           </div>
           <div class="footer">
             <p>This is an automated message from Reviewly.</p>
+            ${unsub.html}
           </div>
         </div>
       </body>
@@ -200,7 +287,7 @@ Please complete the review at your earliest convenience.
 
 Complete your review: ${reviewsUrl}
 
-This is an automated message from Reviewly.
+This is an automated message from Reviewly.${unsub.text}
     `;
 
     return { html, text: text.trim() };
@@ -211,8 +298,10 @@ This is an automated message from Reviewly.
     pendingCount: number,
     cycleName: string,
     daysLeft: number,
+    userId: string,
   ): { html: string; text: string } {
     const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee`;
+    const unsub = this.unsubscribeFooter(userId);
 
     const html = `
       <!DOCTYPE html>
@@ -244,6 +333,7 @@ This is an automated message from Reviewly.
           </div>
           <div class="footer">
             <p>This is an automated message from Reviewly.</p>
+            ${unsub.html}
           </div>
         </div>
       </body>
@@ -263,7 +353,7 @@ Please complete your pending reviews to ensure timely feedback.
 
 Complete your reviews: ${dashboardUrl}
 
-This is an automated message from Reviewly.
+This is an automated message from Reviewly.${unsub.text}
     `;
 
     return { html, text: text.trim() };
@@ -273,8 +363,10 @@ This is an automated message from Reviewly.
     employeeName: string,
     score: number,
     cycleName: string,
+    userId: string,
   ): { html: string; text: string } {
     const scoresUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee/scores`;
+    const unsub = this.unsubscribeFooter(userId);
 
     const html = `
       <!DOCTYPE html>
@@ -308,6 +400,7 @@ This is an automated message from Reviewly.
           </div>
           <div class="footer">
             <p>This is an automated message from Reviewly.</p>
+            ${unsub.html}
           </div>
         </div>
       </body>
@@ -327,7 +420,7 @@ View your detailed feedback and score breakdown in your dashboard.
 
 View details: ${scoresUrl}
 
-This is an automated message from Reviewly.
+This is an automated message from Reviewly.${unsub.text}
     `;
 
     return { html, text: text.trim() };
@@ -371,6 +464,7 @@ This is an automated message from Reviewly.
         employee.name,
         cycle.name,
         cycle.endDate.toISOString(),
+        employee.id,
       );
       await this.sendEmail({
         to: employee.email,
@@ -413,6 +507,7 @@ This is an automated message from Reviewly.
       employee.name,
       reviewType,
       cycle.name,
+      reviewer.id,
     );
     await this.sendEmail({
       to: reviewer.email,
@@ -485,6 +580,7 @@ This is an automated message from Reviewly.
             pendingCount,
             cycle.name,
             daysLeft,
+            user.id,
           );
           await this.sendEmail({
             to: user.email,
@@ -522,7 +618,7 @@ This is an automated message from Reviewly.
       return;
     }
 
-    const scoreTemplate = this.scoreAvailableTemplate(employee.name, score, cycle.name);
+    const scoreTemplate = this.scoreAvailableTemplate(employee.name, score, cycle.name, employee.id);
     await this.sendEmail({
       to: employee.email,
       subject: `Your Review Score for ${cycle.name}`,
@@ -587,7 +683,8 @@ This is an automated message from Reviewly.
   // Welcome Email
   // ============================================================================
 
-  private welcomeEmailTemplate(userName: string, companyName: string, setupLink?: string): { html: string; text: string } {
+  private welcomeEmailTemplate(userName: string, companyName: string, userId: string, setupLink?: string): { html: string; text: string } {
+    const unsub = this.unsubscribeFooter(userId);
     const html = `
       <!DOCTYPE html>
       <html>
@@ -631,6 +728,7 @@ This is an automated message from Reviewly.
           <div class="footer">
             <p>Questions? Contact your HR administrator.</p>
             <p>This is an automated message from Reviewly.</p>
+            ${unsub.html}
           </div>
         </div>
       </body>
@@ -658,7 +756,7 @@ ${setupLink
     }
 
 Questions? Contact your HR administrator.
-This is an automated message from Reviewly.
+This is an automated message from Reviewly.${unsub.text}
     `;
 
     return { html, text: text.trim() };
@@ -677,7 +775,7 @@ This is an automated message from Reviewly.
       return;
     }
 
-    const template = this.welcomeEmailTemplate(user.name, user.company.name, setupLink);
+    const template = this.welcomeEmailTemplate(user.name, user.company.name, user.id, setupLink);
 
     await this.sendEmail({
       to: user.email,
