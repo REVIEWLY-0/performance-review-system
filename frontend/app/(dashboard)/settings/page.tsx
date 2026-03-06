@@ -2,18 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser, User } from '@/lib/auth';
+import { getCurrentUser, invalidateUserCache, User } from '@/lib/auth';
 import {
   getNotificationPreferences,
   updateNotificationPreferences,
   NotificationPreferences,
 } from '@/lib/notifications';
+import { usersApi } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import BackButton from '@/components/BackButton';
 
 export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [nameInput, setNameInput] = useState('');
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     cycleStarted: true,
     reviewAssigned: true,
@@ -21,6 +23,7 @@ export default function SettingsPage() {
     scoreAvailable: true,
   });
   const [loading, setLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [saving, setSaving] = useState(false);
   const toast = useToast();
 
@@ -37,6 +40,7 @@ export default function SettingsPage() {
       }
 
       setUser(currentUser);
+      setNameInput(currentUser.name);
 
       const prefs = await getNotificationPreferences();
       setPreferences(prefs);
@@ -44,6 +48,32 @@ export default function SettingsPage() {
       console.error('Error loading settings:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    const trimmed = nameInput.trim();
+    if (trimmed.length < 2) {
+      toast.error('Name must be at least 2 characters');
+      return;
+    }
+    if (trimmed.length > 100) {
+      toast.error('Name must be 100 characters or fewer');
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      const updated = await usersApi.updateProfile(trimmed);
+      // Bust the user cache so DashboardNav picks up the new name
+      invalidateUserCache();
+      setUser((prev) => prev ? { ...prev, name: updated.name } : prev);
+      setNameInput(updated.name);
+      toast.success('Profile updated');
+    } catch (err: any) {
+      console.error('Error saving profile:', err);
+      toast.error(err.message || 'Failed to save profile');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -107,6 +137,8 @@ export default function SettingsPage() {
 
   if (!user) return null;
 
+  const profileDirty = nameInput.trim() !== user.name;
+
   return (
     <div className="px-4 py-6 sm:px-0">
       {/* Header */}
@@ -118,22 +150,54 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* User Info */}
+      {/* Account Information */}
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <h2 className="text-lg font-medium text-gray-900 mb-4">Account Information</h2>
-        <div className="space-y-3">
-          <div className="flex justify-between">
-            <span className="text-sm font-medium text-gray-600">Name:</span>
-            <span className="text-sm text-gray-900">{user.name}</span>
+
+        <div className="space-y-4">
+          {/* Name — editable */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-600 mb-1">
+              Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              minLength={2}
+              maxLength={100}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
           </div>
-          <div className="flex justify-between">
-            <span className="text-sm font-medium text-gray-600">Email:</span>
-            <span className="text-sm text-gray-900">{user.email}</span>
+
+          {/* Email — read-only */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Email
+              <span className="ml-1 text-xs text-gray-400">(read-only)</span>
+            </label>
+            <p className="text-sm text-gray-900 py-2">{user.email}</p>
           </div>
-          <div className="flex justify-between">
-            <span className="text-sm font-medium text-gray-600">Role:</span>
-            <span className="text-sm text-gray-900">{user.role}</span>
+
+          {/* Role — read-only */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Role
+              <span className="ml-1 text-xs text-gray-400">(managed by admin)</span>
+            </label>
+            <p className="text-sm text-gray-900 py-2">{user.role}</p>
           </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={handleSaveProfile}
+            disabled={savingProfile || !profileDirty}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {savingProfile ? 'Saving...' : 'Save Profile'}
+          </button>
         </div>
       </div>
 

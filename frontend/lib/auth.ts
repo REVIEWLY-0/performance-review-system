@@ -197,3 +197,8 @@ export async function signOut() {
   _userCache = null
   await supabase.auth.signOut()
 }
+
+/** Clear the user cache so the next getCurrentUser() call fetches fresh data */
+export function invalidateUserCache() {
+  _userCache = null
+}

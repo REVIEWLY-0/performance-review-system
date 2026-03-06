@@ -61,6 +61,13 @@ export class UpdateUserDto {
   department?: string;
 }
 
+export class UpdateProfileDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  name!: string;
+}
+
 export class ImportUserDto {
   @IsEmail()
   email!: string;
@@ -559,6 +566,27 @@ export class UsersService {
     }
 
     return results;
+  }
+
+  /**
+   * Update the current user's own profile (name only)
+   * No admin required — any authenticated user may update their own name
+   */
+  async updateProfile(userId: string, companyId: string, name: string) {
+    // Verify the user exists within this company (tenant guard)
+    await this.findOne(userId, companyId);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { name },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        companyId: true,
+      },
+    });
   }
 
   /**

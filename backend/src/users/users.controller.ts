@@ -3,17 +3,19 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService, CreateUserDto, UpdateUserDto, ImportUsersBodyDto } from './users.service';
+import { UsersService, CreateUserDto, UpdateUserDto, UpdateProfileDto, ImportUsersBodyDto } from './users.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CompanyId } from '../common/decorators/company-id.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -54,6 +56,17 @@ export class UsersController {
   @Get('departments')
   async getDepartments(@CompanyId() companyId: string) {
     return this.usersService.getDepartments(companyId);
+  }
+
+  /**
+   * Update own profile (name) — any authenticated user, no admin required
+   */
+  @Patch('profile')
+  async updateProfile(
+    @CurrentUser() currentUser: { id: string; companyId: string },
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(currentUser.id, currentUser.companyId, dto.name);
   }
 
   /**

@@ -158,6 +158,13 @@ export const usersApi = {
     return result
   },
 
+  updateProfile: async (name: string): Promise<{ id: string; name: string; email: string; role: string; companyId: string }> => {
+    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    })
+  },
+
   getDepartments: async (): Promise<string[]> => {
     const key = 'users:departments'
     const cached = getCached<string[]>(key)
