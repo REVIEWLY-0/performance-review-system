@@ -579,19 +579,23 @@ export class UsersService {
    * Get user statistics
    */
   async getStats(companyId: string) {
-    const [total, admins, managers, employees] = await Promise.all([
-      this.prisma.user.count({ where: { companyId } }),
-      this.prisma.user.count({ where: { companyId, role: 'ADMIN' } }),
-      this.prisma.user.count({ where: { companyId, role: 'MANAGER' } }),
-      this.prisma.user.count({ where: { companyId, role: 'EMPLOYEE' } }),
-    ]);
+    // Single query instead of 4 — uses the (companyId, role) composite index
+    const groups = await this.prisma.user.groupBy({
+      by: ['role'],
+      where: { companyId },
+      _count: { _all: true },
+    });
+
+    const count = (role: string) =>
+      groups.find((g) => g.role === role)?._count._all ?? 0;
+    const total = groups.reduce((sum, g) => sum + g._count._all, 0);
 
     return {
       total,
       byRole: {
-        admins,
-        managers,
-        employees,
+        admins: count('ADMIN'),
+        managers: count('MANAGER'),
+        employees: count('EMPLOYEE'),
       },
     };
   }

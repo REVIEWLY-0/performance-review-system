@@ -163,7 +163,12 @@ export const reviewCyclesApi = {
    * Get HR insights for a cycle: completion matrix, stats, per-employee status
    */
   getInsights: async (id: string): Promise<CycleInsights> => {
-    return fetchWithAuth(`${API_URL}/review-cycles/${id}/insights`);
+    const key = `cycles:insights:${id}`;
+    const cached = getCached<CycleInsights>(key);
+    if (cached) return cached;
+    const data = await fetchWithAuth(`${API_URL}/review-cycles/${id}/insights`);
+    setCache(key, data, 30_000); // 30s — stale-while-revalidate for the heavy HR panel
+    return data;
   },
 };
 

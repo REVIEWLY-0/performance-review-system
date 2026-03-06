@@ -95,6 +95,7 @@ model User {
   @@unique([companyId, email])
   @@unique([companyId, employeeId])
   @@index([companyId])
+  @@index([companyId, role])
   @@index([managerId])
   @@index([email])
   @@map("users")
@@ -215,6 +216,8 @@ model Review {
   @@index([employeeId])
   @@index([reviewerId])
   @@index([reviewCycleId, status])
+  @@index([reviewCycleId, reviewType])
+  @@index([reviewCycleId, reviewType, status])
   @@index([reviewCycleId, employeeId])
   @@map("reviews")
 }
@@ -257,5 +260,6 @@ model ReviewerAssignment {
   @@index([employeeId])
   @@index([reviewerId])
   @@index([reviewCycleId, employeeId])
+  @@index([reviewCycleId, reviewerId, reviewerType])
   @@map("reviewer_assignments")
 }

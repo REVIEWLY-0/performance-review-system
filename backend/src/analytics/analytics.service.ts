@@ -101,44 +101,12 @@ export class AnalyticsService {
       peerPending,
     ] = await Promise.all([
       this.prisma.user.findMany({ where: { companyId, role: 'EMPLOYEE' } }),
-      this.prisma.review.count({
-        where: {
-          reviewCycleId: cycleId,
-          reviewCycle: { companyId },
-          status: 'SUBMITTED',
-        },
-      }),
-      this.prisma.review.count({
-        where: {
-          reviewCycleId: cycleId,
-          reviewCycle: { companyId },
-          status: 'DRAFT',
-        },
-      }),
-      this.prisma.review.count({
-        where: {
-          reviewCycleId: cycleId,
-          reviewCycle: { companyId },
-          reviewType: 'SELF',
-          status: { not: 'SUBMITTED' },
-        },
-      }),
-      this.prisma.review.count({
-        where: {
-          reviewCycleId: cycleId,
-          reviewCycle: { companyId },
-          reviewType: 'MANAGER',
-          status: { not: 'SUBMITTED' },
-        },
-      }),
-      this.prisma.review.count({
-        where: {
-          reviewCycleId: cycleId,
-          reviewCycle: { companyId },
-          reviewType: 'PEER',
-          status: { not: 'SUBMITTED' },
-        },
-      }),
+      // cycleId already verified to belong to companyId above — no JOIN needed
+      this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'SUBMITTED' } }),
+      this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'DRAFT' } }),
+      this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'SELF',    status: { not: 'SUBMITTED' } } }),
+      this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'MANAGER', status: { not: 'SUBMITTED' } } }),
+      this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'PEER',    status: { not: 'SUBMITTED' } } }),
     ]);
 
     // Calculate scores using a single batch query internally
@@ -207,7 +175,7 @@ export class AnalyticsService {
         reviewCycleId: cycleId,
         reviewerId: managerId,
         reviewerType: 'MANAGER',
-        reviewCycle: { companyId },
+        // cycleId already verified to belong to companyId above
       },
       include: { employee: true },
     });
@@ -231,7 +199,6 @@ export class AnalyticsService {
             reviewCycleId: cycleId,
             employeeId: { in: teamMemberIds },
             status: 'SUBMITTED',
-            reviewCycle: { companyId },
           },
           include: { answers: { include: { question: true } } },
         }),
@@ -448,12 +415,7 @@ export class AnalyticsService {
     companyId: string,
   ): Promise<number | null> {
     const reviews = await this.prisma.review.findMany({
-      where: {
-        reviewCycleId: cycleId,
-        employeeId,
-        status: 'SUBMITTED',
-        reviewCycle: { companyId },
-      },
+      where: { reviewCycleId: cycleId, employeeId, status: 'SUBMITTED' },
       include: { answers: { include: { question: true } } },
     });
 
@@ -472,12 +434,9 @@ export class AnalyticsService {
     if (employees.length === 0) return [];
 
     // Single batch query for all submitted reviews across all employees
+    // companyId verified by caller — no relation JOIN needed
     const allReviews = await this.prisma.review.findMany({
-      where: {
-        reviewCycleId: cycleId,
-        status: 'SUBMITTED',
-        reviewCycle: { companyId },
-      },
+      where: { reviewCycleId: cycleId, status: 'SUBMITTED' },
       include: { answers: { include: { question: true } } },
     });
 
