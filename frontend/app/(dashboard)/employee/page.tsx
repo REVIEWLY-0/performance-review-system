@@ -356,15 +356,31 @@ export default function EmployeeDashboard() {
 
               <div className="flex justify-between items-center py-3 border-b border-gray-200">
                 <span className="text-sm font-medium text-gray-600">Manager Reviews</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {analytics.reviewCounts.manager} received
+                <span className="text-sm">
+                  {analytics.reviewCounts.manager > 0 ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                      {analytics.reviewCounts.manager} received
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800">
+                      Pending
+                    </span>
+                  )}
                 </span>
               </div>
 
               <div className="flex justify-between items-center py-3 border-b border-gray-200">
                 <span className="text-sm font-medium text-gray-600">Peer Reviews Received</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {analytics.reviewCounts.peer} received
+                <span className="text-sm">
+                  {analytics.reviewCounts.peer > 0 ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                      {analytics.reviewCounts.peer} received
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800">
+                      Pending
+                    </span>
+                  )}
                 </span>
               </div>
 
