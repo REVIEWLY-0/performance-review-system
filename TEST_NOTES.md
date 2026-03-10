@@ -60,68 +60,28 @@
 ### P0 — Core Product Flexibility + Correctness
 
 #### 1) Review Cycle Steps must be flexible (not limited to 3)
-Problem:
-- Workflow steps are currently limited (e.g., max 3).
-Founder requirement:
-- Admin should customize as many steps as needed.
-- Steps should match reviewer roles and potentially repeated phases.
-
-Expected:
-- Remove max-step restriction.
-- Allow any number of steps (1..N).
-- Each step has: type (SELF / MANAGER / PEER / CUSTOM if needed), name/label, start/end date.
-- Still enforce valid date logic (within cycle dates; step start < step end; cycle start < cycle end).
-- UI should handle many steps cleanly (scroll/accordion).
-
-Acceptance Criteria:
-- Admin can add 1..N steps.
-- No artificial max step limit.
-- Dates validated correctly.
-- Steps persist and render correctly in create/edit/preview/view.
+**ALREADY DONE — verified BATCH L (2026-03-10)**
+- No max step limit exists in backend or frontend.
+- `validateConfigDates()`: only enforces 1 SELF step, date ordering, steps within cycle bounds.
+- `WorkflowStepBuilder.tsx`: `addStep()` has no count cap; container uses `max-h-[600px] overflow-y-auto` for scroll with many steps.
+- Each step has reviewType (SELF/MANAGER/PEER/custom), name/label, startDate, endDate.
+- Dynamic review types (custom keys) supported via `ReviewTypeConfig` table (Batch E).
 
 ---
 
 #### 2) Peer reviewers count must be unlimited (not 3–5)
-Problem:
-- Peer reviewers currently limited to 3–5 per employee.
-
-Expected:
-- Allow any number of peer reviewers per employee per cycle.
-- UI supports large lists (search, pagination/multi-select).
-- Backend enforces tenant safety but does not enforce reviewer count limits.
-
-Acceptance Criteria:
-- Assign 1, 2, 10, 30 peers successfully.
-- No validation blocks due to peer count.
-- Strict company_id scoping.
+**DONE — BATCH L (2026-03-10)**
+- Backend: no peer count limit; only enforces ≥1 manager via `managerCount === 0` check.
+- Frontend: `hasValidAssignment = managerIds.length >= 1 && peerIds.length >= 1` (no upper limit).
+- Fixed: `BulkUploadModal.tsx` instructional text changed from "3-5 peers" → "1+ peers".
 
 ---
 
 #### 3) CSV template download for onboarding (and future imports)
-Problem:
-- Admin needs downloadable CSV template to edit then upload.
-
-Expected:
-- On /admin/employees:
-  - "Download CSV Template" button
-  - template includes required columns + a sample row
-- Template format documented in UI and README.
-
-Template columns (proposal):
-- employee_id (required OR auto-generated if missing; see item 9)
-- full_name (required)
-- email (required)
-- role (EMPLOYEE / MANAGER)
-- department (REQUIRED - see department section)
-- manager_employee_id OR manager_email (optional; choose one standard)
-Notes:
-- Enforce company email rules (see Auth/email domain rules if implemented).
-- Dedupe by email within company.
-
-Acceptance Criteria:
-- Template downloads successfully.
-- Uploading edited template imports users correctly.
-- Import errors are shown clearly with row numbers.
+**ALREADY DONE — verified BATCH L (2026-03-10)**
+- `downloadCsvTemplate()` in `admin/employees/page.tsx`: downloads `employee_import_template.csv` with columns: name, email, role, department, manager_email, employee_id + 2 sample rows.
+- `CsvImportModal.tsx`: parses all 6 columns, shows row warnings for missing department/email, shows import errors clearly.
+- Department column is required (warns + skips on missing); employee_id optional (auto-generates).
 
 ---
 

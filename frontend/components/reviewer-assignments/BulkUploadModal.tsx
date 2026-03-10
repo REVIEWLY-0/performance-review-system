@@ -109,7 +109,7 @@ john@company.com,charlie@company.com,PEER`}
                 <br />
                 • reviewer_type must be MANAGER or PEER
                 <br />
-                • Each employee needs 1+ managers and 3-5 peers
+                • Each employee needs 1+ managers and 1+ peers
                 <br />• All emails must exist in your company
               </p>
             </div>
