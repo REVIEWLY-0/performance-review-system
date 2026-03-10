@@ -4,53 +4,35 @@
 ## 2026-02-25 — Post-fix Regression / UX Issues Found
 
 ### P0 — Must Fix (blocks trust / core flows)
-1) Auth pages branding missing
-- Signup/Login pages do NOT show "Reviewly" name + logo (only browser tab title changes).
-- Expected: Reviewly brand visible on /login and signup.
+1) Auth pages branding missing — **FIXED (prior batch)**
+- Added Reviewly logo + name to /login and /signup pages.
 
-2) Extremely slow navigation / page transitions
-- Clicking buttons that navigate to new pages is very slow (dashboard → employees, review cycles, etc.)
-- Expected: fast transitions with loading states and reduced refetching.
+2) Extremely slow navigation / page transitions — **FIXED (prior batch)**
+- Added 30s session cache + 60s user cache in auth.ts; removed redundant refetches.
 
-3) Analytics pie chart overlap when empty
-- When review progress is empty, "Draft" and "Submitted" labels overlap.
-- Expected: proper empty state or hide labels when 0.
+3) Analytics pie chart overlap when empty — **FIXED (prior batch)**
+- Filters out zero-value slices; shows empty state when no data.
 
-4) Reviewer assignment tenant leak / wrong users visible
-- Assign reviewers shows error: "some users are not in the company"
-- Users outside current company appear selectable (should never happen).
-- Expected: user pickers filtered strictly by company_id (frontend + backend validation).
+4) Reviewer assignment tenant leak / wrong users visible — **FIXED (prior batch)**
+- `users.controller.ts`: `@CompanyId()` decorator enforces company scoping on all user queries.
 
 ### P1 — Should Fix (polish + correctness)
-5) Company identity not visible enough
-- Company name not prominent; doesn’t feel like company-specific portal.
-- Expected: show "{CompanyName} — Reviewly" clearly in dashboard nav/header.
+5) Company identity not visible enough — **FIXED (prior batch)**
+- `DashboardNav.tsx`: displays "{CompanyName} — Reviewly" in nav header.
 
-6) Manage Employees list not updating after create
-- After creating an employee, user must refresh to see them.
-- Expected: list updates immediately (optimistic update or refetch after success).
+6) Manage Employees list not updating after create — **FIXED (prior batch)**
+7) Manage Employees filters/search broken — **FIXED (prior batch)**
+- `EmployeeList.tsx`: `useEffect` syncs from parent on prop change; role + search filters work reliably.
 
-7) Manage Employees filters/search broken
-- Role filter does not filter results.
-- Search field does not filter results.
-- Expected: both should work reliably.
-
-8) Questions UI tabs mismatch (Self/Peer/Manager)
-- All questions display under all tabs even when adding within one tab.
-- Preview shows correct questions per tab.
-- Expected: tabs should display only their assigned questions (UI should match preview).
+8) Questions UI tabs mismatch (Self/Peer/Manager) — **FIXED (prior batch)**
+- `QuestionList.tsx`: uses `useEffect` to update displayed questions on tab change.
 
 ### P2 — Nice to Have / UX Improvements
-9) Review Cycle create flow back navigation
-- "Back" from Add Review Cycle returns to Review Cycles list.
-- Expected: Back should return to dashboard (or provide explicit "Back to Dashboard" + separate link to Review Cycles).
+9) Review Cycle create flow back navigation — **FIXED (prior batch)**
+- New review cycle "Back" navigates to /admin dashboard.
 
-10) Department feature request for better organization + reviewer selection
-- Add Department for employees (e.g., Engineering/Sales/etc.)
-- Group employees by department
-- Manager selection should show only managers in same department
-- Peer selection should show only employees in same department
-- Prevent selecting a manager as a peer
+10) Department feature request — **IMPLEMENTED — BATCH G + H (2026-03-10)**
+- Full department model + multi-department membership, reviewer filtering by dept, manager≠peer enforcement.
 
 
 --- 
