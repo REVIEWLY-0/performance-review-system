@@ -122,7 +122,9 @@ export class UsersService {
     const { userDepartments, ...rest } = user;
     return {
       ...rest,
-      departments: (userDepartments ?? []).map((ud: any) => ud.department),
+      departments: (userDepartments ?? [])
+        .map((ud: any) => ud.department)
+        .filter(Boolean), // guard against null if FK integrity issue
     };
   }
 

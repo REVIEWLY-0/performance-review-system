@@ -234,7 +234,7 @@ export default function DepartmentsPage() {
                   className="group inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-800 rounded-full text-sm font-medium border border-indigo-200 hover:bg-indigo-100 transition-colors"
                 >
                   <span>{dept.name}</span>
-                  {dept._count !== undefined && (
+                  {dept._count != null && (
                     <span className="text-xs text-indigo-400 tabular-nums">
                       {dept._count.userDepts}
                     </span>

@@ -18,8 +18,8 @@ export default function DepartmentMultiSelect({
   departments,
   error = false,
 }: DepartmentMultiSelectProps) {
-  const selected = departments.filter((d) => value.includes(d.id));
-  const unselected = departments.filter((d) => !value.includes(d.id));
+  const selected = departments.filter((d) => d && value.includes(d.id));
+  const unselected = departments.filter((d) => d && !value.includes(d.id));
 
   const add = (id: string) => {
     if (!value.includes(id)) onChange([...value, id]);
