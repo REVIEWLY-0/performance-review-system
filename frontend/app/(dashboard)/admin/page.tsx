@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getCurrentUser, User } from '@/lib/auth';
-import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
+import { reviewCyclesApi, ReviewCycle, formatDate } from '@/lib/review-cycles';
 import { getAdminAnalytics, AdminAnalytics } from '@/lib/analytics';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import SkeletonCard from '@/components/skeletons/SkeletonCard';
+import StatusBadge from '@/components/review-cycles/StatusBadge';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -15,16 +17,11 @@ export default function AdminDashboard() {
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
-
-  useEffect(() => {
-    if (selectedCycleId) {
-      loadAnalytics();
-    }
-  }, [selectedCycleId]);
 
   const loadData = async () => {
     try {
@@ -48,16 +45,20 @@ export default function AdminDashboard() {
       const { data: allCycles } = await reviewCyclesApi.getAll();
       setCycles(allCycles);
 
-      // Select first active cycle or first cycle
-      const activeCycle = allCycles.find((c) => c.status === 'ACTIVE');
-      if (activeCycle) {
-        setSelectedCycleId(activeCycle.id);
-      } else if (allCycles.length > 0) {
-        setSelectedCycleId(allCycles[0].id);
+      // Select first active cycle or first cycle, then load analytics inline
+      const initialCycle =
+        allCycles.find((c) => c.status === 'ACTIVE') ?? allCycles[0];
+      if (initialCycle) {
+        setSelectedCycleId(initialCycle.id);
+        try {
+          const data = await getAdminAnalytics(initialCycle.id);
+          setAnalytics(data);
+        } catch (err: any) {
+          console.error('Error loading analytics:', err);
+        }
       }
     } catch (err: any) {
       console.error('Error loading dashboard:', err);
-      // On error, sign out and redirect
       const { signOut } = await import('@/lib/auth');
       await signOut();
       router.push('/login');
@@ -66,14 +67,16 @@ export default function AdminDashboard() {
     }
   };
 
-  const loadAnalytics = async () => {
-    if (!selectedCycleId) return;
-
+  const handleCycleChange = async (newCycleId: string) => {
+    setSelectedCycleId(newCycleId);
+    setAnalyticsLoading(true);
     try {
-      const data = await getAdminAnalytics(selectedCycleId);
+      const data = await getAdminAnalytics(newCycleId);
       setAnalytics(data);
     } catch (err: any) {
       console.error('Error loading analytics:', err);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -117,6 +120,118 @@ export default function AdminDashboard() {
         </p>
       </div>
 
+      {/* Cycles Overview */}
+      <div className="mb-6 bg-white shadow rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Review Cycles</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {cycles.length === 0
+                ? 'No cycles yet — create one to get started'
+                : `${cycles.length} cycle${cycles.length !== 1 ? 's' : ''} total`}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {cycles.length > 0 && (
+              <Link
+                href="/admin/review-cycles"
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                View all →
+              </Link>
+            )}
+            <button
+              onClick={() => router.push('/admin/review-cycles/new')}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              + New Cycle
+            </button>
+          </div>
+        </div>
+
+        {cycles.length === 0 ? (
+          <div className="text-center py-6">
+            <svg
+              className="mx-auto h-10 w-10 text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+            <p className="mt-2 text-sm text-gray-500">
+              A review cycle defines the timeline and workflow for performance reviews across your organisation. Create one to get started.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Status summary chips */}
+            <div className="flex gap-2 mb-4">
+              {(['ACTIVE', 'DRAFT', 'COMPLETED'] as const).map((s) => {
+                const count = cycles.filter((c) => c.status === s).length;
+                if (count === 0) return null;
+                const colors: Record<string, string> = {
+                  ACTIVE: 'bg-green-100 text-green-800',
+                  DRAFT: 'bg-yellow-100 text-yellow-800',
+                  COMPLETED: 'bg-gray-100 text-gray-700',
+                };
+                return (
+                  <span
+                    key={s}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[s]}`}
+                  >
+                    {count} {s.charAt(0) + s.slice(1).toLowerCase()}
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* Recent cycles list */}
+            <div className="divide-y divide-gray-100">
+              {cycles.slice(0, 4).map((cycle) => (
+                <div
+                  key={cycle.id}
+                  className="py-3 flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <StatusBadge status={cycle.status} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {cycle.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatDate(cycle.startDate)} – {formatDate(cycle.endDate)}
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/admin/review-cycles/${cycle.id}`}
+                    className="flex-shrink-0 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    {cycle.status === 'DRAFT' ? 'Edit' : 'View'}
+                  </Link>
+                </div>
+              ))}
+            </div>
+            {cycles.length > 4 && (
+              <div className="pt-3 text-center">
+                <Link
+                  href="/admin/review-cycles"
+                  className="text-sm text-indigo-600 hover:text-indigo-700"
+                >
+                  View {cycles.length - 4} more →
+                </Link>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Cycle Selector */}
       {cycles.length > 0 && (
         <div className="mb-6">
@@ -125,8 +240,9 @@ export default function AdminDashboard() {
           </label>
           <select
             value={selectedCycleId}
-            onChange={(e) => setSelectedCycleId(e.target.value)}
-            className="block w-full md:w-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            onChange={(e) => handleCycleChange(e.target.value)}
+            disabled={analyticsLoading}
+            className="block w-full md:w-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-60"
           >
             {cycles.map((cycle) => (
               <option key={cycle.id} value={cycle.id}>
@@ -298,40 +414,8 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* No Cycles Exist */}
-      {cycles.length === 0 && !loading && (
-        <div className="mb-6 rounded-lg bg-white shadow p-8 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            No review cycles yet
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Get started by creating your first review cycle.
-          </p>
-          <div className="mt-6">
-            <button
-              onClick={() => router.push('/admin/review-cycles/new')}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              Start New Cycle
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Charts and Top Performers */}
+      <div className={analyticsLoading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
       {analytics && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Progress Chart */}
@@ -408,6 +492,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Quick Actions */}
       <div className="bg-white shadow rounded-lg p-6">

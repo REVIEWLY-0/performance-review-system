@@ -297,17 +297,12 @@ UX Improvement (optional):
 ---
 
 #### 2) Admin dashboard doesn’t clearly show existing cycles
-Problem:
-- Admin has to click "New Cycle" to discover cycles; confusing for first-time users.
-
-Expected:
-- Admin dashboard should show "Active / Draft / Completed cycles" summary and list (at least recent cycles) with clear CTA:
-  - "View all cycles" and "Create new cycle"
-- If none exist: empty state explains what a review cycle is and prompts creation.
-
-Acceptance Criteria:
-- On /admin, user can see whether cycles exist without navigating away.
-- Empty state guides first-time admins.
+**FIXED — BATCH D (2026-03-10)**
+- Added "Review Cycles" overview card at top of admin dashboard (above KPI cards).
+- Shows status count chips (Active/Draft/Completed), list of up to 4 recent cycles with StatusBadge + dates + Edit/View link.
+- "View all →" link to /admin/review-cycles and "+ New Cycle" button always visible.
+- Empty state: if no cycles exist, card explains what a review cycle is with a helpful description.
+- Also fixed analytics loading race: inlined initial analytics fetch into loadData(), added analyticsLoading + handleCycleChange() for subsequent cycle changes.
 
 ---
 
