@@ -79,12 +79,14 @@ Root causes + fixes:
 ---
 
 #### 5) Active cycle “View” page needs detailed HR/Admin insights
-**ALREADY DONE — verified BATCH N (2026-03-10)**
+**IMPLEMENTED — BATCH Q (2026-03-10)**
+- Fixed department filter: `getInsights` now fetches `userDepartments` (multi-dept model from Batch G), not just legacy `department` string. `departments[]` field added to `EmployeeInsight` (backend + frontend type).
+- Department column: replaced single string with department pills (indigo badge per department).
+- Peer reviewer matrix: replaced X/N fraction with individual reviewer names + status pills, collapsing to “+N more” when > 3 peers.
 - `CycleInsightsPanel.tsx`: full HR/Admin view for ACTIVE and COMPLETED cycles.
   - Stats cards: Total Employees, Fully Complete, In Progress, Not Started, Overdue (with progress bars + %).
-  - Filters: department dropdown + status dropdown (All/Complete/In Progress/Not Started/Overdue) + search by name/email.
-  - Employee table: completion status per row (self review, manager reviews with names, peer review X/N fraction), overdue row highlighting.
-  - Reviewer assignment matrix: manager reviews show each reviewer name + pill status; peer reviews show submitted/total fraction.
+  - Filters: department dropdown (now uses multi-dept model) + status dropdown + search.
+  - Reviewer assignment matrix: both manager and peer reviews show individual names + status pills.
   - Breadcrumb nav: Dashboard / Review Cycles / Cycle Name — both links work.
 
 ---

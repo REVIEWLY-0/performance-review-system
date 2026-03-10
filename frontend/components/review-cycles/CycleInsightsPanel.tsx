@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CycleInsights,
@@ -97,6 +97,51 @@ function StatCard({
   );
 }
 
+// Show peer reviewer names with status pills; collapse to summary when > 3
+const PEER_COLLAPSE_THRESHOLD = 3;
+
+function PeerReviewsCell({
+  peerReviews,
+  overdue,
+}: {
+  peerReviews: Array<{ reviewer: { id: string; name: string }; status: ReviewStatus }>;
+  overdue: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const total = peerReviews.length;
+  const submitted = peerReviews.filter((r) => r.status === 'SUBMITTED').length;
+
+  if (total === 0) return <span className="text-xs text-gray-400">Not assigned</span>;
+
+  const visible = expanded ? peerReviews : peerReviews.slice(0, PEER_COLLAPSE_THRESHOLD);
+  const hasMore = total > PEER_COLLAPSE_THRESHOLD;
+
+  return (
+    <div className="flex flex-col gap-1">
+      {visible.map((r) => (
+        <div key={r.reviewer.id} className="flex items-center gap-2">
+          <span className="text-xs text-gray-600 truncate max-w-[110px]" title={r.reviewer.name}>
+            {r.reviewer.name}
+          </span>
+          <ReviewPill status={r.status} overdue={overdue && r.status !== 'SUBMITTED'} />
+        </div>
+      ))}
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="text-xs text-indigo-600 hover:text-indigo-800 text-left mt-0.5"
+        >
+          {expanded ? 'Show less' : `+${total - PEER_COLLAPSE_THRESHOLD} more (${submitted}/${total} submitted)`}
+        </button>
+      )}
+      {!hasMore && (
+        <span className="text-xs text-gray-400">{submitted}/{total} submitted</span>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function CycleInsightsPanel({
@@ -133,16 +178,22 @@ export default function CycleInsightsPanel({
     [employees, selfOverdue, managerOverdue, peerOverdue],
   );
 
-  // Unique sorted departments
-  const departments = Array.from(
-    new Set(employees.map((e) => e.department ?? 'Unknown')),
-  ).sort();
+  // Unique sorted departments from the new multi-dept model
+  const departments = useMemo(() =>
+    Array.from(
+      new Set(employees.flatMap((e) => (e.departments ?? []).map((d) => d.name))),
+    ).sort(),
+    [employees],
+  );
 
   // Filtered list
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return employees.filter((emp) => {
-      if (deptFilter !== 'ALL' && (emp.department ?? 'Unknown') !== deptFilter) return false;
+      if (
+        deptFilter !== 'ALL' &&
+        !(emp.departments ?? []).some((d) => d.name === deptFilter)
+      ) return false;
       const compStatus = employeeCompletionStatus(emp);
       if (statusFilter === 'OVERDUE') {
         if (!overdueEmployees.includes(emp)) return false;
@@ -374,8 +425,21 @@ export default function CycleInsightsPanel({
                       </td>
 
                       {/* Department */}
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                        {emp.department ?? <span className="text-gray-300">—</span>}
+                      <td className="px-4 py-3">
+                        {(emp.departments ?? []).length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {(emp.departments ?? []).map((d) => (
+                              <span
+                                key={d.id}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                              >
+                                {d.name}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
 
                       {/* Self Review */}
@@ -408,29 +472,11 @@ export default function CycleInsightsPanel({
                       </td>
 
                       {/* Peer Reviews */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {peerTotal === 0 ? (
-                          <span className="text-xs text-gray-400">Not assigned</span>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-sm font-medium ${
-                                peerSubmitted === peerTotal
-                                  ? 'text-green-700'
-                                  : peerOverdue && peerSubmitted < peerTotal
-                                  ? 'text-orange-600'
-                                  : peerSubmitted > 0
-                                  ? 'text-yellow-700'
-                                  : 'text-gray-500'
-                              }`}
-                            >
-                              {peerSubmitted}/{peerTotal}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {peerOverdue && peerSubmitted < peerTotal ? 'overdue' : 'submitted'}
-                            </span>
-                          </div>
-                        )}
+                      <td className="px-4 py-3">
+                        <PeerReviewsCell
+                          peerReviews={emp.peerReviews}
+                          overdue={peerOverdue}
+                        />
                       </td>
                     </tr>
                   );

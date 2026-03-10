@@ -466,7 +466,15 @@ export class ReviewCyclesService {
         where: { reviewCycleId: id },
         include: {
           employee: {
-            select: { id: true, name: true, email: true, department: true },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              department: true,
+              userDepartments: {
+                include: { department: { select: { id: true, name: true } } },
+              },
+            },
           },
           reviewer: {
             select: { id: true, name: true, email: true },
@@ -501,6 +509,7 @@ export class ReviewCyclesService {
       name: string;
       email: string;
       department: string | null;
+      departments: { id: string; name: string }[];
       selfReviewStatus: ReviewStatus;
       managerReviews: ReviewerStatusEntry[];
       peerReviews: ReviewerStatusEntry[];
@@ -518,6 +527,7 @@ export class ReviewCyclesService {
           name: a.employee.name,
           email: a.employee.email,
           department: a.employee.department ?? null,
+          departments: (a.employee.userDepartments ?? []).map((ud: any) => ud.department),
           selfReviewStatus: selfStatus,
           managerReviews: [],
           peerReviews: [],

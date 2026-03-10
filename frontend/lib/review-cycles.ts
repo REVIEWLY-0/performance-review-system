@@ -57,6 +57,7 @@ export interface EmployeeInsight {
   name: string;
   email: string;
   department: string | null;
+  departments: { id: string; name: string }[];
   selfReviewStatus: ReviewStatus;
   managerReviews: ReviewerStatus[];
   peerReviews: ReviewerStatus[];
