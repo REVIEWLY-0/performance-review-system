@@ -391,7 +391,7 @@ export class AnalyticsService {
       },
       pendingTasks: {
         selfReview: !hasSelfReview,
-        peerReviews: peerAssignments - completedPeerReviews,
+        peerReviews: Math.max(0, peerAssignments - completedPeerReviews),
       },
       reviewCounts: {
         self: selfReview ? 1 : 0,

@@ -18,16 +18,11 @@ export default function EmployeeDashboard() {
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
   const [analytics, setAnalytics] = useState<EmployeeAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
-
-  useEffect(() => {
-    if (selectedCycleId) {
-      loadAnalytics();
-    }
-  }, [selectedCycleId]);
 
   const loadData = async () => {
     try {
@@ -42,12 +37,20 @@ export default function EmployeeDashboard() {
       const { data: allCycles } = await reviewCyclesApi.getAll();
       setCycles(allCycles);
 
-      // Select first active cycle or first cycle
+      // Select first active cycle, else first available
       const activeCycle = allCycles.find((c) => c.status === 'ACTIVE');
-      if (activeCycle) {
-        setSelectedCycleId(activeCycle.id);
-      } else if (allCycles.length > 0) {
-        setSelectedCycleId(allCycles[0].id);
+      const initialCycle = activeCycle ?? (allCycles.length > 0 ? allCycles[0] : null);
+
+      if (initialCycle) {
+        setSelectedCycleId(initialCycle.id);
+        // Fetch analytics inline — ensures it is ready before loading goes false,
+        // so KPI cards don't flash missing and then appear.
+        try {
+          const data = await getEmployeeAnalytics(initialCycle.id);
+          setAnalytics(data);
+        } catch (err: any) {
+          console.error('Error loading analytics:', err);
+        }
       }
     } catch (err: any) {
       console.error('Error loading dashboard:', err);
@@ -56,14 +59,17 @@ export default function EmployeeDashboard() {
     }
   };
 
-  const loadAnalytics = async () => {
-    if (!selectedCycleId) return;
-
+  const handleCycleChange = async (newCycleId: string) => {
+    setSelectedCycleId(newCycleId);
+    setAnalyticsLoading(true);
     try {
-      const data = await getEmployeeAnalytics(selectedCycleId);
+      const data = await getEmployeeAnalytics(newCycleId);
       setAnalytics(data);
     } catch (err: any) {
       console.error('Error loading analytics:', err);
+      setAnalytics(null);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -147,8 +153,9 @@ export default function EmployeeDashboard() {
           </label>
           <select
             value={selectedCycleId}
-            onChange={(e) => setSelectedCycleId(e.target.value)}
-            className="block w-full md:w-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            onChange={(e) => handleCycleChange(e.target.value)}
+            disabled={analyticsLoading}
+            className="block w-full md:w-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-60"
           >
             {cycles.map((cycle) => (
               <option key={cycle.id} value={cycle.id}>
@@ -158,6 +165,21 @@ export default function EmployeeDashboard() {
           </select>
         </div>
       )}
+
+      {/* No cycles empty state */}
+      {cycles.length === 0 && (
+        <div className="bg-white shadow rounded-lg p-10 text-center">
+          <svg className="mx-auto h-12 w-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <h3 className="text-base font-semibold text-gray-900 mb-1">No review cycles yet</h3>
+          <p className="text-sm text-gray-500">Your manager hasn't started a review cycle. Check back later.</p>
+        </div>
+      )}
+
+      {/* Analytics sections — fades while a cycle change is in flight */}
+      <div className={analyticsLoading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
 
       {/* Key Metrics */}
       {analytics && (
@@ -474,6 +496,8 @@ export default function EmployeeDashboard() {
         </div>
       )}
 
+      </div>{/* end analytics fade wrapper */}
+
       {/* Quick Actions */}
       <div className="bg-white shadow rounded-lg p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
@@ -489,7 +513,7 @@ export default function EmployeeDashboard() {
               Complete Self Review
             </button>
           )}
-          {analytics?.pendingTasks?.peerReviews && analytics.pendingTasks.peerReviews > 0 && (
+          {(analytics?.pendingTasks?.peerReviews ?? 0) > 0 && (
             <button
               onClick={() =>
                 selectedCycleId &&
@@ -497,7 +521,7 @@ export default function EmployeeDashboard() {
               }
               className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
             >
-              Complete Peer Reviews ({analytics.pendingTasks.peerReviews})
+              Complete Peer Reviews ({analytics?.pendingTasks?.peerReviews})
             </button>
           )}
           <button
