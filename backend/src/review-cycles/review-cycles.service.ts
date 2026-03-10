@@ -363,6 +363,16 @@ export class ReviewCyclesService {
       );
     }
 
+    // Validate company has at least one question configured
+    const questionCount = await this.prisma.question.count({
+      where: { companyId },
+    });
+    if (questionCount === 0) {
+      throw new BadRequestException(
+        'Add at least one question before activating this cycle.',
+      );
+    }
+
     const activatedCycle = await this.prisma.reviewCycle.update({
       where: { id },
       data: { status: 'ACTIVE' },

@@ -1,233 +1,384 @@
-# Testing Session – Review Cycles Module
+# Testing Session 
 
-## Issue 1 – Incorrect Cycle Status Counters
 
-### Scenario
-Created 1 new review cycle.
-Cycle status = DRAFT.
+## 2026-02-25 — Post-fix Regression / UX Issues Found
 
-### Observed Behavior
-- Top summary shows:
-  - 1 Draft
-  - 1 Active
-  - 1 Completed
-- But only 1 cycle exists and it is still in Draft.
+### P0 — Must Fix (blocks trust / core flows)
+1) Auth pages branding missing
+- Signup/Login pages do NOT show "Reviewly" name + logo (only browser tab title changes).
+- Expected: Reviewly brand visible on /login and signup.
 
-### When Clicking Filters
-- Clicking "Active" → shows 0 cycles.
-- Clicking "Completed" → shows 0 cycles.
-- Clicking "Draft" → shows the 1 correct cycle.
+2) Extremely slow navigation / page transitions
+- Clicking buttons that navigate to new pages is very slow (dashboard → employees, review cycles, etc.)
+- Expected: fast transitions with loading states and reduced refetching.
 
-### Expected Behavior
-- Counters should reflect actual counts.
-- With 1 draft cycle:
-  - Draft: 1
-  - Active: 0
-  - Completed: 0
+3) Analytics pie chart overlap when empty
+- When review progress is empty, "Draft" and "Submitted" labels overlap.
+- Expected: proper empty state or hide labels when 0.
 
----
+4) Reviewer assignment tenant leak / wrong users visible
+- Assign reviewers shows error: "some users are not in the company"
+- Users outside current company appear selectable (should never happen).
+- Expected: user pickers filtered strictly by company_id (frontend + backend validation).
 
-## Issue 2 – Active Filter Inconsistency
+### P1 — Should Fix (polish + correctness)
+5) Company identity not visible enough
+- Company name not prominent; doesn’t feel like company-specific portal.
+- Expected: show "{CompanyName} — Reviewly" clearly in dashboard nav/header.
 
-When clicking "Active":
-- Summary counters still show incorrect numbers.
-- List shows 0 cycles.
+6) Manage Employees list not updating after create
+- After creating an employee, user must refresh to see them.
+- Expected: list updates immediately (optimistic update or refetch after success).
 
-This suggests:
-- Either the counter logic is wrong
-- Or frontend state is not synced with backend
-- Or backend query for counts is incorrect
+7) Manage Employees filters/search broken
+- Role filter does not filter results.
+- Search field does not filter results.
+- Expected: both should work reliably.
 
----
+8) Questions UI tabs mismatch (Self/Peer/Manager)
+- All questions display under all tabs even when adding within one tab.
+- Preview shows correct questions per tab.
+- Expected: tabs should display only their assigned questions (UI should match preview).
 
-## Issue 3 – View and Edit Buttons Do Same Thing
+### P2 — Nice to Have / UX Improvements
+9) Review Cycle create flow back navigation
+- "Back" from Add Review Cycle returns to Review Cycles list.
+- Expected: Back should return to dashboard (or provide explicit "Back to Dashboard" + separate link to Review Cycles).
 
-### Observed
-- "View" opens editable form
-- "Edit" opens same editable form
-- No read-only mode
+10) Department feature request for better organization + reviewer selection
+- Add Department for employees (e.g., Engineering/Sales/etc.)
+- Group employees by department
+- Manager selection should show only managers in same department
+- Peer selection should show only employees in same department
+- Prevent selecting a manager as a peer
 
-### Expected
-- View → read-only
-- Edit → editable
 
-Or remove one of them.
+--- 
 
----
+## 2026-03-04 — Founder Demo Feedback (Must Address)
 
-## Issue 4 – No Assign Reviewers Button
+### P0 — Core Product Flexibility + Correctness
 
-After creating a cycle:
-- No obvious UI action to assign reviewers
-- Workflow requires reviewer assignment
-- Feature appears missing from UI
+#### 1) Review Cycle Steps must be flexible (not limited to 3)
+Problem:
+- Workflow steps are currently limited (e.g., max 3).
+Founder requirement:
+- Admin should customize as many steps as needed.
+- Steps should match reviewer roles and potentially repeated phases.
 
 Expected:
-- Either:
-  - Button: "Assign Reviewers"
-  - Or step-based flow guiding admin
+- Remove max-step restriction.
+- Allow any number of steps (1..N).
+- Each step has: type (SELF / MANAGER / PEER / CUSTOM if needed), name/label, start/end date.
+- Still enforce valid date logic (within cycle dates; step start < step end; cycle start < cycle end).
+- UI should handle many steps cleanly (scroll/accordion).
 
-
-
-``
-# Issues Found – Post Seed (Employees + Dashboard + Navigation)
-
-## Context
-- Seeding test users was successful (users exist in DB).
-- After seeding, multiple dashboard + auth/navigation issues appear.
-- Stack: Next.js App Router frontend + Supabase Auth + NestJS/Prisma backend (multi-tenant company_id).
+Acceptance Criteria:
+- Admin can add 1..N steps.
+- No artificial max step limit.
+- Dates validated correctly.
+- Steps persist and render correctly in create/edit/preview/view.
 
 ---
 
-## 1) Dashboard KPIs Not Loading (shows "-")
-**Where**
-- Admin dashboard home (overview cards)
+#### 2) Peer reviewers count must be unlimited (not 3–5)
+Problem:
+- Peer reviewers currently limited to 3–5 per employee.
 
-**Symptoms**
-- "Total Employees" displays `-` (not a number).
-- "Active Review Cycle" section is empty.
+Expected:
+- Allow any number of peer reviewers per employee per cycle.
+- UI supports large lists (search, pagination/multi-select).
+- Backend enforces tenant safety but does not enforce reviewer count limits.
 
-**Expected**
-- Total Employees should show count of users in current company.
-- Active Review Cycle should show the currently ACTIVE cycle (if exists) or clear empty-state message.
-
-**Suspected Cause**
-- Dashboard data fetch failing due to auth/session missing/expired.
-- API call failing (401/403) and UI falls back to `-`.
-- company_id not available / not being sent to backend.
-- Wrong endpoint route or caching issue in App Router.
-
-**To Verify**
-- Check network requests on dashboard load:
-  - Which endpoint is called for employee count?
-  - Which endpoint is called for active cycle?
-  - Response status codes (401/403/500?) and payload.
+Acceptance Criteria:
+- Assign 1, 2, 10, 30 peers successfully.
+- No validation blocks due to peer count.
+- Strict company_id scoping.
 
 ---
 
-## 2) "Manage Employees" Signs Me Out
-**Where**
-- Admin dashboard → "Manage Employees" button/link
+#### 3) CSV template download for onboarding (and future imports)
+Problem:
+- Admin needs downloadable CSV template to edit then upload.
 
-**Steps**
-1. Login as admin
-2. Click "Manage Employees"
-3. App logs out (session cleared / redirected to login)
+Expected:
+- On /admin/employees:
+  - "Download CSV Template" button
+  - template includes required columns + a sample row
+- Template format documented in UI and README.
 
-**Expected**
-- Should navigate to employees/users management page without changing auth state.
+Template columns (proposal):
+- employee_id (required OR auto-generated if missing; see item 9)
+- full_name (required)
+- email (required)
+- role (EMPLOYEE / MANAGER)
+- department (REQUIRED - see department section)
+- manager_employee_id OR manager_email (optional; choose one standard)
+Notes:
+- Enforce company email rules (see Auth/email domain rules if implemented).
+- Dedupe by email within company.
 
-**Suspected Cause**
-- Route triggers an auth guard that fails and forces sign out.
-- Client-side code calling signOut() unexpectedly on navigation error.
-- Middleware/JWT verification failing on that route only.
-- Dashboard links using wrong path (e.g., protected route mismatch).
-
-**To Verify**
-- Inspect Next.js middleware logs / console error on navigation.
-- Confirm the route exists and is included in protected route matcher.
-- Check if any `signOut()` runs on 401 handler globally.
-
----
-
-## 3) Navigation Bug: "Create Review Cycles" and "View Analytics" go to the same page
-**Where**
-- Admin dashboard quick actions / navigation links
-
-**Symptoms**
-- "Create Review Cycles" and "View Analytics" navigate to the same route/page.
-
-**Expected**
-- Create Review Cycles → review cycle creation page (or list with "Create" CTA).
-- View Analytics → analytics page (different route).
-
-**Suspected Cause**
-- Both buttons share the same href or handler.
-- Sidebar config / dashboard quick actions map has duplicated route.
-
-**To Verify**
-- Check the component that renders these buttons and confirm hrefs.
-- Search for "View Analytics" in frontend to locate route mapping.
+Acceptance Criteria:
+- Template downloads successfully.
+- Uploading edited template imports users correctly.
+- Import errors are shown clearly with row numbers.
 
 ---
 
-## 4) Signup → Auto Sign-in → Then Forced Logout
-**Where**
-- Auth flow on signup
+#### 4) Performance is too slow locally — investigate Supabase vs local Postgres
+Problem:
+- App feels slow even on localhost.
+- Need decision: is Supabase latency the cause? Should we run local Postgres via Docker for dev?
 
-**Symptoms**
-- After signup, user is automatically signed in briefly, then gets logged out.
-- This also sometimes happens on normal sign in after some navigations.
+Expected:
+- Identify root cause of slowness (DB latency, unbounded queries, refetch loops, lack of caching, no pagination).
+- Provide recommendation with evidence:
+  A) Local Postgres via Docker for dev (keep Supabase for staging/prod)
+  B) Tune queries/caching if Supabase isn’t the main issue
 
-**Expected**
-- After signup: remain signed in and routed to correct dashboard.
-- No unexpected logout unless token truly invalid/expired.
-
-**Suspected Cause**
-- Supabase session not persisted properly (storage / cookie issue).
-- JWT verification middleware rejecting token (wrong audience/issuer, stale JWKS, wrong key, mismatch between frontend token and backend verification).
-- Frontend auth state listener detects mismatch and triggers signOut.
-- Multi-tenant user/company creation timing race: DB user not found immediately → app treats as invalid and logs out.
-- Global API client interceptor signs out on 401 (even for non-auth-critical endpoints).
-
-**To Verify**
-- Check backend response on first `/me` or profile fetch right after signup:
-  - Is it 404/401? Does it say user not found?
-- Check token expiry and whether refresh token flow works.
-- Confirm whether cookies/localStorage is being used (Next App Router + middleware can be tricky).
+Acceptance Criteria:
+- Report with evidence (timings/logs).
+- Implement 1–2 high-impact performance fixes.
+- If local Postgres chosen: add docker-compose + docs + env examples.
 
 ---
 
-## Priority
-P0: Unexpected logout (Manage Employees logs out + signup logs out)
-P1: Dashboard KPIs showing "-" and active cycle empty
-P2: Navigation routes wrong (Create Review Cycles vs Analytics)
+#### 5) Active cycle “View” page needs detailed HR/Admin insights
+Problem:
+- Active cycle view is not informative enough for HR/Admin.
+
+Expected (Senior PM / HR Manager view):
+- Cycle overview:
+  - employee completion status (who completed self review, who hasn’t)
+  - reviewer assignment matrix (who reviews who)
+  - counts: pending/completed/overdue
+  - filters: department, status
+- Navigation:
+  - “Back” and/or breadcrumb is clearly visible
+  - Back should take to Dashboard (not just review cycles), and provide explicit link to Review Cycles too.
+
+Acceptance Criteria:
+- Active cycle view shows actionable details.
+- Back navigation is clear and works.
 
 ---
 
-## Fix Strategy (Important)
-- Diagnose root cause before patching.
-- Fix auth/session stability first (P0), then data fetching, then navigation.
-- Do not change backend business logic for review cycles.
-``
+### P1 — Questions Builder & Preview Behavior
 
-# EMAIL AND UI ISSUES
-We have issues in Notifications + Dashboard UI navigation.
+#### 6) TASK_LIST questions must allow defining tasks (not only question title)
+Problem:
+- Task list questions allow setting the question but not defining tasks.
 
-P0: Emails are not being sent at all
-- No emails in admin inbox
-- Resend dashboard shows NO emails sent
-- Preferences are toggled ON and saved successfully on /settings
-- Activating a review cycle should trigger "Cycle Started" emails
+Expected:
+- For TASK_LIST question type:
+  - UI to add/edit/remove tasks (task label, optional description, required flag)
+  - Persist tasks to backend model (Question or related model)
+  - Tasks render in preview and actual review form.
 
-Investigate first, do NOT patch blindly:
-1) When activating a cycle, confirm notification trigger runs (add/verify logs).
-2) Confirm EMAIL_SERVICE_KEY and EMAIL_FROM are loaded at runtime.
-3) Confirm recipient query returns users (same company_id, not empty, not excluding everyone).
-4) Confirm preference keys match between UI saved data and backend checks.
-5) Ensure resend send errors are logged and surfaced.
+Acceptance Criteria:
+- Tasks can be created/edited/deleted.
+- Tasks persist and display correctly everywhere.
 
-Deliverable:
-- A short diagnosis report with the exact reason emails aren’t sent.
-- Then implement the smallest fix to get "Cycle Started" emails showing in Resend dashboard.
+---
 
-P1: UI navigation gaps
-- No Settings icon/link anywhere to reach /settings
-- On /settings page there is no obvious way back to dashboard
-- On /admin/review-cycles page there is no way back to dashboard
+#### 7) “Show Preview” must be truly conditional (no stale content)
+Problem:
+- Preview shows stale content / does not change when clicking show preview.
 
-Fix:
-- Add a Settings link (gear icon) to dashboard navbar/sidebar
-- Ensure /settings and /admin/review-cycles use the same dashboard layout and navigation
-- Add breadcrumb or "Back to Dashboard" button
+Expected:
+- Preview only renders after clicking "Show Preview".
+- Preview updates when switching tabs (Self/Peer/Manager) or editing questions.
+- Before clicking preview: show placeholder/empty state.
 
-P2: Workflow builder validation
-- Review cycle workflow allows more than 3 steps
-- Multiple steps can be "Self Review" simultaneously
-Decide rules:
-- Enforce max steps (if required)
-- Prevent duplicate "Self Review" steps (recommended)
-Implement UI validation + backend validation (if needed) but keep minimal.
+Acceptance Criteria:
+- Preview is empty/placeholder initially.
+- Preview always matches current tab/type and current question list.
 
-Do fixes in order: P0 -> P1 -> P2
-``
+---
+
+### P2 — Department + Employee Identity + UI Enhancements
+
+#### 8) Department must be REQUIRED + use Peel UI for department selection
+IMPORTANT UPDATE:
+- Peel UI is NOT installed. You must install it and use it for department UI (combobox/select).
+
+Requirements:
+- Department is NOT optional. Every user must belong to a department.
+- Create a company-scoped Department model or a strict department field (choose best, but it must support:
+  - listing departments
+  - selecting department during employee creation and CSV import
+  - filtering users by department for reviewer assignment)
+- Use Peel UI components for department selection/editing.
+- Reviewer assignment must support:
+  1) Select department first
+  2) Then pick reviewers only from that department (with search)
+- Manager assignment: only MANAGERs from selected department
+- Peer assignment: only EMPLOYEEs from selected department
+- Prevent selecting a manager as a peer
+
+Acceptance Criteria:
+- Cannot create/import user without department.
+- Department filtering works in reviewer assignment.
+- UI uses Peel UI and looks polished.
+- Strict company_id scoping everywhere.
+
+---
+
+#### 9) Employee ID must be used to manage employees
+Problem:
+- Need stable employee id for HR workflows.
+
+Expected:
+- Add employeeId (unique per company).
+- Display employeeId in employee list/table.
+- Search by employeeId.
+- Include employeeId in CSV template/import:
+  - If provided: validate uniqueness in company
+  - If missing: auto-generate in a consistent format.
+
+Acceptance Criteria:
+- employeeId exists, unique per company, visible + searchable.
+- Import supports employeeId safely.
+
+---
+
+#### 10) Employee page: reviewer status should show “Pending” not 0
+Problem:
+- Other reviewers status shows “0” (confusing).
+
+Expected:
+- Status labels: Pending / In Progress / Submitted / Not Assigned
+- No numeric "0" shown for status.
+
+Acceptance Criteria:
+- Status UI uses readable labels everywhere.
+
+---
+
+#### 11) Employee self-cycle score should be hidden until all reviews complete
+Problem:
+- Employee should not see cycle score until all required reviews are completed.
+
+Expected:
+- Employee score visible only after:
+  - required self + manager + peers (as configured) are complete for that cycle.
+- Admin can still view progress/partial completion.
+
+Acceptance Criteria:
+- Employee cannot see score early.
+- Score appears automatically when all required reviews complete.
+
+---
+
+---
+
+## 2026-03-10 — New Issues After Latest Round of Testing
+
+### Notes / Product Decision
+#### A) Company name duplicates
+Observation:
+- Signup allows two companies with the same company name.
+Decision:
+- This is acceptable because company_id uniquely identifies tenants.
+UX Improvement (optional):
+- Warn user if company name already exists: "Name already used, you can still continue."
+- Consider adding a unique company slug (auto-generated) for URLs, not for identity.
+
+---
+
+### P0 — Bugs / Broken Flows
+
+#### 1) Manager dashboard inconsistent state (missing "Complete review", shows empty reviews)
+**FIXED — BATCH A (2026-03-10)**
+- Inlined analytics fetch into loadData() before setLoading(false) — same race fix as employee page
+- Quick Actions now data-driven: "Complete Self Review" / "Complete Peer Reviews (N)" only appear when pending
+- Added empty states for no-cycles and no-team-members
+
+---
+
+#### 2) Admin dashboard doesn’t clearly show existing cycles
+Problem:
+- Admin has to click "New Cycle" to discover cycles; confusing for first-time users.
+
+Expected:
+- Admin dashboard should show "Active / Draft / Completed cycles" summary and list (at least recent cycles) with clear CTA:
+  - "View all cycles" and "Create new cycle"
+- If none exist: empty state explains what a review cycle is and prompts creation.
+
+Acceptance Criteria:
+- On /admin, user can see whether cycles exist without navigating away.
+- Empty state guides first-time admins.
+
+---
+
+#### 3) Cycle activation should be blocked unless questions are attached
+**FIXED — BATCH C (2026-03-10)**
+- Backend: `activate()` now queries `question.count({ where: { companyId } })` after the reviewConfigs check.
+- If zero questions exist, throws `BadRequestException('Add at least one question before activating this cycle.')`.
+- Frontend: existing `setError(err.message)` in `ReviewCycleList.tsx` surfaces the 400 message automatically — no UI changes needed.
+
+---
+
+#### 4) Peer review action visibility
+**FIXED — BATCH B (2026-03-10)**
+- Root cause: `analytics?.pendingTasks?.peerReviews && count > 0` short-circuits to
+  the number `0` in React when count is 0, rendering literal “0” text beside the
+  “Complete Self Review” button (the “0 badge”). Fixed to `(count ?? 0) > 0` guard.
+- Loading race was already fixed in Batch A (employee page analytics inline load).
+- Backend: added Math.max(0, ...) guard so counter never goes negative.
+
+---
+
+### P1 — Product Model Improvements (Needs Spec + Implementation)
+
+#### 5) Review types should be dynamic (not fixed to SELF/PEER/MANAGER only)
+Problem:
+- System is fixed to only 3 review types.
+Founder feedback:
+- Allow company admins to define custom reviewer types (e.g., "Lead", "Mentor", "360", "HR").
+
+Expected:
+- Admin can create custom review types per company.
+- Review steps should be based on these types (steps count matches configured reviewer types/steps).
+- No need to label each step manually if it can inherit from review type.
+
+Acceptance Criteria:
+- Admin can add/remove review types.
+- Assignment UI uses available review types.
+- Backwards compatible: existing SELF/PEER/MANAGER still work.
+
+---
+
+#### 6) Only Manager should be compulsory; others depend on configured review types
+Expected:
+- Manager review required (if company chooses) OR at minimum the system supports making certain types required.
+- Assign reviewers UI should show options based on configured review types.
+- Custom types appear as assignment options automatically.
+
+Acceptance Criteria:
+- Configurable “required” vs “optional” per review type.
+- Assignment UI respects config.
+
+---
+
+#### 7) Departments management (not only on-the-fly) + multi-department membership
+Requirements:
+- Admin can manage departments in a dedicated UI:
+  - list all departments
+  - create/edit/archive departments
+- Department UI should use pill/tag style (pill UI inspiration; no external assets required).
+- Employee can belong to more than one department.
+- Reviewer assignment should support filtering by department(s):
+  - pick department filter first → then search/select people
+
+Acceptance Criteria:
+- Departments are company-scoped (company_id).
+- Employee can be assigned multiple departments.
+- Manager selection and peer selection can be filtered by chosen department(s).
+- UI uses pill/tag visual style for departments.
+
+---
+
+### Priority Order Suggestion
+P0: (1) Manager dashboard inconsistency, (3) block activation without questions, (4) peer review visibility, (2) cycles visibility on admin dashboard
+P1: dynamic review types + required config + department management + multi-department membership
