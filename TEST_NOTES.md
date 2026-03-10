@@ -126,33 +126,20 @@ Acceptance Criteria:
 ### P1 — Questions Builder & Preview Behavior
 
 #### 6) TASK_LIST questions must allow defining tasks (not only question title)
-Problem:
-- Task list questions allow setting the question but not defining tasks.
-
-Expected:
-- For TASK_LIST question type:
-  - UI to add/edit/remove tasks (task label, optional description, required flag)
-  - Persist tasks to backend model (Question or related model)
-  - Tasks render in preview and actual review form.
-
-Acceptance Criteria:
-- Tasks can be created/edited/deleted.
-- Tasks persist and display correctly everywhere.
+**ALREADY DONE — verified BATCH M (2026-03-10)**
+- `QuestionForm.tsx`: TASK_LIST section has add/remove/edit task items (label, optional description, required checkbox) + inline preview while editing.
+- Backend (`questions.service.ts`): tasks persisted as `Prisma.InputJsonValue` JSON on the Question model; `create()` and `update()` both handle tasks.
+- `QuestionPreview.tsx`: renders predefined tasks as checkboxes with label/description/required; falls back to free-form entry when no tasks defined.
+- `QuestionForm` cleans empty labels before submit.
 
 ---
 
 #### 7) “Show Preview” must be truly conditional (no stale content)
-Problem:
-- Preview shows stale content / does not change when clicking show preview.
-
-Expected:
-- Preview only renders after clicking "Show Preview".
-- Preview updates when switching tabs (Self/Peer/Manager) or editing questions.
-- Before clicking preview: show placeholder/empty state.
-
-Acceptance Criteria:
-- Preview is empty/placeholder initially.
-- Preview always matches current tab/type and current question list.
+**ALREADY DONE — verified BATCH M (2026-03-10)**
+- `questions/page.tsx`: `showPreview` starts `false` → placeholder shown initially.
+- Tab switch: `useEffect([selectedTab])` calls `setShowPreview(false)` — preview always resets on tab change, forcing re-click.
+- `QuestionPreview` receives `questions[selectedTab]` (live state) — always current content.
+- After create/edit: `loadQuestions()` re-fetches; if preview visible it auto-refreshes from updated state.
 
 ---
 
