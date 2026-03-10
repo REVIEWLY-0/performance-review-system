@@ -14,6 +14,20 @@ export interface RequestWithUser extends Request {
   };
 }
 
+// In-memory user cache: token → { user, expiresAt }
+// Avoids a Supabase + DB round-trip on every authenticated request.
+// TTL: 60 seconds — safe balance between performance and consistency.
+const USER_CACHE_TTL_MS = 60_000;
+const userCache = new Map<string, { user: RequestWithUser['user']; expiresAt: number }>();
+
+// Periodically purge expired entries so the map doesn't grow unbounded.
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of userCache) {
+    if (entry.expiresAt <= now) userCache.delete(key);
+  }
+}, USER_CACHE_TTL_MS * 5);
+
 @Injectable()
 export class TenantContextMiddleware implements NestMiddleware {
   private supabase;
@@ -40,14 +54,22 @@ export class TenantContextMiddleware implements NestMiddleware {
 
       const token = authHeader.replace('Bearer ', '');
 
+      // Check in-memory cache first — avoids Supabase + DB round-trip on every request
+      const cached = userCache.get(token);
+      if (cached && cached.expiresAt > Date.now()) {
+        req.user = cached.user;
+        return next();
+      }
+
       // Verify token with Supabase
       const { data, error } = await this.supabase.auth.getUser(token);
 
       if (error || !data.user) {
+        userCache.delete(token); // evict stale entry on auth failure
         throw new UnauthorizedException('Invalid or expired token');
       }
 
-      // CRITICAL: Fetch user from database with company_id
+      // Fetch user from database with company_id
       const user = await this.prisma.user.findUnique({
         where: { id: data.user.id },
         select: {
@@ -63,6 +85,9 @@ export class TenantContextMiddleware implements NestMiddleware {
         throw new UnauthorizedException('User not found in system');
       }
 
+      // Cache for next requests within TTL window
+      userCache.set(token, { user, expiresAt: Date.now() + USER_CACHE_TTL_MS });
+
       // Attach user (with company_id) to request object
       req.user = user;
 
@@ -74,4 +99,9 @@ export class TenantContextMiddleware implements NestMiddleware {
       throw new UnauthorizedException('Authentication failed');
     }
   }
+}
+
+/** Evict a specific token from the cache (call on logout / profile update). */
+export function invalidateUserTokenCache(token: string): void {
+  userCache.delete(token);
 }

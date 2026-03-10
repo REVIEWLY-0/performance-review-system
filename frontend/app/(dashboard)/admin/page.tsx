@@ -25,7 +25,12 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const currentUser = await getCurrentUser();
+      // Fetch user + cycles in parallel — both only need the stored JWT token
+      const [currentUser, cyclesResult] = await Promise.all([
+        getCurrentUser(),
+        reviewCyclesApi.getAll().catch(() => ({ data: [] as ReviewCycle[] })),
+      ]);
+
       if (!currentUser) {
         console.log('⚠️  No user found, redirecting to login');
         const { signOut } = await import('@/lib/auth');
@@ -42,7 +47,7 @@ export default function AdminDashboard() {
 
       setUser(currentUser);
 
-      const { data: allCycles } = await reviewCyclesApi.getAll();
+      const allCycles = cyclesResult.data;
       setCycles(allCycles);
 
       // Select first active cycle or first cycle, then load analytics inline

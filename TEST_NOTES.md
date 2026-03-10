@@ -68,12 +68,13 @@
 ---
 
 #### 4) Performance is too slow locally — investigate Supabase vs local Postgres
-**ALREADY DONE — verified BATCH N (2026-03-10)**
-Root causes addressed:
-- Supabase cloud latency: solved by `docker-compose.yml` local Postgres (port 5433) already in repo root.
-- Query performance: BATCH 14 added 4 DB indexes, `groupBy` for getStats, removed redundant JOIN filters, `getInsights` cache.
-- `backend/.env.example`: documented Option A (local Docker Postgres, recommended) vs Option B (Supabase staging/prod).
-- Fixed `.env.example` port: changed `localhost:5432` → `localhost:5433` to match `docker-compose.yml` port mapping.
+**IMPLEMENTED — BATCH P (2026-03-10)**
+Root causes + fixes:
+- **Supabase cloud latency**: `docker-compose.yml` provides local Postgres (port 5433) for dev; `.env.example` documents usage.
+- **Auth middleware DB lookup on every request** (100-200ms each): Added 60s in-memory user cache in `TenantContextMiddleware` — cache hit skips Supabase JWT verification + `prisma.user.findUnique`. Added `invalidateUserTokenCache()` export. Cache auto-purges expired entries every 5 min.
+- **`calculateAllEmployeeScores()` + `calculateEmployeeScore()` loading full question objects**: Replaced `include: { answers: { include: { question: true } } }` with `select: { answers: { select: { rating, question: { select: { type } } } } }` — fetches only the 2 fields `ratingAvgFromAnswers` needs, dramatically reducing query data volume.
+- **Admin dashboard sequential requests**: Changed `loadData()` to `Promise.all([getCurrentUser(), reviewCyclesApi.getAll()])` — both requests fly in parallel, saving one full round-trip on every dashboard load.
+- BATCH 14 (prior): 4 DB indexes, groupBy for getStats, removed redundant JOIN filters, getInsights cache.
 
 ---
 

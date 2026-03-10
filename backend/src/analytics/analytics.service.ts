@@ -428,7 +428,17 @@ export class AnalyticsService {
   ): Promise<number | null> {
     const reviews = await this.prisma.review.findMany({
       where: { reviewCycleId: cycleId, employeeId, status: 'SUBMITTED' },
-      include: { answers: { include: { question: true } } },
+      select: {
+        id: true,
+        employeeId: true,
+        reviewType: true,
+        answers: {
+          select: {
+            rating: true,
+            question: { select: { type: true } },
+          },
+        },
+      },
     });
 
     return this.scoreFromReviews(reviews);
@@ -445,11 +455,22 @@ export class AnalyticsService {
   ): Promise<EmployeeScore[]> {
     if (employees.length === 0) return [];
 
-    // Single batch query for all submitted reviews across all employees
-    // companyId verified by caller — no relation JOIN needed
+    // Single batch query for all submitted reviews across all employees.
+    // Use select (not include) to fetch only the fields scoreFromReviews needs:
+    // answer.rating + answer.question.type — avoids loading all text/metadata fields.
     const allReviews = await this.prisma.review.findMany({
       where: { reviewCycleId: cycleId, status: 'SUBMITTED' },
-      include: { answers: { include: { question: true } } },
+      select: {
+        id: true,
+        employeeId: true,
+        reviewType: true,
+        answers: {
+          select: {
+            rating: true,
+            question: { select: { type: true } },
+          },
+        },
+      },
     });
 
     // Group by employeeId for O(1) lookup
