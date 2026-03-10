@@ -253,3 +253,21 @@ UX Improvement (optional):
 ### Priority Order Suggestion
 P0: (1) Manager dashboard inconsistency, (3) block activation without questions, (4) peer review visibility, (2) cycles visibility on admin dashboard
 P1: dynamic review types + required config + department management + multi-department membership
+
+---
+
+## 2026-03-10 — Post-BATCH R Fixes
+
+### FIXED — BATCH R (2026-03-10)
+
+#### 1) Admin dashboard Review Cycles overview card removed
+- `admin/page.tsx`: Removed the entire "Review Cycles" overview card (status chips, recent cycles list, View all link) — redundant with the cycle selector dropdown already on the same page.
+- Also removed unused imports: `Link`, `StatusBadge`, `formatDate`.
+
+#### 2) Departments page crash ("reading properties of created departments")
+- `departments/page.tsx`: Changed `dept._count !== undefined` to `dept._count != null` — covers null AND undefined, preventing a crash when `_count` is null.
+
+#### 3) Add employees crashing + department pills crash
+- Root cause: `mapUser()` in `users.service.ts` returned `[null, ...]` in departments array if any `UserDepartment.department` FK was null (data integrity issue after manual DB operations).
+- `users.service.ts` `mapUser()`: Added `.filter(Boolean)` after mapping `ud.department` — drops nulls, prevents "Cannot read properties of null (reading 'id')" in `EmployeeList` and `EditEmployeeModal`.
+- `DepartmentMultiSelect.tsx`: Added `d &&` guard in `.filter()` calls — defensive safety to match backend fix.
