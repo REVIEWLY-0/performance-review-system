@@ -11,6 +11,7 @@ export interface ReviewTypeConfig {
   label: string;
   baseType: BaseReviewType;
   isBuiltIn: boolean;
+  isRequired: boolean;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -23,6 +24,11 @@ export interface CreateReviewTypeConfigDto {
   key?: string;
 }
 
+export interface UpdateReviewTypeConfigDto {
+  isRequired?: boolean;
+  label?: string;
+}
+
 export const reviewTypeConfigsApi = {
   async getAll(): Promise<ReviewTypeConfig[]> {
     return fetchWithAuth(`${API_URL}/review-type-configs`);
@@ -31,6 +37,14 @@ export const reviewTypeConfigsApi = {
   async create(dto: CreateReviewTypeConfigDto): Promise<ReviewTypeConfig> {
     return fetchWithAuth(`${API_URL}/review-type-configs`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+  },
+
+  async update(id: string, dto: UpdateReviewTypeConfigDto): Promise<ReviewTypeConfig> {
+    return fetchWithAuth(`${API_URL}/review-type-configs/${id}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dto),
     });

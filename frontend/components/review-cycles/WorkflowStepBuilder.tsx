@@ -26,9 +26,9 @@ export default function WorkflowStepBuilder({
       .catch(() => {
         // Fallback to built-ins if API fails
         setReviewTypeConfigs([
-          { id: 'self', companyId: '', key: 'SELF', label: 'Self Review', baseType: 'SELF', isBuiltIn: true, isActive: true, sortOrder: 0, createdAt: '', updatedAt: '' },
-          { id: 'manager', companyId: '', key: 'MANAGER', label: 'Manager Review', baseType: 'MANAGER', isBuiltIn: true, isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
-          { id: 'peer', companyId: '', key: 'PEER', label: 'Peer Review', baseType: 'PEER', isBuiltIn: true, isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
+          { id: 'self', companyId: '', key: 'SELF', label: 'Self Review', baseType: 'SELF', isBuiltIn: true, isRequired: false, isActive: true, sortOrder: 0, createdAt: '', updatedAt: '' },
+          { id: 'manager', companyId: '', key: 'MANAGER', label: 'Manager Review', baseType: 'MANAGER', isBuiltIn: true, isRequired: true, isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
+          { id: 'peer', companyId: '', key: 'PEER', label: 'Peer Review', baseType: 'PEER', isBuiltIn: true, isRequired: false, isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
         ]);
       });
   }, []);

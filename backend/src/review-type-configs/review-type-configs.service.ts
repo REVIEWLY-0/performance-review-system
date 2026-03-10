@@ -9,6 +9,7 @@ import {
   IsString,
   IsEnum,
   IsOptional,
+  IsBoolean,
   MinLength,
   MaxLength,
 } from 'class-validator';
@@ -26,6 +27,17 @@ export class CreateReviewTypeConfigDto {
   @IsString()
   @MaxLength(50)
   key?: string; // Auto-generated from label if omitted
+}
+
+export class UpdateReviewTypeConfigDto {
+  @IsOptional()
+  @IsBoolean()
+  isRequired?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  label?: string;
 }
 
 @Injectable()
@@ -69,6 +81,27 @@ export class ReviewTypeConfigsService {
         baseType: dto.baseType,
         isBuiltIn: false,
         isActive: true,
+      },
+    });
+  }
+
+  /**
+   * Update a review type config (label and/or isRequired)
+   */
+  async update(id: string, companyId: string, dto: UpdateReviewTypeConfigDto) {
+    const config = await this.prisma.reviewTypeConfig.findFirst({
+      where: { id, companyId },
+    });
+
+    if (!config) {
+      throw new NotFoundException('Review type not found');
+    }
+
+    return this.prisma.reviewTypeConfig.update({
+      where: { id },
+      data: {
+        ...(dto.isRequired !== undefined && { isRequired: dto.isRequired }),
+        ...(dto.label !== undefined && !config.isBuiltIn && { label: dto.label }),
       },
     });
   }
@@ -118,6 +151,7 @@ export class ReviewTypeConfigsService {
           label: 'Manager Review',
           baseType: ReviewType.MANAGER,
           isBuiltIn: true,
+          isRequired: true, // Manager review is required by default
           sortOrder: 1,
         },
         {

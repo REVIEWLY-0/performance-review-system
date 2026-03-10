@@ -339,14 +339,12 @@ UX Improvement (optional):
 ---
 
 #### 6) Only Manager should be compulsory; others depend on configured review types
-Expected:
-- Manager review required (if company chooses) OR at minimum the system supports making certain types required.
-- Assign reviewers UI should show options based on configured review types.
-- Custom types appear as assignment options automatically.
-
-Acceptance Criteria:
-- Configurable “required” vs “optional” per review type.
-- Assignment UI respects config.
+**IMPLEMENTED — BATCH F (2026-03-10)**
+- Added `isRequired Boolean` to `ReviewTypeConfig`; MANAGER defaults to `true`, SELF/PEER to `false`.
+- `PATCH /review-type-configs/:id` endpoint to toggle `isRequired` (and rename custom types).
+- `getEmployeeAnalytics`: `allReviewsComplete` gate now reads `requiredTypeConfigs` from DB; only required types block score visibility.
+- Frontend: `/admin/review-types` shows Required toggle (pill badge + animated toggle switch) for all types including built-ins.
+- Info callout on the page explains how “Required” affects score visibility.
 
 ---
 

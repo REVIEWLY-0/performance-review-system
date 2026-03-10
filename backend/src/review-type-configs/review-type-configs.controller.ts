@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -9,6 +10,7 @@ import {
 import {
   ReviewTypeConfigsService,
   CreateReviewTypeConfigDto,
+  UpdateReviewTypeConfigDto,
 } from './review-type-configs.service';
 import { CompanyId } from '../common/decorators/company-id.decorator';
 
@@ -33,6 +35,18 @@ export class ReviewTypeConfigsController {
     @Body() dto: CreateReviewTypeConfigDto,
   ) {
     return this.service.create(companyId, dto);
+  }
+
+  /**
+   * Update a review type config (toggle isRequired, rename custom types)
+   */
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @Body() dto: UpdateReviewTypeConfigDto,
+  ) {
+    return this.service.update(id, companyId, dto);
   }
 
   /**

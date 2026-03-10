@@ -303,8 +303,8 @@ export class AnalyticsService {
       throw new NotFoundException('Review cycle not found or access denied');
     }
 
-    // Load personal reviews, peer assignment counts, and company employees in parallel
-    const [reviews, peerAssignments, completedPeerReviews, allEmployees, assignedManagerReviewers, assignedPeerReviewers] =
+    // Load personal reviews, peer assignment counts, company employees, and required types in parallel
+    const [reviews, peerAssignments, completedPeerReviews, allEmployees, assignedManagerReviewers, assignedPeerReviewers, requiredTypeConfigs] =
       await Promise.all([
         this.prisma.review.findMany({
           where: { reviewCycleId: cycleId, employeeId },
@@ -333,6 +333,11 @@ export class AnalyticsService {
         // Incoming: how many peer reviewers are assigned to review this employee
         this.prisma.reviewerAssignment.count({
           where: { reviewCycleId: cycleId, employeeId, reviewerType: 'PEER' },
+        }),
+        // Which base types are required for this company
+        this.prisma.reviewTypeConfig.findMany({
+          where: { companyId, isRequired: true, isActive: true },
+          select: { baseType: true },
         }),
       ]);
 
@@ -372,11 +377,18 @@ export class AnalyticsService {
       (r) => r.reviewType === 'SELF' && r.status === 'SUBMITTED',
     );
 
-    // Score is only visible once all assigned review types have at least one submission
+    // Score is only visible once all *required* review types have at least one submission.
+    // Optional types (isRequired=false) do not block the score.
+    const requiredBaseTypes = new Set(requiredTypeConfigs.map((c) => c.baseType));
+
+    const selfRequired = requiredBaseTypes.has('SELF');
+    const managerRequired = requiredBaseTypes.has('MANAGER');
+    const peerRequired = requiredBaseTypes.has('PEER');
+
     const allReviewsComplete =
-      hasSelfReview &&
-      (assignedManagerReviewers === 0 || managerReviews.length > 0) &&
-      (assignedPeerReviewers === 0 || peerReviews.length > 0);
+      (!selfRequired || hasSelfReview) &&
+      (!managerRequired || assignedManagerReviewers === 0 || managerReviews.length > 0) &&
+      (!peerRequired || assignedPeerReviewers === 0 || peerReviews.length > 0);
 
     return {
       personalScore: allReviewsComplete ? personalScore : null,

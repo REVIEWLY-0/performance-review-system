@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
 import {
   ReviewTypeConfig,
@@ -23,8 +22,40 @@ const BASE_TYPE_COLORS: Record<BaseReviewType, string> = {
   PEER: 'bg-purple-100 text-purple-800',
 };
 
+function RequiredToggle({
+  config,
+  onToggle,
+}: {
+  config: ReviewTypeConfig;
+  onToggle: (id: string, isRequired: boolean) => void;
+}) {
+  const [toggling, setToggling] = useState(false);
+
+  const handleClick = async () => {
+    setToggling(true);
+    await onToggle(config.id, !config.isRequired);
+    setToggling(false);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={toggling}
+      title={config.isRequired ? 'Click to make optional' : 'Click to make required'}
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none disabled:opacity-60 ${
+        config.isRequired ? 'bg-indigo-600' : 'bg-gray-300'
+      }`}
+    >
+      <span
+        className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+          config.isRequired ? 'translate-x-4' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+}
+
 export default function ReviewTypesPage() {
-  const router = useRouter();
   const toast = useToast();
 
   const [configs, setConfigs] = useState<ReviewTypeConfig[]>([]);
@@ -56,6 +87,16 @@ export default function ReviewTypesPage() {
     }
   };
 
+  const handleToggleRequired = async (id: string, isRequired: boolean) => {
+    try {
+      const updated = await reviewTypeConfigsApi.update(id, { isRequired });
+      setConfigs((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      toast.success(isRequired ? 'Marked as required' : 'Marked as optional');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update');
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formLabel.trim()) {
@@ -84,7 +125,11 @@ export default function ReviewTypesPage() {
   };
 
   const handleDelete = async (config: ReviewTypeConfig) => {
-    if (!confirm(`Delete "${config.label}"? This will not affect existing cycles using this type.`)) {
+    if (
+      !confirm(
+        `Delete "${config.label}"? This will not affect existing cycles using this type.`,
+      )
+    ) {
       return;
     }
     setDeletingId(config.id);
@@ -108,8 +153,9 @@ export default function ReviewTypesPage() {
         <BackButton href="/admin" label="← Back to Dashboard" />
         <h1 className="text-2xl font-bold text-gray-900 mt-2">Review Types</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Manage the reviewer roles available in your workflow steps. Built-in types cannot be
-          removed. Custom types appear alongside built-ins when building cycle steps.
+          Manage the reviewer roles available in your workflow steps. Toggle{' '}
+          <strong>Required</strong> to control whether a type must be completed before an
+          employee&apos;s score is shown.
         </p>
       </div>
 
@@ -129,26 +175,44 @@ export default function ReviewTypesPage() {
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-base font-semibold text-gray-900 mb-1">Built-in Types</h2>
             <p className="text-sm text-gray-500 mb-4">
-              These types are always available and cannot be deleted.
+              These types are always available. You can change whether they are required.
             </p>
-            <div className="space-y-2">
+            <div className="divide-y divide-gray-100">
               {builtIns.map((config) => (
                 <div
                   key={config.id}
-                  className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md"
+                  className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <span className="text-sm font-medium text-gray-900">{config.label}</span>
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${BASE_TYPE_COLORS[config.baseType]}`}
                     >
                       {config.baseType}
                     </span>
+                    {config.isRequired && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                        Required
+                      </span>
+                    )}
                   </div>
-                  <span className="text-xs text-gray-400">Built-in</span>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-xs text-gray-500">
+                      {config.isRequired ? 'Required' : 'Optional'}
+                    </span>
+                    <RequiredToggle config={config} onToggle={handleToggleRequired} />
+                  </div>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Score gate explanation */}
+          <div className="rounded-md bg-blue-50 p-4 text-sm text-blue-700">
+            <strong>How &quot;Required&quot; works:</strong> An employee&apos;s score is hidden
+            until all <em>required</em> review types that have been assigned to them are
+            submitted. Optional types (e.g. peer reviews) will not block the score if they
+            haven&apos;t been submitted.
           </div>
 
           {/* Custom types */}
@@ -158,7 +222,7 @@ export default function ReviewTypesPage() {
                 <h2 className="text-base font-semibold text-gray-900">Custom Types</h2>
                 <p className="text-sm text-gray-500">
                   {custom.length === 0
-                    ? 'No custom types yet. Add one below.'
+                    ? 'No custom types yet.'
                     : `${custom.length} custom type${custom.length !== 1 ? 's' : ''}`}
                 </p>
               </div>
@@ -180,9 +244,7 @@ export default function ReviewTypesPage() {
               >
                 <h3 className="text-sm font-semibold text-indigo-900">New Custom Review Type</h3>
 
-                {formError && (
-                  <p className="text-sm text-red-600">{formError}</p>
-                )}
+                {formError && <p className="text-sm text-red-600">{formError}</p>}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -215,7 +277,7 @@ export default function ReviewTypesPage() {
                     ))}
                   </select>
                   <p className="mt-1 text-xs text-gray-500">
-                    Determines how this review type behaves in the system (question set, assignment flow).
+                    Determines how this review type behaves in the system.
                   </p>
                 </div>
 
@@ -244,13 +306,13 @@ export default function ReviewTypesPage() {
 
             {/* Custom types list */}
             {custom.length > 0 && (
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-100">
                 {custom.map((config) => (
                   <div
                     key={config.id}
-                    className="flex items-center justify-between py-2 px-3 border border-gray-200 rounded-md"
+                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <span className="text-sm font-medium text-gray-900">{config.label}</span>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${BASE_TYPE_COLORS[config.baseType]}`}
@@ -258,14 +320,27 @@ export default function ReviewTypesPage() {
                         {config.baseType}
                       </span>
                       <span className="text-xs text-gray-400 font-mono">{config.key}</span>
+                      {config.isRequired && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                          Required
+                        </span>
+                      )}
                     </div>
-                    <button
-                      onClick={() => handleDelete(config)}
-                      disabled={deletingId === config.id}
-                      className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
-                    >
-                      {deletingId === config.id ? 'Deleting…' : 'Delete'}
-                    </button>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">
+                          {config.isRequired ? 'Required' : 'Optional'}
+                        </span>
+                        <RequiredToggle config={config} onToggle={handleToggleRequired} />
+                      </div>
+                      <button
+                        onClick={() => handleDelete(config)}
+                        disabled={deletingId === config.id}
+                        className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+                      >
+                        {deletingId === config.id ? 'Deleting…' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
