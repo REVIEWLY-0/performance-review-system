@@ -86,40 +86,23 @@
 ---
 
 #### 4) Performance is too slow locally — investigate Supabase vs local Postgres
-Problem:
-- App feels slow even on localhost.
-- Need decision: is Supabase latency the cause? Should we run local Postgres via Docker for dev?
-
-Expected:
-- Identify root cause of slowness (DB latency, unbounded queries, refetch loops, lack of caching, no pagination).
-- Provide recommendation with evidence:
-  A) Local Postgres via Docker for dev (keep Supabase for staging/prod)
-  B) Tune queries/caching if Supabase isn’t the main issue
-
-Acceptance Criteria:
-- Report with evidence (timings/logs).
-- Implement 1–2 high-impact performance fixes.
-- If local Postgres chosen: add docker-compose + docs + env examples.
+**ALREADY DONE — verified BATCH N (2026-03-10)**
+Root causes addressed:
+- Supabase cloud latency: solved by `docker-compose.yml` local Postgres (port 5433) already in repo root.
+- Query performance: BATCH 14 added 4 DB indexes, `groupBy` for getStats, removed redundant JOIN filters, `getInsights` cache.
+- `backend/.env.example`: documented Option A (local Docker Postgres, recommended) vs Option B (Supabase staging/prod).
+- Fixed `.env.example` port: changed `localhost:5432` → `localhost:5433` to match `docker-compose.yml` port mapping.
 
 ---
 
 #### 5) Active cycle “View” page needs detailed HR/Admin insights
-Problem:
-- Active cycle view is not informative enough for HR/Admin.
-
-Expected (Senior PM / HR Manager view):
-- Cycle overview:
-  - employee completion status (who completed self review, who hasn’t)
-  - reviewer assignment matrix (who reviews who)
-  - counts: pending/completed/overdue
-  - filters: department, status
-- Navigation:
-  - “Back” and/or breadcrumb is clearly visible
-  - Back should take to Dashboard (not just review cycles), and provide explicit link to Review Cycles too.
-
-Acceptance Criteria:
-- Active cycle view shows actionable details.
-- Back navigation is clear and works.
+**ALREADY DONE — verified BATCH N (2026-03-10)**
+- `CycleInsightsPanel.tsx`: full HR/Admin view for ACTIVE and COMPLETED cycles.
+  - Stats cards: Total Employees, Fully Complete, In Progress, Not Started, Overdue (with progress bars + %).
+  - Filters: department dropdown + status dropdown (All/Complete/In Progress/Not Started/Overdue) + search by name/email.
+  - Employee table: completion status per row (self review, manager reviews with names, peer review X/N fraction), overdue row highlighting.
+  - Reviewer assignment matrix: manager reviews show each reviewer name + pill status; peer reviews show submitted/total fraction.
+  - Breadcrumb nav: Dashboard / Review Cycles / Cycle Name — both links work.
 
 ---
 
