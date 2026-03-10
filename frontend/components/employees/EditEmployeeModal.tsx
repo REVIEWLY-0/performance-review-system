@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { usersApi } from '@/lib/api'
-import type { User } from '@/lib/api'
-import DepartmentCombobox from '@/components/DepartmentCombobox'
+import { usersApi, departmentsApi } from '@/lib/api'
+import type { User, Department } from '@/lib/api'
+import DepartmentMultiSelect from './DepartmentMultiSelect'
 
 interface EditEmployeeModalProps {
   employee: User
@@ -15,35 +15,38 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [managers, setManagers] = useState<User[]>([])
-  const [departments, setDepartments] = useState<string[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
   const [deptError, setDeptError] = useState('')
   const [formData, setFormData] = useState({
     name: employee.name,
     email: employee.email,
     role: employee.role,
     managerId: employee.managerId || '',
-    department: employee.department || '',
+    departmentIds: employee.departments?.map((d) => d.id) ?? [],
   })
 
   useEffect(() => {
     usersApi.getManagers().then(setManagers).catch(console.error)
-    usersApi.getDepartments().then(setDepartments).catch(console.error)
+    departmentsApi.getAll().then(setDepartments).catch(console.error)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!formData.department.trim()) {
-      setDeptError('Department is required')
+    if (formData.departmentIds.length === 0) {
+      setDeptError('At least one department is required')
       return
     }
 
     setLoading(true)
     try {
       const updated = await usersApi.update(employee.id, {
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
         managerId: formData.managerId || undefined,
+        departmentIds: formData.departmentIds,
       })
       onSuccess(updated)
     } catch (err: any) {
@@ -150,14 +153,14 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Department <span className="text-red-500">*</span>
+                    Department(s) <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1">
-                    <DepartmentCombobox
-                      value={formData.department}
-                      onChange={(val) => {
-                        setFormData({ ...formData, department: val })
-                        if (val.trim()) setDeptError('')
+                    <DepartmentMultiSelect
+                      value={formData.departmentIds}
+                      onChange={(ids) => {
+                        setFormData({ ...formData, departmentIds: ids })
+                        if (ids.length > 0) setDeptError('')
                       }}
                       departments={departments}
                       error={!!deptError}

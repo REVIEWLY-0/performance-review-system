@@ -349,20 +349,19 @@ UX Improvement (optional):
 ---
 
 #### 7) Departments management (not only on-the-fly) + multi-department membership
-Requirements:
-- Admin can manage departments in a dedicated UI:
-  - list all departments
-  - create/edit/archive departments
-- Department UI should use pill/tag style (pill UI inspiration; no external assets required).
-- Employee can belong to more than one department.
-- Reviewer assignment should support filtering by department(s):
-  - pick department filter first → then search/select people
-
-Acceptance Criteria:
-- Departments are company-scoped (company_id).
-- Employee can be assigned multiple departments.
-- Manager selection and peer selection can be filtered by chosen department(s).
-- UI uses pill/tag visual style for departments.
+**IMPLEMENTED — BATCH G (2026-03-10)**
+- Added `Department` model (company-scoped, with `archivedAt` soft-delete) + `UserDepartment` join table.
+- Migration: creates both tables + migrates existing `User.department` strings to `Department` rows + `UserDepartment` records.
+- Backend: `departments` module — `GET /departments`, `GET /departments/archived`, `POST /departments`, `PATCH /:id` (rename), `PATCH /:id/archive`, `PATCH /:id/restore`.
+- Updated `users.service.ts`: accepts `departmentIds: string[]` in create/update; `syncUserDepartments()` validates company-scoping and replaces `UserDepartment` records; keeps `User.department` in sync with first dept name; `findAll`/`findOne` include departments array.
+- Frontend: `/admin/departments` page with pill/tag UI (hover to rename/archive, inline rename input, archived section with restore).
+- New `DepartmentMultiSelect` component: pill chips for selected depts, dropdown to add more.
+- Updated `CreateEmployeeModal` + `EditEmployeeModal` to use `DepartmentMultiSelect` + `departmentIds`.
+- Updated `AssignmentCard` to filter by `user.departments[]` (Department id comparison, not string).
+- `EmployeeList` shows department pills per employee.
+- Admin dashboard Quick Actions: added "Departments" button.
+- `departmentsApi` in `frontend/lib/api.ts` with getAll/getArchived/create/update/archive/restore.
+- `getDepartments()` in users service now queries `Department` model (with legacy fallback).
 
 ---
 

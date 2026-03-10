@@ -114,6 +114,18 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
                         <p className="truncate">{employee.email}</p>
                       </div>
                     </div>
+                    {(employee.departments ?? []).length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {(employee.departments ?? []).map((d) => (
+                          <span
+                            key={d.id}
+                            className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                          >
+                            {d.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {employee.manager && (
                       <div className="mt-1 flex">
                         <div className="flex items-center text-sm text-gray-500">

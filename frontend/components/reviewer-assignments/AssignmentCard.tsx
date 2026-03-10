@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { User } from '@/lib/api';
 import ReviewerMultiSelect from './ReviewerMultiSelect';
 
@@ -30,13 +30,24 @@ export default function AssignmentCard({
   const [isDirty, setIsDirty] = useState(false);
   const [localSaving, setLocalSaving] = useState(false);
 
-  // Department filter — defaults to employee's department (which is always set)
-  const [filterDept, setFilterDept] = useState(employee.department || '');
+  // Derive unique departments from all available users (new multi-dept model)
+  const availableDepartments = useMemo(() => {
+    const seen = new Set<string>();
+    const result: { id: string; name: string }[] = [];
+    for (const u of availableUsers) {
+      for (const d of u.departments ?? []) {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          result.push(d);
+        }
+      }
+    }
+    return result.sort((a, b) => a.name.localeCompare(b.name));
+  }, [availableUsers]);
 
-  // Derive distinct departments from all available users
-  const availableDepartments = [
-    ...new Set(availableUsers.map((u) => u.department).filter(Boolean)),
-  ].sort() as string[];
+  // Default filter to the employee's first department
+  const defaultDeptId = employee.departments?.[0]?.id ?? '';
+  const [filterDeptId, setFilterDeptId] = useState(defaultDeptId);
 
   useEffect(() => {
     setManagerIds(existingManagers.map((m) => m.id));
@@ -64,18 +75,19 @@ export default function AssignmentCard({
     setIsDirty(true);
   };
 
-  // Reviewers filtered by selected department
-  // Managers: MANAGER role only, from filterDept
-  const managerOptions = availableUsers.filter(
-    (u) => u.role === 'MANAGER' && u.department === filterDept,
-  );
+  // Filter reviewers by selected department (using new departments array)
+  const inDept = (u: User) =>
+    !filterDeptId || (u.departments ?? []).some((d) => d.id === filterDeptId);
 
-  // Peers: EMPLOYEE role only, from filterDept (managers cannot be peers)
+  const managerOptions = availableUsers.filter(
+    (u) => u.role === 'MANAGER' && inDept(u),
+  );
   const peerOptions = availableUsers.filter(
-    (u) => u.role === 'EMPLOYEE' && u.department === filterDept,
+    (u) => u.role === 'EMPLOYEE' && inDept(u),
   );
 
   const hasValidAssignment = managerIds.length >= 1 && peerIds.length >= 1;
+  const filterDeptName = availableDepartments.find((d) => d.id === filterDeptId)?.name ?? '';
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
@@ -83,10 +95,18 @@ export default function AssignmentCard({
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{employee.name}</h3>
           <p className="text-sm text-gray-500">{employee.email}</p>
-          {employee.department && (
-            <span className="mt-1 inline-block text-xs bg-indigo-50 text-indigo-700 rounded px-2 py-0.5">
-              {employee.department}
-            </span>
+          {/* Department pills */}
+          {(employee.departments ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {(employee.departments ?? []).map((d) => (
+                <span
+                  key={d.id}
+                  className="text-xs bg-indigo-50 text-indigo-700 rounded-full px-2 py-0.5 border border-indigo-100"
+                >
+                  {d.name}
+                </span>
+              ))}
+            </div>
           )}
         </div>
         {isDirty && (
@@ -106,24 +126,21 @@ export default function AssignmentCard({
           Reviewers from:
         </span>
         <select
-          value={filterDept}
-          onChange={(e) => setFilterDept(e.target.value)}
+          value={filterDeptId}
+          onChange={(e) => setFilterDeptId(e.target.value)}
           className="flex-1 border border-gray-300 rounded-md py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
         >
-          {availableDepartments.length === 0 ? (
-            <option value="">(no departments)</option>
-          ) : (
-            availableDepartments.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))
-          )}
+          <option value="">All departments</option>
+          {availableDepartments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
         </select>
-        {filterDept !== employee.department && (
+        {filterDeptId !== defaultDeptId && (
           <button
             type="button"
-            onClick={() => setFilterDept(employee.department || '')}
+            onClick={() => setFilterDeptId(defaultDeptId)}
             className="text-xs text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
           >
             Reset
@@ -150,7 +167,7 @@ export default function AssignmentCard({
           )}
           {managerOptions.length === 0 && (
             <p className="mt-1 text-xs text-gray-400">
-              No managers in {filterDept}
+              No managers{filterDeptName ? ` in ${filterDeptName}` : ''}
             </p>
           )}
         </div>
@@ -173,7 +190,7 @@ export default function AssignmentCard({
           )}
           {peerOptions.length === 0 && (
             <p className="mt-1 text-xs text-gray-400">
-              No peers in {filterDept}
+              No peers{filterDeptName ? ` in ${filterDeptName}` : ''}
             </p>
           )}
         </div>

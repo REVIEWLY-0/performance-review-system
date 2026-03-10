@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { usersApi } from '@/lib/api'
-import type { User } from '@/lib/api'
+import { usersApi, departmentsApi } from '@/lib/api'
+import type { User, Department } from '@/lib/api'
 import {
   validateEmail,
   validateName,
   getInputClassName,
 } from '@/lib/validation'
-import DepartmentCombobox from '@/components/DepartmentCombobox'
+import DepartmentMultiSelect from './DepartmentMultiSelect'
 
 interface CreateEmployeeModalProps {
   onClose: () => void
@@ -19,94 +19,85 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [managers, setManagers] = useState<User[]>([])
-  const [departments, setDepartments] = useState<string[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     role: 'EMPLOYEE' as 'ADMIN' | 'MANAGER' | 'EMPLOYEE',
     managerId: '',
-    department: '',
+    departmentIds: [] as string[],
   })
 
   const [fieldErrors, setFieldErrors] = useState({
     name: '',
     email: '',
-    department: '',
+    departmentIds: '',
   })
 
   const [touched, setTouched] = useState({
     name: false,
     email: false,
-    department: false,
+    departmentIds: false,
   })
 
   useEffect(() => {
     usersApi.getManagers().then(setManagers).catch(console.error)
-    usersApi.getDepartments().then(setDepartments).catch(console.error)
+    departmentsApi.getAll().then(setDepartments).catch(console.error)
   }, [])
 
-  // Validate individual field
-  const validateField = (field: string, value: string): string => {
+  const validateField = (field: string, value: any): string => {
     switch (field) {
       case 'name':
-        return validateName(value, 'Full Name') || ''
+        return validateName(value as string, 'Full Name') || ''
       case 'email':
-        return validateEmail(value) || ''
-      case 'department':
-        return value.trim().length === 0 ? 'Department is required' : ''
+        return validateEmail(value as string) || ''
+      case 'departmentIds':
+        return (value as string[]).length === 0 ? 'At least one department is required' : ''
       default:
         return ''
     }
   }
 
-  // Handle field blur (show validation)
   const handleBlur = (field: string) => {
     setTouched({ ...touched, [field]: true })
-    const error = validateField(field, formData[field as keyof typeof formData])
-    setFieldErrors({ ...fieldErrors, [field]: error })
+    const err = validateField(field, formData[field as keyof typeof formData])
+    setFieldErrors({ ...fieldErrors, [field]: err })
   }
 
-  // Handle field change
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: any) => {
     setFormData({ ...formData, [field]: value })
-
-    // Real-time validation if field was touched
     if (touched[field as keyof typeof touched]) {
-      const error = validateField(field, value)
-      setFieldErrors({ ...fieldErrors, [field]: error })
+      const err = validateField(field, value)
+      setFieldErrors({ ...fieldErrors, [field]: err })
     }
   }
 
-  // Validate all fields before submit
   const validateForm = (): boolean => {
     const errors = {
       name: validateField('name', formData.name),
       email: validateField('email', formData.email),
-      department: validateField('department', formData.department),
+      departmentIds: validateField('departmentIds', formData.departmentIds),
     }
-
     setFieldErrors(errors)
-    setTouched({ name: true, email: true, department: true })
-
-    return !Object.values(errors).some((err) => err !== '')
+    setTouched({ name: true, email: true, departmentIds: true })
+    return !Object.values(errors).some((e) => e !== '')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-
-    // Validate form
     if (!validateForm()) {
       setError('Please fix the errors above')
       return
     }
-
     setLoading(true)
-
     try {
       await usersApi.create({
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
         managerId: formData.managerId || undefined,
+        departmentIds: formData.departmentIds,
       })
       onSuccess()
     } catch (err: any) {
@@ -219,18 +210,27 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Department <span className="text-red-500">*</span>
+                    Department(s) <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1">
-                    <DepartmentCombobox
-                      value={formData.department}
-                      onChange={(val) => handleChange('department', val)}
+                    <DepartmentMultiSelect
+                      value={formData.departmentIds}
+                      onChange={(ids) => handleChange('departmentIds', ids)}
                       departments={departments}
-                      error={touched.department && !!fieldErrors.department}
+                      error={touched.departmentIds && !!fieldErrors.departmentIds}
                     />
                   </div>
-                  {touched.department && fieldErrors.department && (
-                    <p className="mt-1 text-sm text-red-600">{fieldErrors.department}</p>
+                  {touched.departmentIds && fieldErrors.departmentIds && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.departmentIds}</p>
+                  )}
+                  {departments.length === 0 && (
+                    <p className="mt-1 text-xs text-gray-400">
+                      No departments yet.{' '}
+                      <a href="/admin/departments" className="text-indigo-600 hover:underline">
+                        Create departments
+                      </a>{' '}
+                      first.
+                    </p>
                   )}
                 </div>
               </div>

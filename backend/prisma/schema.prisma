@@ -65,6 +65,7 @@ model Company {
   reviewCycles      ReviewCycle[]
   questions         Question[]
   reviewTypeConfigs ReviewTypeConfig[]
+  departments       Department[]
 
   @@map("companies")
 }
@@ -92,6 +93,7 @@ model User {
   reviewsAsReviewer     Review[]             @relation("ReviewerReviews")
   assignmentsAsEmployee ReviewerAssignment[] @relation("EmployeeAssignments")
   assignmentsAsReviewer ReviewerAssignment[] @relation("ReviewerAssignments")
+  userDepartments       UserDepartment[]
 
   @@unique([companyId, email])
   @@unique([companyId, employeeId])
@@ -193,6 +195,37 @@ model ReviewTypeConfig {
   @@unique([companyId, key])
   @@index([companyId])
   @@map("review_type_configs")
+}
+
+model Department {
+  id         String    @id @default(cuid())
+  companyId  String    @map("company_id")
+  name       String
+  archivedAt DateTime? @map("archived_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userDepts UserDepartment[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("departments")
+}
+
+model UserDepartment {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  departmentId String   @map("department_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, departmentId])
+  @@index([userId])
+  @@index([departmentId])
+  @@map("user_departments")
 }
 
 model Question {

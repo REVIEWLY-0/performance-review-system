@@ -11,6 +11,16 @@ export interface PaginatedResponse<T> {
   }
 }
 
+export interface Department {
+  id: string
+  companyId: string
+  name: string
+  archivedAt: string | null
+  createdAt: string
+  updatedAt: string
+  _count?: { userDepts: number }
+}
+
 export interface User {
   id: string
   email: string
@@ -19,6 +29,7 @@ export interface User {
   companyId: string
   managerId?: string
   department?: string
+  departments?: { id: string; name: string }[]
   employeeId?: string
   manager?: {
     id: string
@@ -39,7 +50,8 @@ export interface CreateUserDto {
   name: string
   role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
   managerId?: string
-  department?: string
+  department?: string      // Legacy
+  departmentIds?: string[] // New: multi-department
 }
 
 export interface UpdateUserDto {
@@ -47,7 +59,8 @@ export interface UpdateUserDto {
   email?: string
   role?: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
   managerId?: string
-  department?: string
+  department?: string      // Legacy
+  departmentIds?: string[] // New: multi-department
 }
 
 export interface UserStats {
@@ -172,5 +185,55 @@ export const usersApi = {
     const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/departments`)
     setCache(key, data, 60_000) // 1 min TTL
     return data
+  },
+}
+
+// Departments API
+export const departmentsApi = {
+  getAll: async (): Promise<Department[]> => {
+    const key = 'departments:active'
+    const cached = getCached<Department[]>(key)
+    if (cached) return cached
+    const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments`)
+    setCache(key, data, 60_000)
+    return data
+  },
+
+  getArchived: async (): Promise<Department[]> => {
+    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments/archived`)
+  },
+
+  create: async (name: string): Promise<Department> => {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    })
+    invalidateCache('departments:')
+    return result
+  },
+
+  update: async (id: string, name: string): Promise<Department> => {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    })
+    invalidateCache('departments:')
+    return result
+  },
+
+  archive: async (id: string): Promise<Department> => {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments/${id}/archive`, {
+      method: 'PATCH',
+    })
+    invalidateCache('departments:')
+    return result
+  },
+
+  restore: async (id: string): Promise<Department> => {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments/${id}/restore`, {
+      method: 'PATCH',
+    })
+    invalidateCache('departments:')
+    return result
   },
 }

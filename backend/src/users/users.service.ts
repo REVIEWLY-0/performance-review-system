@@ -5,7 +5,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { UserRole } from '@prisma/client';
 import {
   IsEmail, IsString, IsEnum, IsOptional, IsArray, ValidateNested,
-  MinLength, MaxLength,
+  MinLength, MaxLength, IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -25,10 +25,16 @@ export class CreateUserDto {
   @IsString()
   managerId?: string;
 
+  @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(100)
-  department!: string;
+  department?: string; // Legacy: still accepted for backwards compat (e.g. CSV import)
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  departmentIds?: string[]; // New: multi-department membership
 
   @IsOptional()
   @IsString()
@@ -58,7 +64,12 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  department?: string;
+  department?: string; // Legacy
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  departmentIds?: string[]; // New: multi-department membership
 }
 
 export class UpdateProfileDto {
@@ -105,6 +116,85 @@ export class ImportUsersBodyDto {
 @Injectable()
 export class UsersService {
   private supabase: SupabaseClient;
+
+  /** Flatten userDepartments to a simple departments: [{id, name}] array */
+  private mapUser(user: any) {
+    const { userDepartments, ...rest } = user;
+    return {
+      ...rest,
+      departments: (userDepartments ?? []).map((ud: any) => ud.department),
+    };
+  }
+
+  /** Standard include for user queries that need department data */
+  private get userInclude() {
+    return {
+      manager: { select: { id: true, name: true, email: true } },
+      directReports: { select: { id: true, name: true, email: true } },
+      userDepartments: {
+        include: { department: { select: { id: true, name: true } } },
+      },
+    };
+  }
+
+  /**
+   * Sync a user's department memberships and update the legacy department field.
+   * Validates all departmentIds belong to the company.
+   */
+  private async syncUserDepartments(
+    userId: string,
+    companyId: string,
+    departmentIds: string[],
+  ) {
+    if (departmentIds.length > 0) {
+      const depts = await this.prisma.department.findMany({
+        where: { id: { in: departmentIds }, companyId },
+      });
+      if (depts.length !== departmentIds.length) {
+        throw new BadRequestException(
+          'One or more departments not found in your company',
+        );
+      }
+    }
+
+    // Replace all UserDepartment records for this user
+    await this.prisma.userDepartment.deleteMany({ where: { userId } });
+    if (departmentIds.length > 0) {
+      await this.prisma.userDepartment.createMany({
+        data: departmentIds.map((departmentId) => ({ userId, departmentId })),
+        skipDuplicates: true,
+      });
+    }
+
+    // Keep User.department in sync with the first department name (backwards compat)
+    if (departmentIds.length > 0) {
+      const first = await this.prisma.department.findFirst({
+        where: { id: departmentIds[0], companyId },
+      });
+      if (first) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { department: first.name },
+        });
+      }
+    } else {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { department: null },
+      });
+    }
+  }
+
+  /**
+   * Find or create a Department by name within a company (used for legacy dept string).
+   */
+  private async findOrCreateDepartment(companyId: string, name: string) {
+    return this.prisma.department.upsert({
+      where: { companyId_name: { companyId, name } },
+      create: { companyId, name },
+      update: {},
+    });
+  }
 
   /** Generate a human-readable HR employee ID — format: EMP-XXXXXX (uppercase alphanumeric) */
   private generateEmployeeId(): string {
@@ -154,25 +244,10 @@ export class UsersService {
     const skip = (page - 1) * safeLimit;
 
     const where = { companyId };
-    const [data, total] = await Promise.all([
+    const [rawData, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        include: {
-          manager: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          directReports: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
+        include: this.userInclude,
         orderBy: { createdAt: 'desc' },
         skip,
         take: safeLimit,
@@ -181,7 +256,7 @@ export class UsersService {
     ]);
 
     return {
-      data,
+      data: rawData.map((u) => this.mapUser(u)),
       pagination: {
         page,
         limit: safeLimit,
@@ -201,25 +276,11 @@ export class UsersService {
         companyId,
       },
       include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        directReports: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-          },
-        },
-        teamMemberships: {
-          include: {
-            team: true,
-          },
+        manager: { select: { id: true, name: true, email: true } },
+        directReports: { select: { id: true, name: true, email: true, role: true } },
+        teamMemberships: { include: { team: true } },
+        userDepartments: {
+          include: { department: { select: { id: true, name: true } } },
         },
       },
     });
@@ -228,14 +289,14 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    return this.mapUser(user);
   }
 
   /**
    * Create new user - automatically assigns companyId
    */
   async create(companyId: string, createUserDto: CreateUserDto) {
-    const { email, name, role, managerId, department, employeeId: requestedEmpId } = createUserDto;
+    const { email, name, role, managerId, department, departmentIds, employeeId: requestedEmpId } = createUserDto;
 
     // Check if email already exists in company
     const existingUser = await this.prisma.user.findFirst({
@@ -320,23 +381,25 @@ export class UsersService {
         employeeId: resolvedEmpId,
         password: '', // Password managed by Supabase
       },
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
     });
+
+    // Handle department memberships
+    if (departmentIds && departmentIds.length > 0) {
+      await this.syncUserDepartments(user.id, companyId, departmentIds);
+    } else if (department) {
+      // Legacy flow: find/create dept by name and link user
+      const dept = await this.findOrCreateDepartment(companyId, department);
+      await this.prisma.userDepartment
+        .create({ data: { userId: user.id, departmentId: dept.id } })
+        .catch(() => {}); // ignore duplicate
+    }
 
     // Fire welcome email with setup link — non-blocking
     this.notificationsService
       .sendWelcomeEmail(user.id, setupLink)
       .catch((err) => console.error('Welcome email failed for new user:', err));
 
-    return user;
+    return this.findOne(user.id, companyId);
   }
 
   /**
@@ -360,19 +423,19 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.update({
+    const { departmentIds, ...userFields } = updateUserDto;
+
+    await this.prisma.user.update({
       where: { id: userId },
-      data: updateUserDto,
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+      data: userFields,
     });
+
+    // Sync department memberships if provided
+    if (departmentIds !== undefined) {
+      await this.syncUserDepartments(userId, companyId, departmentIds);
+    }
+
+    return this.findOne(userId, companyId);
   }
 
   /**
@@ -590,10 +653,20 @@ export class UsersService {
   }
 
   /**
-   * Get distinct department names for the company
+   * Get distinct department names for the company (from Department model).
+   * Falls back to distinct User.department strings if no Department rows exist.
    * CRITICAL: Always filter by companyId for multi-tenancy
    */
   async getDepartments(companyId: string): Promise<string[]> {
+    const depts = await this.prisma.department.findMany({
+      where: { companyId, archivedAt: null },
+      select: { name: true },
+      orderBy: { name: 'asc' },
+    });
+    if (depts.length > 0) {
+      return depts.map((d) => d.name);
+    }
+    // Legacy fallback: distinct User.department strings
     const rows = await this.prisma.user.findMany({
       where: { companyId, department: { not: null } },
       select: { department: true },
