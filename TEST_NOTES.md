@@ -232,17 +232,11 @@ Note: "Peel UI" requirement superseded by Spec 7's "no external assets required,
 ---
 
 #### 11) Employee self-cycle score should be hidden until all reviews complete
-Problem:
-- Employee should not see cycle score until all required reviews are completed.
-
-Expected:
-- Employee score visible only after:
-  - required self + manager + peers (as configured) are complete for that cycle.
-- Admin can still view progress/partial completion.
-
-Acceptance Criteria:
-- Employee cannot see score early.
-- Score appears automatically when all required reviews complete.
+**ALREADY DONE — BATCH 11 + BATCH F (prior sessions)**
+- Backend (`analytics.service.ts`): `personalScore: allReviewsComplete ? personalScore : null` — returns `null` until gate passes.
+- Gate is data-driven: reads `requiredTypeConfigs` from DB (BATCH F); only review types with `isRequired = true` block the score.
+- Frontend (`employee/page.tsx`): score section gated on `analytics.personalScore !== null`; shows `"Your score will appear once all required reviews are complete."` while pending.
+- Admin analytics always shows full data regardless of gate (separate `getAdminAnalytics` path).
 
 ---
 
