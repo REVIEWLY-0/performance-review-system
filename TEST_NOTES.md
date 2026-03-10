@@ -327,20 +327,14 @@ UX Improvement (optional):
 ### P1 — Product Model Improvements (Needs Spec + Implementation)
 
 #### 5) Review types should be dynamic (not fixed to SELF/PEER/MANAGER only)
-Problem:
-- System is fixed to only 3 review types.
-Founder feedback:
-- Allow company admins to define custom reviewer types (e.g., "Lead", "Mentor", "360", "HR").
-
-Expected:
-- Admin can create custom review types per company.
-- Review steps should be based on these types (steps count matches configured reviewer types/steps).
-- No need to label each step manually if it can inherit from review type.
-
-Acceptance Criteria:
-- Admin can add/remove review types.
-- Assignment UI uses available review types.
-- Backwards compatible: existing SELF/PEER/MANAGER still work.
+**IMPLEMENTED — BATCH E (2026-03-10)**
+- Added `ReviewTypeConfig` table (company-scoped): built-ins (SELF/MANAGER/PEER) + custom types.
+- Custom types carry a `baseType` (SELF/MANAGER/PEER) for underlying system behavior.
+- `customTypeKey String?` added to `ReviewConfig` schema + DTO.
+- Backend: `review-type-configs` module — GET/POST/DELETE, built-ins seeded on signup, existing 6 companies backfilled.
+- Frontend: `/admin/review-types` page for managing types; WorkflowStepBuilder fetches types from API.
+- Admin dashboard Quick Actions has "Review Types" link.
+- Backwards compatible: existing cycles unaffected.
 
 ---
 

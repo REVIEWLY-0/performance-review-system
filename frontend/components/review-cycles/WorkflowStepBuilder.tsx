@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ReviewConfig, ReviewType } from '@/lib/review-cycles';
+import { ReviewTypeConfig, reviewTypeConfigsApi } from '@/lib/review-type-configs';
 
 interface WorkflowStepBuilderProps {
   cycleStart: string;
@@ -15,19 +17,37 @@ export default function WorkflowStepBuilder({
   steps,
   onChange,
 }: WorkflowStepBuilderProps) {
-  const defaultNameForType = (type: ReviewType): string => {
-    switch (type) {
-      case 'SELF': return 'Self Review';
-      case 'MANAGER': return 'Manager Review';
-      case 'PEER': return 'Peer Review';
+  const [reviewTypeConfigs, setReviewTypeConfigs] = useState<ReviewTypeConfig[]>([]);
+
+  useEffect(() => {
+    reviewTypeConfigsApi
+      .getAll()
+      .then(setReviewTypeConfigs)
+      .catch(() => {
+        // Fallback to built-ins if API fails
+        setReviewTypeConfigs([
+          { id: 'self', companyId: '', key: 'SELF', label: 'Self Review', baseType: 'SELF', isBuiltIn: true, isActive: true, sortOrder: 0, createdAt: '', updatedAt: '' },
+          { id: 'manager', companyId: '', key: 'MANAGER', label: 'Manager Review', baseType: 'MANAGER', isBuiltIn: true, isActive: true, sortOrder: 1, createdAt: '', updatedAt: '' },
+          { id: 'peer', companyId: '', key: 'PEER', label: 'Peer Review', baseType: 'PEER', isBuiltIn: true, isActive: true, sortOrder: 2, createdAt: '', updatedAt: '' },
+        ]);
+      });
+  }, []);
+
+  const labelForStep = (step: ReviewConfig): string => {
+    if (step.customTypeKey) {
+      const config = reviewTypeConfigs.find((c) => c.key === step.customTypeKey);
+      return config?.label ?? step.customTypeKey;
     }
+    return reviewTypeConfigs.find((c) => c.key === step.reviewType)?.label ?? step.reviewType;
   };
 
   const addStep = () => {
+    const defaultConfig = reviewTypeConfigs[0];
     const newStep: ReviewConfig = {
       stepNumber: steps.length + 1,
-      reviewType: 'SELF',
-      name: defaultNameForType('SELF'),
+      reviewType: (defaultConfig?.baseType ?? 'SELF') as ReviewType,
+      customTypeKey: defaultConfig && !defaultConfig.isBuiltIn ? defaultConfig.key : undefined,
+      name: defaultConfig?.label ?? 'Self Review',
       startDate: cycleStart || new Date().toISOString().split('T')[0],
       endDate: cycleEnd || new Date().toISOString().split('T')[0],
     };
@@ -36,50 +56,59 @@ export default function WorkflowStepBuilder({
 
   const removeStep = (index: number) => {
     const newSteps = steps.filter((_, i) => i !== index);
-    // Renumber steps
     newSteps.forEach((step, i) => (step.stepNumber = i + 1));
     onChange(newSteps);
   };
 
-  const updateStep = (
-    index: number,
-    field: keyof ReviewConfig,
-    value: any,
-  ) => {
+  const updateStep = (index: number, field: keyof ReviewConfig, value: any) => {
     const newSteps = [...steps];
     newSteps[index] = { ...newSteps[index], [field]: value };
     onChange(newSteps);
   };
 
-  const reviewTypes: { value: ReviewType; label: string; color: string }[] = [
-    { value: 'SELF', label: 'Self Review', color: 'blue' },
-    { value: 'MANAGER', label: 'Manager Review', color: 'green' },
-    { value: 'PEER', label: 'Peer Review', color: 'purple' },
-  ];
+  // Get the current select value for a step: customTypeKey if set, else reviewType
+  const selectValueForStep = (step: ReviewConfig): string =>
+    step.customTypeKey ?? step.reviewType;
 
-  const hasSelfReview = steps.some((step) => step.reviewType === 'SELF');
+  const hasSelfReview = steps.some(
+    (step) => step.reviewType === 'SELF' && !step.customTypeKey,
+  );
+
+  const handleTypeChange = (index: number, selectedKey: string) => {
+    const config = reviewTypeConfigs.find((c) => c.key === selectedKey);
+    if (!config) return;
+
+    const newSteps = [...steps];
+    const isBuiltIn = config.isBuiltIn;
+    newSteps[index] = {
+      ...newSteps[index],
+      reviewType: config.baseType as ReviewType,
+      customTypeKey: isBuiltIn ? undefined : config.key,
+    };
+
+    // Auto-update name if it still matches a default
+    const currentName = newSteps[index].name ?? '';
+    const oldLabel = labelForStep(steps[index]);
+    if (!currentName || currentName === oldLabel) {
+      newSteps[index].name = config.label;
+    }
+
+    onChange(newSteps);
+  };
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Workflow Steps
-          </h2>
-          <p className="text-sm text-gray-600">
-            Define the review process and timeline
-          </p>
+          <h2 className="text-lg font-semibold text-gray-900">Workflow Steps</h2>
+          <p className="text-sm text-gray-600">Define the review process and timeline</p>
         </div>
         <button
           type="button"
           onClick={addStep}
           disabled={!cycleStart || !cycleEnd}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-          title={
-            !cycleStart || !cycleEnd
-              ? 'Set cycle dates first'
-              : 'Add a new workflow step'
-          }
+          title={!cycleStart || !cycleEnd ? 'Set cycle dates first' : 'Add a new workflow step'}
         >
           + Add Step
         </button>
@@ -91,7 +120,7 @@ export default function WorkflowStepBuilder({
         </div>
       ) : steps.length === 0 ? (
         <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-          <p>No workflow steps yet. Click "Add Step" to begin.</p>
+          <p>No workflow steps yet. Click &quot;Add Step&quot; to begin.</p>
         </div>
       ) : (
         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
@@ -107,7 +136,7 @@ export default function WorkflowStepBuilder({
 
                 {/* Step Details */}
                 <div className="flex-1 space-y-3">
-                  {/* Name field — full width */}
+                  {/* Name field */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Step Label
@@ -129,37 +158,34 @@ export default function WorkflowStepBuilder({
                         Review Type
                       </label>
                       <select
-                        value={step.reviewType}
-                        onChange={(e) => {
-                          const newType = e.target.value as ReviewType;
-                          const newSteps = [...steps];
-                          newSteps[index] = { ...newSteps[index], reviewType: newType };
-                          // Auto-update name only if it still matches the old default
-                          if (!newSteps[index].name || newSteps[index].name === defaultNameForType(step.reviewType)) {
-                            newSteps[index].name = defaultNameForType(newType);
-                          }
-                          onChange(newSteps);
-                        }}
+                        value={selectValueForStep(step)}
+                        onChange={(e) => handleTypeChange(index, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                       >
-                        {reviewTypes.map((type) => (
+                        {reviewTypeConfigs.map((config) => (
                           <option
-                            key={type.value}
-                            value={type.value}
+                            key={config.key}
+                            value={config.key}
                             disabled={
-                              type.value === 'SELF' &&
+                              config.key === 'SELF' &&
                               hasSelfReview &&
-                              step.reviewType !== 'SELF'
+                              selectValueForStep(step) !== 'SELF'
                             }
                           >
-                            {type.label}
-                            {type.value === 'SELF' &&
+                            {config.label}
+                            {!config.isBuiltIn && ' ✦'}
+                            {config.key === 'SELF' &&
                               hasSelfReview &&
-                              step.reviewType !== 'SELF' &&
+                              selectValueForStep(step) !== 'SELF' &&
                               ' (already added)'}
                           </option>
                         ))}
                       </select>
+                      {step.customTypeKey && (
+                        <p className="mt-1 text-xs text-indigo-600">
+                          Custom type · behaves as {step.reviewType.toLowerCase()} review
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -169,9 +195,7 @@ export default function WorkflowStepBuilder({
                       <input
                         type="date"
                         value={step.startDate}
-                        onChange={(e) =>
-                          updateStep(index, 'startDate', e.target.value)
-                        }
+                        onChange={(e) => updateStep(index, 'startDate', e.target.value)}
                         min={cycleStart}
                         max={cycleEnd}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -185,9 +209,7 @@ export default function WorkflowStepBuilder({
                       <input
                         type="date"
                         value={step.endDate}
-                        onChange={(e) =>
-                          updateStep(index, 'endDate', e.target.value)
-                        }
+                        onChange={(e) => updateStep(index, 'endDate', e.target.value)}
                         min={cycleStart}
                         max={cycleEnd}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -203,18 +225,8 @@ export default function WorkflowStepBuilder({
                   className="flex-shrink-0 text-red-600 hover:text-red-800 mt-6"
                   title="Remove step"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>

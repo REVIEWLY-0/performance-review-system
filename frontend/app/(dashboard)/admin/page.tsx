@@ -519,6 +519,12 @@ export default function AdminDashboard() {
             ❓ Edit Questions
           </button>
           <button
+            onClick={() => router.push('/admin/review-types')}
+            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            🏷️ Review Types
+          </button>
+          <button
             onClick={() =>
               selectedCycleId &&
               router.push(`/admin/cycles/${selectedCycleId}/scores`)

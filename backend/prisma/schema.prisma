@@ -60,10 +60,11 @@ model Company {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  users        User[]
-  teams        Team[]
-  reviewCycles ReviewCycle[]
-  questions    Question[]
+  users             User[]
+  teams             Team[]
+  reviewCycles      ReviewCycle[]
+  questions         Question[]
+  reviewTypeConfigs ReviewTypeConfig[]
 
   @@map("companies")
 }
@@ -159,6 +160,7 @@ model ReviewConfig {
   reviewCycleId String     @map("review_cycle_id")
   stepNumber    Int        @map("step_number")
   reviewType    ReviewType @map("review_type")
+  customTypeKey String?    @map("custom_type_key") // Set when using a custom ReviewTypeConfig; reviewType stores the base behavior
   name          String?    @map("name") // Optional step label, e.g. "Self Review Phase"
   startDate     DateTime   @map("start_date")
   endDate       DateTime   @map("end_date")
@@ -171,6 +173,25 @@ model ReviewConfig {
   @@unique([reviewCycleId, stepNumber])
   @@index([reviewCycleId])
   @@map("review_configs")
+}
+
+model ReviewTypeConfig {
+  id        String     @id @default(cuid())
+  companyId String     @map("company_id")
+  key       String     // Unique per company: "SELF", "PEER", "MANAGER", "LEAD", etc.
+  label     String     // Display name: "Lead Review"
+  baseType  ReviewType @map("base_type") // Underlying behavior: SELF | MANAGER | PEER
+  isBuiltIn Boolean    @default(false) @map("is_built_in")
+  isActive  Boolean    @default(true) @map("is_active")
+  sortOrder Int        @default(0) @map("sort_order")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, key])
+  @@index([companyId])
+  @@map("review_type_configs")
 }
 
 model Question {

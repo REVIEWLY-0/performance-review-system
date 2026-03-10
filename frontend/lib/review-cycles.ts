@@ -11,6 +11,7 @@ export interface ReviewConfig {
   id?: string;
   stepNumber: number;
   reviewType: ReviewType;
+  customTypeKey?: string; // Set when using a custom ReviewTypeConfig; reviewType stores base behavior
   name?: string;
   startDate: string;
   endDate: string;

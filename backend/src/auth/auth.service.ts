@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../common/services/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ReviewTypeConfigsService } from '../review-type-configs/review-type-configs.service';
 
 @Injectable()
 export class AuthService {
@@ -10,6 +11,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private reviewTypeConfigsService: ReviewTypeConfigsService,
   ) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -91,6 +93,10 @@ export class AuthService {
         data: { name: companyName },
       });
       console.log('✅ Company created:', company.id);
+
+      // Seed built-in review type configs (SELF, MANAGER, PEER) for new company
+      await this.reviewTypeConfigsService.seedBuiltins(company.id);
+      console.log('✅ Review type configs seeded for company:', company.id);
 
       // 4) Create user in our database
       const user = await this.prisma.user.create({

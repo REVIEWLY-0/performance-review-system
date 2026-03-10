@@ -11,6 +11,7 @@ import { ScoringModule } from './scoring/scoring.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
+import { ReviewTypeConfigsModule } from './review-type-configs/review-type-configs.module';
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { PrismaService } from './common/services/prisma.service';
@@ -34,6 +35,7 @@ import { PrismaService } from './common/services/prisma.service';
     AnalyticsModule,
     NotificationsModule,
     HealthModule,
+    ReviewTypeConfigsModule,
   ],
   providers: [
     PrismaService,

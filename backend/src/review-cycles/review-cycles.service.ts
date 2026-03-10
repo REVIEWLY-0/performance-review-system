@@ -28,6 +28,11 @@ export class ReviewConfigDto {
   @MaxLength(100)
   name?: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  customTypeKey?: string; // Set when using a custom ReviewTypeConfig; reviewType stores base behavior
+
   @IsDateString()
   startDate!: string;
 
@@ -195,6 +200,7 @@ export class ReviewCyclesService {
           reviewCycleId: cycle.id,
           stepNumber: config.stepNumber,
           reviewType: config.reviewType,
+          customTypeKey: config.customTypeKey || null,
           name: config.name || null,
           startDate: new Date(config.startDate),
           endDate: new Date(config.endDate),
@@ -313,6 +319,7 @@ export class ReviewCyclesService {
           reviewCycleId: id,
           stepNumber: config.stepNumber,
           reviewType: config.reviewType,
+          customTypeKey: config.customTypeKey || null,
           name: config.name || null,
           startDate: new Date(config.startDate),
           endDate: new Date(config.endDate),
