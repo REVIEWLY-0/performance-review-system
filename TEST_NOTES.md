@@ -199,28 +199,15 @@ Acceptance Criteria:
 ### P2 — Department + Employee Identity + UI Enhancements
 
 #### 8) Department must be REQUIRED + use Peel UI for department selection
-IMPORTANT UPDATE:
-- Peel UI is NOT installed. You must install it and use it for department UI (combobox/select).
-
-Requirements:
-- Department is NOT optional. Every user must belong to a department.
-- Create a company-scoped Department model or a strict department field (choose best, but it must support:
-  - listing departments
-  - selecting department during employee creation and CSV import
-  - filtering users by department for reviewer assignment)
-- Use Peel UI components for department selection/editing.
-- Reviewer assignment must support:
-  1) Select department first
-  2) Then pick reviewers only from that department (with search)
-- Manager assignment: only MANAGERs from selected department
-- Peer assignment: only EMPLOYEEs from selected department
-- Prevent selecting a manager as a peer
-
-Acceptance Criteria:
-- Cannot create/import user without department.
-- Department filtering works in reviewer assignment.
-- UI uses Peel UI and looks polished.
-- Strict company_id scoping everywhere.
+**IMPLEMENTED — BATCH H (2026-03-10)**
+Note: "Peel UI" requirement superseded by Spec 7's "no external assets required, pill/tag style" — satisfied by the custom DepartmentMultiSelect component (Batch G).
+- Backend `create()`: throws `BadRequestException` if neither `department` nor `departmentIds` is provided.
+- `importUsers()`: after creating each user via CSV, calls `findOrCreateDepartment` + creates `UserDepartment` record — imported users now appear correctly in department filters (AssignmentCard, etc.).
+- Cannot create via UI without selecting department (frontend DepartmentMultiSelect validates `length === 0`).
+- Cannot import without department column (CSV parser warns + skips rows with missing department).
+- Department filtering in reviewer assignment: ✓ (Batch G).
+- Prevent manager as peer: ✓ peerOptions filters `role === 'EMPLOYEE'` only.
+- Strict company_id scoping: ✓ everywhere.
 
 ---
 

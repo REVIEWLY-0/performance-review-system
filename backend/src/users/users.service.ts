@@ -298,6 +298,11 @@ export class UsersService {
   async create(companyId: string, createUserDto: CreateUserDto) {
     const { email, name, role, managerId, department, departmentIds, employeeId: requestedEmpId } = createUserDto;
 
+    // Enforce department requirement
+    if ((!departmentIds || departmentIds.length === 0) && !department) {
+      throw new BadRequestException('At least one department is required');
+    }
+
     // Check if email already exists in company
     const existingUser = await this.prisma.user.findFirst({
       where: {
@@ -589,6 +594,14 @@ export class UsersService {
 
         createdUsers.set(userData.email, user.id);
         results.successful++;
+
+        // Link user to Department model (find or create dept, then create UserDepartment record)
+        if (userData.department) {
+          const dept = await this.findOrCreateDepartment(companyId, userData.department);
+          await this.prisma.userDepartment
+            .create({ data: { userId: user.id, departmentId: dept.id } })
+            .catch(() => {}); // ignore duplicate (shouldn't happen on fresh import)
+        }
 
         // Fire welcome email with setup link — non-blocking, failure must not affect import results
         this.notificationsService
