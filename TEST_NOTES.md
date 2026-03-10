@@ -224,15 +224,10 @@ Note: "Peel UI" requirement superseded by Spec 7's "no external assets required,
 ---
 
 #### 10) Employee page: reviewer status should show “Pending” not 0
-Problem:
-- Other reviewers status shows “0” (confusing).
-
-Expected:
-- Status labels: Pending / In Progress / Submitted / Not Assigned
-- No numeric "0" shown for status.
-
-Acceptance Criteria:
-- Status UI uses readable labels everywhere.
+**ALREADY DONE — BATCH 10 (prior session)**
+- `employee/page.tsx`: manager/peer review badges show `”{count} received”` when > 0, `”Pending”` (orange badge) when 0 — never bare `”0”`.
+- Peer/manager review pages: `getStatusBadge()` maps `NOT_STARTED → “Not Started”`, `DRAFT → “In Progress”`, `SUBMITTED → “Submitted”`.
+- `CycleInsightsPanel`: uses `”Pending”`, `”In Progress”`, `”Submitted”`, `”Not assigned”` labels; `”Not assigned”` shown when no reviewers; fraction `0/3` is informational context only.
 
 ---
 
