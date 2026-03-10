@@ -212,20 +212,14 @@ Note: "Peel UI" requirement superseded by Spec 7's "no external assets required,
 ---
 
 #### 9) Employee ID must be used to manage employees
-Problem:
-- Need stable employee id for HR workflows.
-
-Expected:
-- Add employeeId (unique per company).
-- Display employeeId in employee list/table.
-- Search by employeeId.
-- Include employeeId in CSV template/import:
-  - If provided: validate uniqueness in company
-  - If missing: auto-generate in a consistent format.
-
-Acceptance Criteria:
-- employeeId exists, unique per company, visible + searchable.
-- Import supports employeeId safely.
+**ALREADY DONE — prior batches**
+- `employeeId String? @map("employee_id")` on User model with `@@unique([companyId, employeeId])`.
+- Auto-generated as `EMP-XXXXXX` (uppercase alphanumeric) via `resolveEmployeeId()` if not provided.
+- Visible in `EmployeeList.tsx` as a mono badge alongside role.
+- Searchable: `employees/page.tsx` search box matches name, email, **and** `employeeId`.
+- CSV template (`downloadCsvTemplate()`) includes `employee_id` column.
+- CSV import: if `employee_id` column provided → validates uniqueness, throws if duplicate; if missing → auto-generates.
+- EditEmployeeModal shows employeeId as read-only for reference.
 
 ---
 
