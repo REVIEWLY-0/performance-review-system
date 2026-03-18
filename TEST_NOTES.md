@@ -271,3 +271,218 @@ P1: dynamic review types + required config + department management + multi-depar
 - Root cause: `mapUser()` in `users.service.ts` returned `[null, ...]` in departments array if any `UserDepartment.department` FK was null (data integrity issue after manual DB operations).
 - `users.service.ts` `mapUser()`: Added `.filter(Boolean)` after mapping `ud.department` — drops nulls, prevents "Cannot read properties of null (reading 'id')" in `EmployeeList` and `EditEmployeeModal`.
 - `DepartmentMultiSelect.tsx`: Added `d &&` guard in `.filter()` calls — defensive safety to match backend fix.
+
+---
+
+## 2026-03-10 — Post-BATCH R Follow-up Fixes (BATCH S)
+
+### FIXED — BATCH S (2026-03-10)
+
+#### 1) Review cycle edit fails with stale step-date validation error
+- Root cause: `update()` in `review-cycles.service.ts` validated OLD step dates (still in DB) against the NEW cycle dates BEFORE `updateConfigs()` could replace them — causing a false "Step X dates must fall within cycle dates" error whenever the user changed both cycle dates and step dates together.
+- Fix: Removed the config-date validation block from `update()`. The `updateConfigs()` call that immediately follows validates new step dates against the already-updated cycle dates, so the check in `update()` was redundant and harmful.
+
+#### 2) Activate/delete/complete/edit cycle — list doesn't refresh without page reload
+- Root cause: `activate()`, `complete()`, `delete()`, `update()`, `updateConfigs()` in `frontend/lib/review-cycles.ts` never called `invalidateCache('cycles:')`. When `onRefresh()` fired after a mutation, `getAll()` returned the 30s cached stale response.
+- Fix: Added `invalidateCache('cycles:')` after each of the five mutation methods in `review-cycles.ts`.
+
+---
+
+## 2026-03-10 — E2E System Test Findings (BATCH T)
+
+### E2E Test Summary
+Full end-to-end API test: created company "Acme Tech", admin + manager + 3 employees, departments, questions (SELF/MANAGER/PEER), review cycle with 3 steps, reviewer assignments, activated cycle, submitted self/peer/manager reviews, verified scoring formula `(Self + Avg(Managers) + Avg(Peers)) / 3` = correct.
+
+### Issues Found + Fixed
+
+#### 1) CRITICAL: No RBAC guard on GET /analytics/admin/:cycleId — **FIXED BATCH T**
+- `analytics.controller.ts` had `@UseGuards(AuthGuard)` at class level but no `@Roles` guard on `getAdminAnalytics`.
+- Any authenticated EMPLOYEE token could call `GET /analytics/admin/:cycleId` and receive full company-wide data (completionRate, averageScore, topPerformers, reviewProgress).
+- Fix: Added `@Roles('ADMIN') @UseGuards(RolesGuard)` to `getAdminAnalytics`.
+- Also added `@Roles('ADMIN', 'MANAGER') @UseGuards(RolesGuard)` to `getManagerAnalytics` — employees should not access team analytics.
+
+#### 2) MEDIUM: GET /reviewer-assignments had no auth guard — **FIXED BATCH T**
+- `reviewer-assignments.controller.ts` had no `@UseGuards(AuthGuard)` at class level — unauthenticated requests could technically reach the endpoint.
+- Write endpoints (POST/DELETE) had `@Roles('ADMIN') @UseGuards(RolesGuard)` correctly, but GET had neither guard.
+- Fix: Added `@UseGuards(AuthGuard)` at class level + `@Roles('ADMIN') @UseGuards(RolesGuard)` on `findByCycle`.
+
+#### 3) NOT A BUG: GET /notifications returns 404
+- Frontend never calls `GET /notifications` (list endpoint) — confirmed by grep.
+- The 404 in the E2E test was hitting a non-existent route. No action needed.
+
+#### 4) NOTE: Employees receive invite email automatically — no gap
+- Supabase `inviteUserByEmail()` is called on user creation — employees receive a password-setup email in Mailtrap. Confirmed by testing. No action needed.
+
+---
+
+## 2026-03-11 — RBAC Audit Follow-up (BATCH U)
+
+### FIXED — BATCH U (2026-03-11)
+
+#### 1) questions.controller.ts had no AuthGuard — unauthenticated access + potential data leak
+- No `@UseGuards(AuthGuard)` anywhere on the controller.
+- `@CompanyId()` resolves to `undefined` without a valid JWT → Prisma ignores the `companyId` filter → unauthenticated requests could read questions from ALL companies.
+- Write endpoints (POST, PUT, DELETE, reorder, duplicate) had no auth or role guard.
+- Fix: Added `@UseGuards(AuthGuard)` at class level. Added `@Roles('ADMIN') @UseGuards(RolesGuard)` to all write endpoints (create, update, delete, reorder, duplicate). GET endpoints remain open to all authenticated users (employees need to read questions during reviews).
+
+#### 2) POST /notifications/test used soft role check instead of guard
+- `notifications.controller.ts` `sendTestEmail()` returned `{ success: false }` with HTTP 200 for non-admins instead of 403.
+- Fix: Removed soft check, added `@Roles('ADMIN') @UseGuards(RolesGuard)`.
+
+#### 3) reviews.controller.ts — no gaps found
+- `@UseGuards(AuthGuard)` correctly applied at class level.
+- All endpoints use `user.id` to scope queries; service validates reviewer assignments before allowing access. No role guard needed — any authenticated user can be a reviewer.
+
+---
+
+## 2026-03-11 — HR Manager Feedback + Fixes
+
+### Feature 1: Company Monogram (Tenant Branding)
+Requirement:
+- Admin defines a company monogram (e.g., "EY", "ACME", "HR") or simple initials.
+- All employees must see it on their pages (dashboard header/sidebar and key pages).
+- Must be company-scoped (company_id) and tenant-safe.
+
+Acceptance criteria:
+- Admin can set/update monogram in Settings (or Company Profile).
+- Employees see monogram consistently across dashboards/pages.
+- Stored in DB (Company model) and returned in existing "me/company" payload (or similar).
+
+**IMPLEMENTED — BATCH W (2026-03-11)**
+- DB: `monogram String? @map("monogram")` added to `Company` model. Migration: `20260311_add_company_monogram`.
+- Backend: `PATCH /auth/company` (ADMIN only) → `updateCompany(companyId, dto)` in `auth.service.ts`. Monogram trimmed + uppercased before save. `companyMonogram` added to `signIn()` and `verifyToken()` responses.
+- Frontend `lib/auth.ts`: `companyMonogram?: string | null` added to `User` interface. `updateCompany()` function added.
+- Frontend `DashboardNav.tsx`: indigo badge with monogram text shown between separator and company name. Gracefully hidden when not set.
+- Frontend `settings/page.tsx`: "Company Profile" card (ADMIN only) with monogram input (max 5 chars, auto-uppercased), live badge preview, Save button. Calls `updateCompany()` + `invalidateUserCache()` on save.
+
+---
+
+### Feature 2: Rating Scale Definition (Flexible scale + meaning per number)
+Requirement:
+- Admin defines rating scale meanings.
+- Each rating value has:
+  - title (short label)
+  - description (what that rating means)
+- Scale should be flexible, but for now implement:
+  - min=1
+  - max configurable up to 10 (1..10 maximum)
+- Employees must see the meanings before selecting a rating (tooltip/modal/side panel).
+
+Expected UX:
+- Admin: configure scale in Settings or Review Config screen.
+- Employee: when answering a rating question, they can view the scale definitions easily.
+
+Acceptance criteria:
+- Scale definitions saved per company_id.
+- Rating questions use company's configured max (default to 5 if not configured, but allow up to 10).
+- UI displays definitions (title+description) for all rating options shown.
+- Validation prevents max > 10.
+
+---
+
+### Fix: Signup form fields prefilled from previous signup
+Problem:
+- Admin signup fields are prefilled from previous signup attempt.
+
+Acceptance criteria:
+- Signup form loads with empty fields every time you visit /signup (or /login?mode=signup).
+- No persisted localStorage autofill from the app code.
+- Ensure this is app-level prefill, not browser autofill (we can only control app).
+
+**FIXED — BATCH V (2026-03-11)**
+- Root cause: toggle button handler in `login/page.tsx` reset `fieldErrors` and `touched` but not `formData`. Switching from login→signup carried over previously typed email/password.
+- Fix: Added `setFormData({ email: '', password: '', confirmPassword: '', name: '', companyName: '' })` to the toggle handler so all fields clear on mode switch.
+
+---
+
+### Feature 2: Rating Scale Definition (cont.)
+
+**IMPLEMENTED — BATCH X (2026-03-11)**
+
+---
+
+## 2026-03-11 — Organogram + Sticky Nav (BATCH Y)
+
+### 1. Sticky Navigation Header
+**IMPLEMENTED — BATCH Y (2026-03-11)**
+- Added `sticky top-0 z-50` to the `<nav>` element in `components/DashboardNav.tsx`.
+- Nav bar remains fixed to the top of the viewport while scrolling on all dashboard pages.
+
+---
+
+### 2. Remove Monogram / Replace with Organogram (visual tree)
+
+**SUPERSEDED by BATCH Y-2 below — see visual org chart implementation.**
+
+### 3. Visual Position-Based Org Chart
+**IMPLEMENTED — BATCH Y-2 (2026-03-11)**
+
+#### Data model
+- New `OrgChartNode` model: `id`, `companyId`, `title`, `parentId` (self-referential, cascade delete), `order`. Migration: `20260311_add_org_chart`.
+
+#### Backend
+- `GET /org-chart` — all authenticated users; returns flat list `{ id, title, parentId, order }`.
+- `POST /org-chart` — ADMIN only; creates a position node.
+- `PATCH /org-chart/:id` — ADMIN only; renames or re-parents a node.
+- `DELETE /org-chart/:id` — ADMIN only; cascades to all descendants.
+- All endpoints tenant-scoped via `@CompanyId()`.
+
+#### Frontend
+- `lib/org-chart.ts`: `OrgChartNode`, `OrgTreeNode`, `buildTree()`, `orgChartApi`.
+- `/organogram` page rewritten as a proper visual org chart:
+  - Top-down tree with boxes connected by CSS lines (vertical stem → horizontal bar → vertical drops per child).
+  - Root boxes: indigo-tinted. Child boxes: white with gray border.
+  - Horizontally scrollable canvas for wide trees.
+  - **Edit mode** (admin only — toggle via ✎ Edit button):
+    - "+ Add root position" button creates top-level nodes.
+    - Hover any box → action bar: ✎ rename (inline), + add child, × delete.
+    - Inline `<input>` with Save/Cancel for all text edits.
+  - **Empty state**: friendly prompt directing admin to Edit → Add root position.
+  - Single-root tree centered; multi-root trees laid out side-by-side.
+
+### 2. Remove Monogram / Replace with Organogram
+**IMPLEMENTED — BATCH Y (2026-03-11)**
+
+#### Monogram Removed
+- `backend/prisma/schema.prisma`: Removed `monogram String?` from `Company` model.
+- Migration `20260311_drop_company_monogram`: `ALTER TABLE companies DROP COLUMN IF EXISTS monogram`.
+- `backend/src/auth/auth.dto.ts`: Removed `UpdateCompanyDto`.
+- `backend/src/auth/auth.service.ts`: Removed `updateCompany()`, removed `companyMonogram` from `signIn()` and `verifyToken()` responses.
+- `backend/src/auth/auth.controller.ts`: Removed `PATCH /auth/company` endpoint and associated imports.
+- `frontend/lib/auth.ts`: Removed `companyMonogram` from `User` interface, removed `updateCompany()`.
+- `frontend/components/DashboardNav.tsx`: Removed monogram badge rendering.
+- `frontend/app/(dashboard)/settings/page.tsx`: Removed all monogram state/handlers/UI (Company Profile card).
+
+#### Organogram Added
+- `backend/src/users/users.service.ts`: `getOrganogramData(companyId, requestingRole)` — fetches all company users, role-aware field filtering.
+- `backend/src/users/users.controller.ts`: `GET /users/organogram` — all authenticated users, placed before `GET :id` to avoid route collision.
+- `frontend/app/(dashboard)/organogram/page.tsx` — **NEW** full org chart page:
+  - Access info banner for EMPLOYEE and MANAGER roles.
+  - Search by name (highlights matching nodes + shows ancestor chain).
+  - Department filter dropdown (MANAGER + ADMIN only).
+  - Role-aware cards: EMPLOYEE sees name/role/dept; MANAGER sees + email; ADMIN sees + email + employeeId.
+  - Recursive collapsible tree with CSS indent lines (`border-l-2 border-gray-200`).
+  - Avatar initials circle, role badge, department pills per node.
+  - Expand/collapse button per branch.
+- Navigation links added to Quick Actions on admin, manager, and employee dashboards.
+
+#### Verification
+- Backend `npx tsc --noEmit` — clean
+- Frontend `npx tsc --noEmit` — clean
+
+#### Backend
+- DB: `RatingScale` model added to `schema.prisma` — `companyId` (unique), `maxRating Int default 5`, `labels Json`. `Company` model gets `ratingScale RatingScale?` relation. Migration: `20260311_add_rating_scale`.
+- Service `rating-scale.service.ts`: `findByCompany(companyId)` returns stored scale or computed default (maxRating:5, first 5 default labels — no auto-persist). `upsert(companyId, dto)` validates maxRating 1–10, fills missing label values from defaults.
+- Controller `rating-scale.controller.ts`: `GET /rating-scale` (all authenticated users — needed during reviews), `PUT /rating-scale` (ADMIN only with RolesGuard).
+- Module `rating-scale.module.ts` registered in `app.module.ts`.
+
+#### Frontend
+- `frontend/lib/rating-scale.ts`: `RatingScale` + `RatingScaleLabel` interfaces. `DEFAULT_SCALE` (5-point). `ALL_DEFAULT_LABELS` (10 entries). `ratingScaleApi.get()` (60s cache, falls back to DEFAULT_SCALE on error). `ratingScaleApi.update()` (PUT, invalidates cache).
+- **Self review page** (`employee/reviews/self/page.tsx`): `ratingScale` state fetched via `Promise.all`. `QuestionCard` receives `ratingScale` prop — rating buttons use `Array.from({ length: maxRating })`, end-labels show `labels[0].title` / `labels[maxRating-1].title`. Collapsible `<details>/<summary>` panel shows all label definitions.
+- **Peer review page** (`employee/reviews/peer/[employeeId]/page.tsx`): same pattern as self review.
+- **Manager review page** (`manager/reviews/[employeeId]/page.tsx`): both `SelfReviewQuestionCard` (read-only) and `ManagerQuestionCard` (editable) receive `ratingScale` prop — dynamic buttons, end-labels, collapsible info panel on editable card.
+- **Settings page** (`settings/page.tsx`): Rating Scale card (ADMIN only). `ratingScaleInput` state (default: `DEFAULT_SCALE`). Loaded in parallel via `Promise.all` in `loadData`. `handleMaxRatingChange()` — clamps 1–10, auto-fills missing label values from `ALL_DEFAULT_LABELS`. `handleLabelChange()` — updates title/description per value. `handleSaveRatingScale()` — calls `ratingScaleApi.update()`. UI: maxRating number input (1–10), grid of label rows (value badge + title input + description input), Save button.
+
+#### Verification
+- Backend `npx tsc --noEmit` — clean
+- Frontend `npx tsc --noEmit` — clean
