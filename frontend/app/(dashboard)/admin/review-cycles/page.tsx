@@ -33,7 +33,7 @@ export default function ReviewCyclesPage() {
     try {
       setLoading(true);
       setError('');
-      const data = await reviewCyclesApi.getAll(); // Fetch all cycles without status filter
+      const { data } = await reviewCyclesApi.getAll(); // Fetch all cycles without status filter
       setAllCycles(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load review cycles');

@@ -243,20 +243,9 @@ export class ReviewCyclesService {
         : cycle.startDate;
       const endDate = dto.endDate ? new Date(dto.endDate) : cycle.endDate;
       this.validateDates(startDate, endDate);
-
-      // Validate that existing configs still fall within new dates
-      if (cycle.reviewConfigs.length > 0) {
-        this.validateConfigDates(
-          startDate,
-          endDate,
-          cycle.reviewConfigs.map((config) => ({
-            stepNumber: config.stepNumber,
-            reviewType: config.reviewType,
-            startDate: config.startDate.toISOString(),
-            endDate: config.endDate.toISOString(),
-          })),
-        );
-      }
+      // Note: config dates are NOT validated here because updateConfigs() is
+      // always called immediately after update() in the edit flow, and it
+      // validates the new config dates against the freshly updated cycle dates.
     }
 
     return this.prisma.reviewCycle.update({

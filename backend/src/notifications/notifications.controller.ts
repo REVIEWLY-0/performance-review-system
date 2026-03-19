@@ -2,6 +2,8 @@ import { Controller, Get, Put, Post, Body, UseGuards, Query, Header, Res } from 
 import { Response } from 'express';
 import { NotificationsService, NotificationPreferences } from './notifications.service';
 import { AuthGuard } from '../common/guards/auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('notifications')
@@ -34,16 +36,13 @@ export class NotificationsController {
 
   /**
    * POST /notifications/test
-   * Send a test email to verify configuration (Admin only)
+   * Send a test email to verify configuration — ADMIN only
    */
   @Post('test')
   @UseGuards(AuthGuard)
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async sendTestEmail(@Query('email') email: string, @CurrentUser() user: any) {
-    // Only admins can test email configuration
-    if (user.role !== 'ADMIN') {
-      return { success: false, message: 'Only admins can test email configuration' };
-    }
-
     const testEmail = email || user.email;
     return this.notificationsService.sendTestEmail(testEmail);
   }

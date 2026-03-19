@@ -10,10 +10,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { QuestionsService, CreateQuestionDto, UpdateQuestionDto } from './questions.service';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CompanyId } from '../common/decorators/company-id.decorator';
 import { ReviewType } from '@prisma/client';
 
 @Controller('questions')
+@UseGuards(AuthGuard)
 export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 
@@ -47,9 +51,11 @@ export class QuestionsController {
   }
 
   /**
-   * Create a new question
+   * Create a new question — ADMIN only
    */
   @Post()
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async create(
     @CompanyId() companyId: string,
     @Body() dto: CreateQuestionDto,
@@ -58,9 +64,11 @@ export class QuestionsController {
   }
 
   /**
-   * Update a question
+   * Update a question — ADMIN only
    */
   @Put(':id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async update(
     @Param('id') id: string,
     @CompanyId() companyId: string,
@@ -70,17 +78,21 @@ export class QuestionsController {
   }
 
   /**
-   * Delete a question
+   * Delete a question — ADMIN only
    */
   @Delete(':id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async delete(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.questionsService.delete(id, companyId);
   }
 
   /**
-   * Reorder questions within a review type
+   * Reorder questions within a review type — ADMIN only
    */
   @Post('reorder')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async reorder(
     @CompanyId() companyId: string,
     @Body() body: { reviewType: ReviewType; questionIds: string[] },
@@ -93,9 +105,11 @@ export class QuestionsController {
   }
 
   /**
-   * Duplicate a question
+   * Duplicate a question — ADMIN only
    */
   @Post(':id/duplicate')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async duplicate(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.questionsService.duplicate(id, companyId);
   }

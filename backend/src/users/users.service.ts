@@ -692,6 +692,43 @@ export class UsersService {
   }
 
   /**
+   * Get org chart data — role-aware field filtering
+   * EMPLOYEE: public fields only (name, role, managerId, departments)
+   * MANAGER:  + email
+   * ADMIN:    + email + employeeId
+   * CRITICAL: Always filter by companyId for multi-tenancy
+   */
+  async getOrganogramData(companyId: string, requestingRole: string) {
+    const users = await this.prisma.user.findMany({
+      where: { companyId },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        managerId: true,
+        email: true,
+        employeeId: true,
+        userDepartments: {
+          include: { department: { select: { id: true, name: true } } },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return users.map((u) => ({
+      id: u.id,
+      name: u.name,
+      role: u.role,
+      managerId: u.managerId,
+      departments: (u.userDepartments ?? [])
+        .map((ud) => ud.department)
+        .filter(Boolean) as { id: string; name: string }[],
+      ...(requestingRole !== 'EMPLOYEE' && { email: u.email }),
+      ...(requestingRole === 'ADMIN' && { employeeId: u.employeeId }),
+    }));
+  }
+
+  /**
    * Get user statistics
    */
   async getStats(companyId: string) {

@@ -66,6 +66,8 @@ model Company {
   questions         Question[]
   reviewTypeConfigs ReviewTypeConfig[]
   departments       Department[]
+  ratingScale       RatingScale?
+  orgChart          OrgChartNode[]
 
   @@map("companies")
 }
@@ -296,6 +298,19 @@ model Answer {
   @@map("answers")
 }
 
+model RatingScale {
+  id        String   @id @default(cuid())
+  companyId String   @unique @map("company_id")
+  maxRating Int      @default(5) @map("max_rating")
+  labels    Json     // [{ value: Int, title: String, description: String }]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("rating_scales")
+}
+
 model ReviewerAssignment {
   id            String       @id @default(cuid())
   reviewCycleId String       @map("review_cycle_id")
@@ -317,4 +332,21 @@ model ReviewerAssignment {
   @@index([reviewCycleId, employeeId])
   @@index([reviewCycleId, reviewerId, reviewerType])
   @@map("reviewer_assignments")
+}
+
+model OrgChartNode {
+  id        String   @id @default(cuid())
+  companyId String   @map("company_id")
+  title     String
+  parentId  String?  @map("parent_id")
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent   OrgChartNode?  @relation("NodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children OrgChartNode[] @relation("NodeHierarchy")
+
+  @@index([companyId])
+  @@map("org_chart_nodes")
 }

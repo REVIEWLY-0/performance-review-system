@@ -9,6 +9,7 @@ import {
   Answer,
   QuestionWithAnswer,
 } from '@/lib/reviews';
+import { ratingScaleApi, RatingScale, DEFAULT_SCALE } from '@/lib/rating-scale';
 
 interface PeerReviewPageProps {
   params: {
@@ -22,6 +23,7 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
   const cycleId = searchParams.get('cycleId');
 
   const [reviewData, setReviewData] = useState<PeerReviewData | null>(null);
+  const [ratingScale, setRatingScale] = useState<RatingScale>(DEFAULT_SCALE);
   const [answers, setAnswers] = useState<Map<string, Answer>>(new Map());
   const [dirtyAnswers, setDirtyAnswers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -65,8 +67,12 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
     try {
       setLoading(true);
       setError('');
-      const data = await getPeerReview(cycleId, params.employeeId);
+      const [data, scale] = await Promise.all([
+        getPeerReview(cycleId, params.employeeId),
+        ratingScaleApi.get(),
+      ]);
       setReviewData(data);
+      setRatingScale(scale);
 
       // Initialize answers map
       const initialAnswers = new Map<string, Answer>();
@@ -332,6 +338,7 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
                 answer={answers.get(question.id)}
                 onUpdate={updateAnswer}
                 disabled={isSubmitted}
+                ratingScale={ratingScale}
               />
             ))}
           </div>
@@ -366,6 +373,7 @@ function QuestionCard({
   answer,
   onUpdate,
   disabled,
+  ratingScale,
 }: {
   question: QuestionWithAnswer;
   number: number;
@@ -375,6 +383,7 @@ function QuestionCard({
     updates: Partial<Omit<Answer, 'questionId'>>,
   ) => void;
   disabled: boolean;
+  ratingScale: RatingScale;
 }) {
   return (
     <div className="bg-white shadow rounded-lg p-6">
@@ -385,22 +394,44 @@ function QuestionCard({
       </div>
 
       {question.type === 'RATING' && (
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map((num) => (
-            <button
-              key={num}
-              type="button"
-              onClick={() => !disabled && onUpdate(question.id, { rating: num })}
-              disabled={disabled}
-              className={`flex-1 px-4 py-4 border-2 rounded-lg font-medium transition-colors ${
-                answer?.rating === num
-                  ? 'border-purple-500 bg-purple-50 text-purple-700'
-                  : 'border-gray-300 text-gray-700 hover:border-purple-300 hover:bg-purple-50'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {num}
-            </button>
-          ))}
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: ratingScale.maxRating }, (_, i) => i + 1).map((num) => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => !disabled && onUpdate(question.id, { rating: num })}
+                disabled={disabled}
+                className={`min-w-[48px] flex-1 px-3 py-4 border-2 rounded-lg font-medium transition-colors ${
+                  answer?.rating === num
+                    ? 'border-purple-500 bg-purple-50 text-purple-700'
+                    : 'border-gray-300 text-gray-700 hover:border-purple-300 hover:bg-purple-50'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-between text-xs text-gray-500 px-1">
+            <span>{ratingScale.labels[0]?.title ?? 'Poor'}</span>
+            <span>{ratingScale.labels[ratingScale.maxRating - 1]?.title ?? 'Excellent'}</span>
+          </div>
+          <details className="text-xs text-gray-500">
+            <summary className="cursor-pointer hover:text-gray-700 select-none">
+              View scale definitions
+            </summary>
+            <div className="mt-2 space-y-1 bg-gray-50 rounded-md p-3">
+              {ratingScale.labels.map((label) => (
+                <div key={label.value} className="flex gap-2">
+                  <span className="font-semibold w-4 shrink-0 text-gray-700">{label.value}</span>
+                  <span className="font-medium text-gray-800">{label.title}</span>
+                  {label.description && (
+                    <span className="text-gray-500">— {label.description}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
         </div>
       )}
 

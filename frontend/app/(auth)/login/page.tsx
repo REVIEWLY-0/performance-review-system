@@ -514,6 +514,13 @@ export default function LoginPage() {
                 setIsSignUp(!isSignUp)
                 setError('')
                 setSuccess('')
+                setFormData({
+                  email: '',
+                  password: '',
+                  confirmPassword: '',
+                  name: '',
+                  companyName: '',
+                })
                 setFieldErrors({
                   email: '',
                   password: '',

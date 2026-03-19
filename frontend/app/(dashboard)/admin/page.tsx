@@ -422,6 +422,12 @@ export default function AdminDashboard() {
             🏢 Departments
           </button>
           <button
+            onClick={() => router.push('/organogram')}
+            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            🏗️ Organogram
+          </button>
+          <button
             onClick={() =>
               selectedCycleId &&
               router.push(`/admin/cycles/${selectedCycleId}/scores`)

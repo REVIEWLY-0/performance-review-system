@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, invalidateUserCache, requestPasswordReset, User } from '@/lib/auth';
+import { ratingScaleApi, RatingScale, RatingScaleLabel, ALL_DEFAULT_LABELS, DEFAULT_SCALE } from '@/lib/rating-scale';
 import {
   getNotificationPreferences,
   updateNotificationPreferences,
@@ -26,6 +27,8 @@ export default function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [ratingScaleInput, setRatingScaleInput] = useState<RatingScale>(DEFAULT_SCALE);
+  const [savingRatingScale, setSavingRatingScale] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -34,7 +37,11 @@ export default function SettingsPage() {
 
   const loadData = async () => {
     try {
-      const currentUser = await getCurrentUser();
+      const [currentUser, prefs, scale] = await Promise.all([
+        getCurrentUser(),
+        getNotificationPreferences(),
+        ratingScaleApi.get(),
+      ]);
       if (!currentUser) {
         router.push('/login');
         return;
@@ -42,9 +49,8 @@ export default function SettingsPage() {
 
       setUser(currentUser);
       setNameInput(currentUser.name);
-
-      const prefs = await getNotificationPreferences();
       setPreferences(prefs);
+      setRatingScaleInput(scale);
     } catch (err: any) {
       console.error('Error loading settings:', err);
     } finally {
@@ -88,6 +94,38 @@ export default function SettingsPage() {
       toast.error(err.message || 'Failed to send password reset email');
     } finally {
       setSendingReset(false);
+    }
+  };
+
+  const handleMaxRatingChange = (val: number) => {
+    const clamped = Math.min(10, Math.max(1, val));
+    const newLabels: RatingScaleLabel[] = Array.from({ length: clamped }, (_, i) => {
+      const v = i + 1;
+      const existing = ratingScaleInput.labels.find((l) => l.value === v);
+      if (existing) return existing;
+      const def = ALL_DEFAULT_LABELS.find((l) => l.value === v);
+      return def ?? { value: v, title: '', description: '' };
+    });
+    setRatingScaleInput({ maxRating: clamped, labels: newLabels });
+  };
+
+  const handleLabelChange = (value: number, field: 'title' | 'description', text: string) => {
+    setRatingScaleInput((prev) => ({
+      ...prev,
+      labels: prev.labels.map((l) => (l.value === value ? { ...l, [field]: text } : l)),
+    }));
+  };
+
+  const handleSaveRatingScale = async () => {
+    setSavingRatingScale(true);
+    try {
+      const updated = await ratingScaleApi.update(ratingScaleInput);
+      setRatingScaleInput(updated);
+      toast.success('Rating scale saved');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save rating scale');
+    } finally {
+      setSavingRatingScale(false);
     }
   };
 
@@ -214,6 +252,81 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Rating Scale — admin only */}
+      {user.role === 'ADMIN' && (
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-1">Rating Scale</h2>
+          <p className="text-sm text-gray-600 mb-5">
+            Configure the rating scale used in all reviews. Employees see the label definitions when submitting answers.
+          </p>
+
+          {/* Max rating input */}
+          <div className="mb-5">
+            <label htmlFor="maxRating" className="block text-sm font-medium text-gray-700 mb-1">
+              Maximum rating value
+              <span className="ml-1 text-xs text-gray-400">(1 – 10)</span>
+            </label>
+            <input
+              id="maxRating"
+              type="number"
+              min={1}
+              max={10}
+              value={ratingScaleInput.maxRating}
+              onChange={(e) => handleMaxRatingChange(parseInt(e.target.value, 10) || 1)}
+              className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* Per-value label editor */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase tracking-wide pb-1 border-b">
+              <div className="col-span-1">#</div>
+              <div className="col-span-3">Title</div>
+              <div className="col-span-8">Description</div>
+            </div>
+            {ratingScaleInput.labels.map((label) => (
+              <div key={label.value} className="grid grid-cols-12 gap-2 items-center">
+                <div className="col-span-1">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+                    {label.value}
+                  </span>
+                </div>
+                <div className="col-span-3">
+                  <input
+                    type="text"
+                    value={label.title}
+                    onChange={(e) => handleLabelChange(label.value, 'title', e.target.value)}
+                    maxLength={40}
+                    placeholder="Title"
+                    className="block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="col-span-8">
+                  <input
+                    type="text"
+                    value={label.description}
+                    onChange={(e) => handleLabelChange(label.value, 'description', e.target.value)}
+                    maxLength={100}
+                    placeholder="Short description visible to employees"
+                    className="block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex justify-end">
+            <button
+              onClick={handleSaveRatingScale}
+              disabled={savingRatingScale}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {savingRatingScale ? 'Saving...' : 'Save Rating Scale'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Security */}
       <div className="bg-white shadow rounded-lg p-6 mb-6">

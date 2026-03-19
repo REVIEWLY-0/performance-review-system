@@ -11,6 +11,7 @@ import {
   Answer,
   TaskDefinition,
 } from '@/lib/reviews';
+import { ratingScaleApi, RatingScale, DEFAULT_SCALE } from '@/lib/rating-scale';
 
 // Free-form task item (employee-defined, no predefined tasks)
 interface TaskItem {
@@ -37,6 +38,7 @@ export default function SelfReviewPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [reviewData, setReviewData] = useState<SelfReviewData | null>(null);
+  const [ratingScale, setRatingScale] = useState<RatingScale>(DEFAULT_SCALE);
   const [answers, setAnswers] = useState<Map<string, Answer>>(new Map());
   const [dirtyAnswers, setDirtyAnswers] = useState<Set<string>>(new Set());
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -59,8 +61,12 @@ export default function SelfReviewPage() {
     try {
       setLoading(true);
       setError('');
-      const data = await getSelfReview(cycleId!);
+      const [data, scale] = await Promise.all([
+        getSelfReview(cycleId!),
+        ratingScaleApi.get(),
+      ]);
       setReviewData(data);
+      setRatingScale(scale);
 
       // Initialize answers from existing data
       const initialAnswers = new Map<string, Answer>();
@@ -392,6 +398,7 @@ export default function SelfReviewPage() {
             onTaskListChange={handleTaskListChange}
             onPredefinedTaskChange={handlePredefinedTaskChange}
             disabled={isSubmitted}
+            ratingScale={ratingScale}
           />
         ))}
       </div>
@@ -433,6 +440,7 @@ interface QuestionCardProps {
   onTaskListChange: (questionId: string, tasks: TaskItem[]) => void;
   onPredefinedTaskChange: (questionId: string, tasks: PredefinedTaskState[]) => void;
   disabled: boolean;
+  ratingScale: RatingScale;
 }
 
 function QuestionCard({
@@ -444,6 +452,7 @@ function QuestionCard({
   onTaskListChange,
   onPredefinedTaskChange,
   disabled,
+  ratingScale,
 }: QuestionCardProps) {
   const hasPredefined = question.tasks && question.tasks.length > 0;
 
@@ -526,14 +535,14 @@ function QuestionCard({
       {/* Rating Question */}
       {question.type === 'RATING' && (
         <div className="space-y-3">
-          <div className="flex gap-3">
-            {[1, 2, 3, 4, 5].map((num) => (
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: ratingScale.maxRating }, (_, i) => i + 1).map((num) => (
               <button
                 key={num}
                 type="button"
                 onClick={() => onRatingChange(question.id, num)}
                 disabled={disabled}
-                className={`flex-1 px-4 py-4 border-2 rounded-lg text-center transition-colors ${
+                className={`min-w-[48px] flex-1 px-3 py-4 border-2 rounded-lg text-center transition-colors ${
                   answer?.rating === num
                     ? 'border-indigo-500 bg-indigo-50'
                     : 'border-gray-300 hover:border-indigo-300 hover:bg-gray-50'
@@ -544,9 +553,25 @@ function QuestionCard({
             ))}
           </div>
           <div className="flex justify-between text-sm text-gray-500 px-1">
-            <span>Poor</span>
-            <span>Excellent</span>
+            <span>{ratingScale.labels[0]?.title ?? 'Poor'}</span>
+            <span>{ratingScale.labels[ratingScale.maxRating - 1]?.title ?? 'Excellent'}</span>
           </div>
+          <details className="text-xs text-gray-500">
+            <summary className="cursor-pointer hover:text-gray-700 select-none">
+              View scale definitions
+            </summary>
+            <div className="mt-2 space-y-1 bg-gray-50 rounded-md p-3">
+              {ratingScale.labels.map((label) => (
+                <div key={label.value} className="flex gap-2">
+                  <span className="font-semibold w-4 shrink-0 text-gray-700">{label.value}</span>
+                  <span className="font-medium text-gray-800">{label.title}</span>
+                  {label.description && (
+                    <span className="text-gray-500">— {label.description}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
         </div>
       )}
 

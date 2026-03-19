@@ -115,10 +115,12 @@ export const reviewCyclesApi = {
     id: string,
     dto: UpdateReviewCycleDto,
   ): Promise<ReviewCycle> => {
-    return fetchWithAuth(`${API_URL}/review-cycles/${id}`, {
+    const result = await fetchWithAuth(`${API_URL}/review-cycles/${id}`, {
       method: 'PUT',
       body: JSON.stringify(dto),
     });
+    invalidateCache('cycles:');
+    return result;
   },
 
   /**
@@ -128,37 +130,45 @@ export const reviewCyclesApi = {
     id: string,
     configs: Omit<ReviewConfig, 'id' | 'createdAt' | 'updatedAt'>[],
   ): Promise<ReviewCycle> => {
-    return fetchWithAuth(`${API_URL}/review-cycles/${id}/configs`, {
+    const result = await fetchWithAuth(`${API_URL}/review-cycles/${id}/configs`, {
       method: 'PUT',
       body: JSON.stringify({ configs }),
     });
+    invalidateCache('cycles:');
+    return result;
   },
 
   /**
    * Activate a review cycle (DRAFT -> ACTIVE)
    */
   activate: async (id: string): Promise<ReviewCycle> => {
-    return fetchWithAuth(`${API_URL}/review-cycles/${id}/activate`, {
+    const result = await fetchWithAuth(`${API_URL}/review-cycles/${id}/activate`, {
       method: 'POST',
     });
+    invalidateCache('cycles:');
+    return result;
   },
 
   /**
    * Complete a review cycle (ACTIVE -> COMPLETED)
    */
   complete: async (id: string): Promise<ReviewCycle> => {
-    return fetchWithAuth(`${API_URL}/review-cycles/${id}/complete`, {
+    const result = await fetchWithAuth(`${API_URL}/review-cycles/${id}/complete`, {
       method: 'POST',
     });
+    invalidateCache('cycles:');
+    return result;
   },
 
   /**
    * Delete a review cycle (DRAFT cycles only)
    */
   delete: async (id: string): Promise<void> => {
-    return fetchWithAuth(`${API_URL}/review-cycles/${id}`, {
+    const result = await fetchWithAuth(`${API_URL}/review-cycles/${id}`, {
       method: 'DELETE',
     });
+    invalidateCache('cycles:');
+    return result;
   },
 
   /**

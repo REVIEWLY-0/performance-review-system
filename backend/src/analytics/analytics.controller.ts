@@ -1,6 +1,8 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { AuthGuard } from '../common/guards/auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CompanyId } from '../common/decorators/company-id.decorator';
 
@@ -11,9 +13,11 @@ export class AnalyticsController {
 
   /**
    * GET /analytics/admin/:cycleId
-   * Get company-wide analytics for admins
+   * Get company-wide analytics for admins — ADMIN only
    */
   @Get('admin/:cycleId')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async getAdminAnalytics(
     @Param('cycleId') cycleId: string,
     @CurrentUser() user: any,
@@ -24,9 +28,11 @@ export class AnalyticsController {
 
   /**
    * GET /analytics/manager/:cycleId
-   * Get team analytics for managers
+   * Get team analytics for managers — ADMIN or MANAGER only
    */
   @Get('manager/:cycleId')
+  @Roles('ADMIN', 'MANAGER')
+  @UseGuards(RolesGuard)
   async getManagerAnalytics(
     @Param('cycleId') cycleId: string,
     @CurrentUser() user: any,

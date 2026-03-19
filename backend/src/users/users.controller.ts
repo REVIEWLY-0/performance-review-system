@@ -70,6 +70,18 @@ export class UsersController {
   }
 
   /**
+   * Get organogram data — all users in company, role-aware field filtering
+   * EMPLOYEE: public fields; MANAGER: +email; ADMIN: +email+employeeId
+   */
+  @Get('organogram')
+  async getOrganogram(
+    @CompanyId() companyId: string,
+    @CurrentUser() currentUser: { id: string; role: string },
+  ) {
+    return this.usersService.getOrganogramData(companyId, currentUser.role);
+  }
+
+  /**
    * Get specific user
    */
   @Get(':id')

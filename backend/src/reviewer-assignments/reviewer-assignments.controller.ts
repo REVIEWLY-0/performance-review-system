@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ReviewerAssignmentsService } from './reviewer-assignments.service';
+import { AuthGuard } from '../common/guards/auth.guard';
 import { CompanyId } from '../common/decorators/company-id.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -19,6 +20,7 @@ import {
 } from './reviewer-assignments.service';
 
 @Controller('reviewer-assignments')
+@UseGuards(AuthGuard)
 export class ReviewerAssignmentsController {
   constructor(
     private readonly reviewerAssignmentsService: ReviewerAssignmentsService,
@@ -26,9 +28,11 @@ export class ReviewerAssignmentsController {
 
   /**
    * GET /reviewer-assignments?reviewCycleId=xxx
-   * Get all assignments for a review cycle, grouped by employee
+   * Get all assignments for a review cycle, grouped by employee — ADMIN only
    */
   @Get()
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async findByCycle(
     @Query('reviewCycleId') reviewCycleId: string,
     @CompanyId() companyId: string,
