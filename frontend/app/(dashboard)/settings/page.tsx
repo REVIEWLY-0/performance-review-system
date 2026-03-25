@@ -195,7 +195,7 @@ export default function SettingsPage() {
     <div className="px-4 py-6 sm:px-0">
       {/* Header */}
       <div className="mb-6">
-        <BackButton href={`/${user.role.toLowerCase()}`} label="Back to Dashboard" />
+        <BackButton label="Back" />
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="mt-1 text-sm text-gray-600">
           Manage your account settings and notification preferences
