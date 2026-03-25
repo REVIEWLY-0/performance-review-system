@@ -2,78 +2,148 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Light mode variables ── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN SYSTEM — "Transparent Authority"
+   Single source of truth: frontend/DESIGN.md
+   Tokens map 1-to-1 to Tailwind utilities in tailwind.config.ts
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Light Mode ─────────────────────────────────────────────────────────── */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 255, 255, 255;
+  /* Primary */
+  --primary:            #0053dc;
+  --primary-dim:        #003eb3;   /* hover / pressed state */
+  --on-primary:         #faf8ff;
+  --primary-fixed-dim:  #aac7ff;   /* timeline: past steps */
+
+  /* Surface hierarchy (hero → sidebar) */
+  --surface:                    #faf8ff;   /* hero / nav */
+  --surface-dim:                #e8ecff;   /* subtle tint */
+  --surface-container-lowest:   #ffffff;   /* card lift layer */
+  --surface-container-low:      #f2f3ff;   /* main content area */
+  --surface-container:          #eaecff;
+  --surface-container-high:     #e2e5ff;   /* sidebar / utility rail */
+  --surface-container-highest:  #d9e2ff;
+
+  /* Glassmorphism base (dropdowns / popovers) */
+  --surface-variant:    #e5e7f5;
+
+  /* Text */
+  --on-surface:         #1f3159;   /* primary text — never pure black */
+  --on-surface-variant: #4a556b;   /* muted labels, helper text */
+
+  /* Structural boundaries (no harsh lines) */
+  --outline:            #b0b8d8;   /* subtle separator */
+  --outline-variant:    #d8dcf0;   /* ghost border @ 15% opacity */
+
+  /* Semantic */
+  --error:              #a83836;
+  --on-error:           #ffffff;
+
+  /* Container tints */
+  --secondary-container:    #dde1ff;
+  --on-secondary-container: #001a72;
+  --tertiary-container:     #f0e6ff;   /* highlight card: top performers */
+  --on-tertiary-container:  #21005d;
 }
 
-html,
-body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+/* ── Dark Mode ───────────────────────────────────────────────────────────── */
+.dark {
+  /* Primary (lighter on dark) */
+  --primary:            #aac7ff;
+  --primary-dim:        #90b0f5;
+  --on-primary:         #002b76;
+  --primary-fixed-dim:  #3c5fbe;
+
+  /* Surface hierarchy */
+  --surface:                    #1a1e2c;
+  --surface-dim:                #131620;   /* main dark bg — easy on eyes */
+  --surface-container-lowest:   #0f1219;
+  --surface-container-low:      #1d2134;
+  --surface-container:          #21263c;
+  --surface-container-high:     #262b42;
+  --surface-container-highest:  #2d3250;
+  --surface-variant:            #242844;
+
+  /* Text */
+  --on-surface:         #e2e4f8;
+  --on-surface-variant: #9ea3c5;
+
+  /* Structural */
+  --outline:            #464d78;
+  --outline-variant:    #2d3260;
+
+  /* Semantic */
+  --error:              #e57373;
+  --on-error:           #5c0000;
+
+  /* Container tints */
+  --secondary-container:    #1a2060;
+  --on-secondary-container: #dee0ff;
+  --tertiary-container:     #2c1f50;
+  --on-tertiary-container:  #e8d9ff;
 }
 
-/* Prevent white flash on overscroll/bounce (iOS, macOS) */
+/* ── Base: page background via tokens ───────────────────────────────────── */
 html {
-  background-color: rgb(243 244 246); /* gray-100 — matches dashboard bg */
+  background-color: var(--surface-container-low);
 }
 
-.dark html,
-html.dark {
-  background-color: rgb(17 24 39); /* gray-900 — matches dark dashboard bg */
-}
+/* Prevent white flash on overscroll/bounce (iOS, macOS) already handled via
+   the token value above — no separate dark override needed. */
 
-/* ── Dark mode: tell the browser we handle it ── */
+/* ── Dark: tell the browser we handle colour-scheme ────────────────────── */
 .dark {
   color-scheme: dark;
 }
 
-/* ── Dark mode cascade overrides ─────────────────────────────────────────────
-   Rather than touching every component, we override the most-used Tailwind
-   utility classes when the `dark` class is present on <html>.
-   Specificity: `.dark .bg-white` (0,2,0) beats `.bg-white` (0,1,0), so no
-   !important needed.
-   ─────────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   BACKWARD-COMPAT OVERRIDES
+   Components still using raw Tailwind colour names (bg-white, text-gray-*, …)
+   continue to render correctly in dark mode while Batch 3 migrates them to
+   token-based classes.
+───────────────────────────────────────────────────────────────────────────── */
 
 /* Backgrounds */
-.dark .bg-white       { background-color: rgb(31  41  55);  }  /* gray-800 */
-.dark .bg-gray-50     { background-color: rgb(17  24  39);  }  /* gray-900 */
-.dark .bg-gray-100    { background-color: rgb(17  24  39);  }  /* gray-900 */
-.dark .bg-gray-200    { background-color: rgb(55  65  81);  }  /* gray-700 */
+.dark .bg-white      { background-color: var(--surface-container); }
+.dark .bg-gray-50    { background-color: var(--surface-container-low); }
+.dark .bg-gray-100   { background-color: var(--surface-container-low); }
+.dark .bg-gray-200   { background-color: var(--surface-container-high); }
 
 /* Text */
-.dark .text-gray-900  { color: rgb(249 250 251); }  /* gray-50  */
-.dark .text-gray-800  { color: rgb(243 244 246); }  /* gray-100 */
-.dark .text-gray-700  { color: rgb(209 213 219); }  /* gray-300 */
-.dark .text-gray-600  { color: rgb(156 163 175); }  /* gray-400 */
+.dark .text-gray-900 { color: var(--on-surface); }
+.dark .text-gray-800 { color: var(--on-surface); }
+.dark .text-gray-700 { color: var(--on-surface-variant); }
+.dark .text-gray-600 { color: var(--on-surface-variant); }
+.dark .text-gray-500 { color: var(--on-surface-variant); }
 
-/* Borders & dividers */
-.dark .border-gray-200 { border-color: rgb(55  65  81); }   /* gray-700 */
-.dark .border-gray-300 { border-color: rgb(75  85  99); }   /* gray-600 */
+/* Borders */
+.dark .border-gray-200 { border-color: var(--outline-variant); }
+.dark .border-gray-300 { border-color: var(--outline); }
 
 .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: rgb(55 65 81);                               /* gray-700 */
+  border-color: var(--outline-variant);
 }
 
 /* Hover states */
-.dark .hover\:bg-gray-50:hover  { background-color: rgb(31 41 55); }  /* gray-800 */
-.dark .hover\:bg-gray-100:hover { background-color: rgb(55 65 81); }  /* gray-700 */
+.dark .hover\:bg-gray-50:hover  { background-color: var(--surface-container); }
+.dark .hover\:bg-gray-100:hover { background-color: var(--surface-container-high); }
 
-/* Form inputs — generic override so all unstyled inputs look right */
+/* Form inputs */
 .dark input:not([type='checkbox']):not([type='radio']),
 .dark textarea,
 .dark select {
-  background-color: rgb(55 65 81);    /* gray-700 */
-  color: rgb(249 250 251);            /* gray-50  */
-  border-color: rgb(75 85 99);        /* gray-600 */
+  background-color: var(--surface-container);
+  color: var(--on-surface);
+  border-color: var(--outline);
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: rgb(107 114 128);            /* gray-500 */
+  color: var(--on-surface-variant);
 }
 
+/* ── Utilities ───────────────────────────────────────────────────────────── */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
