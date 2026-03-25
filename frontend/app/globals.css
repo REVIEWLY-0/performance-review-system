@@ -49,11 +49,11 @@
 
 /* ── Dark Mode ───────────────────────────────────────────────────────────── */
 .dark {
-  /* Primary (lighter on dark) */
-  --primary:            #aac7ff;
-  --primary-dim:        #90b0f5;
-  --on-primary:         #002b76;
-  --primary-fixed-dim:  #3c5fbe;
+  /* Primary (vibrant on dark — avoids pastel-on-dark low-contrast) */
+  --primary:            #3d6fe8;
+  --primary-dim:        #2f5dd4;
+  --on-primary:         #ffffff;
+  --primary-fixed-dim:  #6b99f5;
 
   /* Surface hierarchy */
   --surface:                    #1a1e2c;
