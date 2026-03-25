@@ -39,6 +39,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showCsvTemplateModal, setShowCsvTemplateModal] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
@@ -147,7 +148,7 @@ export default function EmployeesPage() {
         </div>
         <div className="flex items-center space-x-3">
           <button
-            onClick={downloadCsvTemplate}
+            onClick={() => setShowCsvTemplateModal(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <svg className="mr-2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,6 +179,86 @@ export default function EmployeesPage() {
             handlePageChange(page);
           }}
         />
+      )}
+
+      {showCsvTemplateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
+            <div className="flex items-start justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">CSV Import Template</h2>
+              <button
+                onClick={() => setShowCsvTemplateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="font-medium text-gray-700 mb-2">Required fields</p>
+                <ul className="space-y-1">
+                  {[
+                    { col: 'name', note: 'Full name of the employee' },
+                    { col: 'email', note: 'Work email address (must be unique)' },
+                    { col: 'role', note: 'EMPLOYEE, MANAGER, or ADMIN' },
+                    { col: 'department', note: 'Department name (created automatically if new)' },
+                  ].map(({ col, note }) => (
+                    <li key={col} className="flex items-start gap-2">
+                      <span className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono font-medium bg-red-50 text-red-700 border border-red-200">{col}</span>
+                      <span className="text-gray-600">{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-medium text-gray-700 mb-2">Optional fields</p>
+                <ul className="space-y-1">
+                  {[
+                    { col: 'manager_email', note: 'Email of the employee\'s manager (must already exist)' },
+                    { col: 'employee_id', note: 'Custom ID (e.g. EMP-001). Auto-generated if blank.' },
+                  ].map(({ col, note }) => (
+                    <li key={col} className="flex items-start gap-2">
+                      <span className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono font-medium bg-gray-100 text-gray-600 border border-gray-200">{col}</span>
+                      <span className="text-gray-600">{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-medium text-gray-700 mb-1">Example row</p>
+                <div className="bg-gray-50 rounded-md border border-gray-200 p-3 overflow-x-auto">
+                  <code className="text-xs text-gray-700 whitespace-nowrap">
+                    Jane Smith, jane@company.com, EMPLOYEE, Engineering, manager@company.com, EMP-001
+                  </code>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowCsvTemplateModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { downloadCsvTemplate(); setShowCsvTemplateModal(false); }}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download template
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Stats Cards */}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   getGroupedQuestions,
   createQuestion,
@@ -13,6 +14,7 @@ import {
   ReviewType,
   CreateQuestionDto,
 } from '@/lib/questions';
+import { ratingScaleApi, RatingScale, DEFAULT_SCALE } from '@/lib/rating-scale';
 import QuestionForm from '@/components/questions/QuestionForm';
 import QuestionList from '@/components/questions/QuestionList';
 import QuestionPreview from '@/components/questions/QuestionPreview';
@@ -38,6 +40,7 @@ export default function QuestionsPage() {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [error, setError] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [ratingScale, setRatingScale] = useState<RatingScale>(DEFAULT_SCALE);
   const toast = useToast();
 
   useEffect(() => {
@@ -47,8 +50,12 @@ export default function QuestionsPage() {
   const loadQuestions = async () => {
     try {
       setLoading(true);
-      const data = await getGroupedQuestions();
+      const [data, scale] = await Promise.all([
+        getGroupedQuestions(),
+        ratingScaleApi.get(),
+      ]);
       setQuestions(data);
+      setRatingScale(scale);
     } catch (err: any) {
       console.error('Error loading questions:', err);
       setError(err.message || 'Failed to load questions');
@@ -300,10 +307,32 @@ export default function QuestionsPage() {
       </div>
 
       {/* Tab Description */}
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+      <div className="mb-3 p-4 bg-blue-50 rounded-lg">
         <p className="text-sm text-blue-800">
           {tabs.find((t) => t.value === selectedTab)?.description}
         </p>
+      </div>
+
+      {/* Rating Scale Callout */}
+      <div className="mb-6 flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="flex items-center gap-2 text-sm text-amber-800">
+          <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>
+            Rating questions use a <strong>1–{ratingScale.maxRating}</strong> scale
+            {ratingScale.labels[0] && ratingScale.labels[ratingScale.maxRating - 1] && (
+              <> ({ratingScale.labels[0].title} → {ratingScale.labels[ratingScale.maxRating - 1].title})</>
+            )}.
+          </span>
+        </div>
+        <Link
+          href="/settings"
+          className="ml-4 whitespace-nowrap text-xs font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2"
+        >
+          Configure rating scale
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -325,6 +354,7 @@ export default function QuestionsPage() {
             <QuestionForm
               reviewType={selectedTab}
               question={editingQuestion}
+              ratingScale={ratingScale}
               onSubmit={
                 editingQuestion
                   ? (dto) => handleUpdateQuestion(editingQuestion.id, dto)
@@ -333,7 +363,7 @@ export default function QuestionsPage() {
               onCancel={handleCloseForm}
             />
           ) : showPreview ? (
-            <QuestionPreview questions={questions[selectedTab]} reviewType={selectedTab} />
+            <QuestionPreview questions={questions[selectedTab]} reviewType={selectedTab} ratingScale={ratingScale} />
           ) : (
             <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
               <svg

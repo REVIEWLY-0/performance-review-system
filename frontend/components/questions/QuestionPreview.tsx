@@ -1,13 +1,16 @@
 'use client';
 
 import { Question, ReviewType } from '@/lib/questions';
+import { RatingScale } from '@/lib/rating-scale';
 
 interface QuestionPreviewProps {
   questions: Question[];
   reviewType: ReviewType;
+  ratingScale?: RatingScale;
 }
 
-export default function QuestionPreview({ questions, reviewType }: QuestionPreviewProps) {
+export default function QuestionPreview({ questions, reviewType, ratingScale }: QuestionPreviewProps) {
+  const maxRating = ratingScale?.maxRating ?? 5;
   const getReviewTypeLabel = (type: ReviewType) => {
     switch (type) {
       case 'SELF':
@@ -101,12 +104,12 @@ export default function QuestionPreview({ questions, reviewType }: QuestionPrevi
               {/* Rating Scale */}
               {question.type === 'RATING' && (
                 <div className="space-y-2">
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((num) => (
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from({ length: maxRating }, (_, i) => i + 1).map((num) => (
                       <button
                         key={num}
                         type="button"
-                        className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-center hover:border-indigo-500 hover:bg-indigo-50 transition-colors"
+                        className="flex-1 min-w-[2.5rem] px-3 py-3 border-2 border-gray-300 rounded-lg text-center hover:border-indigo-500 hover:bg-indigo-50 transition-colors"
                       >
                         <span className="block text-lg font-semibold text-gray-900">
                           {num}
@@ -115,8 +118,8 @@ export default function QuestionPreview({ questions, reviewType }: QuestionPrevi
                     ))}
                   </div>
                   <div className="flex justify-between text-xs text-gray-500 px-1">
-                    <span>Poor</span>
-                    <span>Excellent</span>
+                    <span>{ratingScale?.labels[0]?.title ?? 'Poor'}</span>
+                    <span>{ratingScale?.labels[maxRating - 1]?.title ?? 'Excellent'}</span>
                   </div>
                 </div>
               )}

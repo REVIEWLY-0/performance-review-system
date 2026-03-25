@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Question, QuestionType, ReviewType, CreateQuestionDto, TaskDefinition } from '@/lib/questions';
+import { RatingScale } from '@/lib/rating-scale';
 
 interface QuestionFormProps {
   reviewType: ReviewType;
   question?: Question | null;
+  ratingScale?: RatingScale;
   onSubmit: (dto: CreateQuestionDto) => Promise<void>;
   onCancel: () => void;
 }
@@ -18,9 +20,11 @@ function newTaskId() {
 export default function QuestionForm({
   reviewType,
   question,
+  ratingScale,
   onSubmit,
   onCancel,
 }: QuestionFormProps) {
+  const maxRating = ratingScale?.maxRating ?? 5;
   const [formData, setFormData] = useState<CreateQuestionDto>({
     reviewType,
     type: 'RATING',
@@ -109,7 +113,7 @@ export default function QuestionForm({
   // ── Render ──────────────────────────────────────────────────────────────────
 
   const questionTypes: { value: QuestionType; label: string; description: string }[] = [
-    { value: 'RATING', label: 'Rating Scale', description: 'Employees rate from 1-5' },
+    { value: 'RATING', label: 'Rating Scale', description: `Employees rate from 1–${maxRating}` },
     { value: 'TEXT', label: 'Text Response', description: 'Free-form text answer' },
     { value: 'TASK_LIST', label: 'Task List', description: 'Predefined tasks employees mark complete' },
   ];
@@ -308,16 +312,22 @@ export default function QuestionForm({
                 {formData.text || 'Your question will appear here...'}
               </p>
               {formData.type === 'RATING' && (
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <button
-                      key={num}
-                      type="button"
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      {num}
-                    </button>
-                  ))}
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from({ length: maxRating }, (_, i) => i + 1).map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-between mt-1 text-xs text-gray-400">
+                    <span>{ratingScale?.labels[0]?.title ?? 'Poor'}</span>
+                    <span>{ratingScale?.labels[maxRating - 1]?.title ?? 'Excellent'}</span>
+                  </div>
                 </div>
               )}
               {formData.type === 'TEXT' && (
