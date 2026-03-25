@@ -2,67 +2,57 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn, signUp } from '@/lib/auth'
+import Link from 'next/link'
+import { signIn } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
-import {
-  validateEmail,
-  validatePassword,
-  validatePasswordStrength,
-  validatePasswordConfirm,
-  validateName,
-  getInputClassName,
-  getPasswordStrengthColor,
-  getPasswordStrengthLabel,
-} from '@/lib/validation'
+import { validateEmail, validatePassword } from '@/lib/validation'
+
+// ── Input style helper (Stitch design) ────────────────────────────────────
+const inputCls = (hasError: boolean) =>
+  `w-full bg-surface-container-lowest border-none ring-1 ${
+    hasError
+      ? 'ring-error focus:ring-error'
+      : 'ring-outline-variant focus:ring-primary'
+  } focus:ring-2 rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant transition-all focus:outline-none`
 
 export default function LoginPage() {
   const router = useRouter()
-  const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // Password-setup mode — triggered when employee clicks the invite link
+  // ── Set-password mode (employee invite link) ───────────────────────────
   const [isSetPassword, setIsSetPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
 
   useEffect(() => {
-    // Parse the URL hash that Supabase appends: #access_token=...&type=recovery
     const hash = window.location.hash.substring(1)
     const params = new URLSearchParams(hash)
     if (params.get('type') === 'recovery' && params.get('access_token')) {
       const accessToken = params.get('access_token')!
       const refreshToken = params.get('refresh_token') ?? ''
-      // Establish the session so updateUser works
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
         .then(() => {
-          // Clean the hash from the URL without triggering a reload
           window.history.replaceState(null, '', window.location.pathname)
           setIsSetPassword(true)
         })
-        .catch(() => setError('Invalid or expired setup link. Please ask your admin to resend the invite.'))
+        .catch(() =>
+          setError('Invalid or expired setup link. Please ask your admin to resend the invite.')
+        )
     }
   }, [])
 
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
-    if (newPassword !== confirmNewPassword) {
-      setError('Passwords do not match.')
-      return
-    }
-
+    if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (newPassword !== confirmNewPassword) { setError('Passwords do not match.'); return }
     setLoading(true)
     try {
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
       if (updateError) throw new Error(updateError.message)
-
       setSuccess('Password set! Signing you in…')
       setTimeout(() => router.push('/employee'), 1500)
     } catch (err: any) {
@@ -72,478 +62,229 @@ export default function LoginPage() {
     }
   }
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-    companyName: '',
-  })
-
-  const [fieldErrors, setFieldErrors] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-    companyName: '',
-  })
-
-  const [touched, setTouched] = useState({
-    email: false,
-    password: false,
-    confirmPassword: false,
-    name: false,
-    companyName: false,
-  })
-
-  // Validate individual field
-  const validateField = (field: string, value: string): string => {
-    switch (field) {
-      case 'email':
-        return validateEmail(value) || ''
-      case 'password':
-        if (isSignUp) {
-          const strength = validatePasswordStrength(value)
-          return strength.isValid ? '' : strength.feedback.join(', ')
-        }
-        return validatePassword(value) || ''
-      case 'confirmPassword':
-        if (isSignUp) {
-          return validatePasswordConfirm(formData.password, value) || ''
-        }
-        return ''
-      case 'name':
-        if (isSignUp) {
-          return validateName(value, 'Full Name') || ''
-        }
-        return ''
-      case 'companyName':
-        if (isSignUp) {
-          return validateName(value, 'Company Name') || ''
-        }
-        return ''
-      default:
-        return ''
-    }
-  }
-
-  // Handle field blur (show validation)
-  const handleBlur = (field: string) => {
-    setTouched({ ...touched, [field]: true })
-    const error = validateField(field, formData[field as keyof typeof formData])
-    setFieldErrors({ ...fieldErrors, [field]: error })
-  }
-
-  // Handle field change
-  const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value })
-
-    // Real-time validation if field was touched
-    if (touched[field as keyof typeof touched]) {
-      const error = validateField(field, value)
-      setFieldErrors({ ...fieldErrors, [field]: error })
-    }
-  }
-
-  // Validate all fields before submit
-  const validateForm = (): boolean => {
-    const errors = {
-      email: validateField('email', formData.email),
-      password: validateField('password', formData.password),
-      confirmPassword: isSignUp ? validateField('confirmPassword', formData.confirmPassword) : '',
-      name: isSignUp ? validateField('name', formData.name) : '',
-      companyName: isSignUp ? validateField('companyName', formData.companyName) : '',
-    }
-
-    setFieldErrors(errors)
-    setTouched({
-      email: true,
-      password: true,
-      confirmPassword: isSignUp,
-      name: isSignUp,
-      companyName: isSignUp,
-    })
-
-    return !Object.values(errors).some((err) => err !== '')
-  }
+  // ── Login form state ───────────────────────────────────────────────────
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
+  const [passwordTouched, setPasswordTouched] = useState(false)
+  const emailError = emailTouched ? validateEmail(email) || '' : ''
+  const passwordError = passwordTouched ? validatePassword(password) || '' : ''
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccess('')
 
-    // Validate form
-    if (!validateForm()) {
-      setError('Please fix the errors above')
-      return
-    }
+    const eErr = validateEmail(email) || ''
+    const pErr = validatePassword(password) || ''
+    setEmailTouched(true)
+    setPasswordTouched(true)
+    if (eErr || pErr) { setError('Please fix the errors above'); return }
 
     setLoading(true)
-
     try {
-      if (isSignUp) {
-        const result = await signUp(
-          formData.email,
-          formData.password,
-          formData.name,
-          formData.companyName
-        )
-        console.log('✅ Signup successful:', result)
-        setSuccess(result.message || 'Account created successfully! Redirecting...')
-
-        // Show success message briefly before redirecting
-        setTimeout(() => {
-          const dashboardPath = getRoleDashboard(result.user.role)
-          router.push(dashboardPath)
-        }, 1500)
-      } else {
-        const result = await signIn(formData.email, formData.password)
-        console.log('✅ Signin successful:', result)
-        setSuccess('Sign in successful! Redirecting...')
-
-        // Show success message briefly before redirecting
-        setTimeout(() => {
-          const dashboardPath = getRoleDashboard(result.user.role)
-          router.push(dashboardPath)
-        }, 1000)
-      }
+      const result = await signIn(email, password)
+      setSuccess('Sign in successful! Redirecting…')
+      setTimeout(() => {
+        const role = result.user.role
+        router.push(role === 'ADMIN' ? '/admin' : role === 'MANAGER' ? '/manager' : '/employee')
+      }, 1000)
     } catch (err: any) {
-      console.error('❌ Authentication error:', err)
       setError(err.message || 'Authentication failed')
     } finally {
       setLoading(false)
     }
   }
 
-  const getRoleDashboard = (role: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return '/admin'
-      case 'MANAGER':
-        return '/manager'
-      case 'EMPLOYEE':
-        return '/employee'
-      default:
-        return '/employee'
-    }
-  }
+  // ── Shared logo ────────────────────────────────────────────────────────
+  const Logo = () => (
+    <div className="flex flex-col items-center mb-8">
+      <div className="bg-primary p-2.5 rounded-xl shadow-lg mb-3">
+        <svg className="h-7 w-7 text-on-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+      </div>
+      <span className="text-2xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
+    </div>
+  )
 
+  // ── Set-password view ──────────────────────────────────────────────────
   if (isSetPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-container-low py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="flex flex-col items-center">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-3">
-              <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-indigo-600">Reviewly</h1>
-            <h2 className="mt-2 text-xl font-semibold text-on-surface">Set your password</h2>
-            <p className="mt-1 text-sm text-on-surface-variant">Choose a password to activate your account</p>
+      <div className="min-h-screen bg-surface-container-low flex items-center justify-center py-12 px-4">
+        <div className="w-full max-w-md">
+          <Logo />
+          <div className="bg-surface rounded-2xl ring-1 ring-outline-variant shadow-sm p-8">
+            <h1 className="text-2xl font-extrabold font-display text-on-surface tracking-tight mb-1">
+              Set your password
+            </h1>
+            <p className="text-on-surface-variant text-sm mb-8">Choose a password to activate your account</p>
+
+            <form className="space-y-5" onSubmit={handleSetPassword}>
+              <div className="space-y-1.5">
+                <label htmlFor="new-password" className="block text-sm font-semibold text-on-surface-variant">
+                  New Password <span className="text-error">*</span>
+                </label>
+                <input
+                  id="new-password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  placeholder="Minimum 8 characters"
+                  className={inputCls(false)}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="confirm-new-password" className="block text-sm font-semibold text-on-surface-variant">
+                  Confirm Password <span className="text-error">*</span>
+                </label>
+                <input
+                  id="confirm-new-password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  placeholder="Re-enter your password"
+                  className={inputCls(false)}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-xl bg-error/10 px-4 py-3 flex items-start gap-3">
+                  <svg className="h-5 w-5 text-error shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm text-error">{error}</p>
+                </div>
+              )}
+              {success && (
+                <div className="rounded-xl bg-primary/10 px-4 py-3">
+                  <p className="text-sm text-primary">{success}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary hover:bg-primary-dim text-on-primary font-display font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {loading ? 'Saving…' : 'Set Password & Sign In'}
+              </button>
+            </form>
           </div>
-
-          <form className="mt-8 space-y-4" onSubmit={handleSetPassword}>
-            <div>
-              <label htmlFor="new-password" className="block text-sm font-medium text-on-surface-variant mb-1">
-                New Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="new-password"
-                type="password"
-                required
-                autoComplete="new-password"
-                className="block w-full border border-outline rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
-                placeholder="Minimum 8 characters"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirm-new-password" className="block text-sm font-medium text-on-surface-variant mb-1">
-                Confirm Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="confirm-new-password"
-                type="password"
-                required
-                autoComplete="new-password"
-                className="block w-full border border-outline rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
-                placeholder="Re-enter your password"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            )}
-            {success && (
-              <div className="rounded-md bg-green-50 p-4">
-                <p className="text-sm text-green-700">{success}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim focus:outline-none disabled:opacity-50"
-            >
-              {loading ? 'Saving…' : 'Set Password & Sign In'}
-            </button>
-          </form>
         </div>
       </div>
     )
   }
 
+  // ── Login view ─────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-container-low py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="flex flex-col items-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-3">
-              <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-indigo-600">Reviewly</h1>
-          </div>
-          <h2 className="text-center text-xl font-semibold text-on-surface">
-            {isSignUp ? 'Create your company account' : 'Sign in to your account'}
-          </h2>
-          <p className="mt-1 text-center text-sm text-on-surface-variant">
-            Performance review platform
-          </p>
-        </div>
+    <div className="min-h-screen bg-surface-container-low flex items-center justify-center py-12 px-4">
+      <div className="w-full max-w-md">
+        <Logo />
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {isSignUp && (
-              <>
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-on-surface-variant mb-1">
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    className={getInputClassName(
-                      touched.name && !!fieldErrors.name,
-                      touched.name && !fieldErrors.name && formData.name.length > 0
-                    )}
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={(e) => handleChange('name', e.target.value)}
-                    onBlur={() => handleBlur('name')}
-                  />
-                  {touched.name && fieldErrors.name && (
-                    <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-on-surface-variant mb-1">
-                    Company Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="company"
-                    name="company"
-                    type="text"
-                    className={getInputClassName(
-                      touched.companyName && !!fieldErrors.companyName,
-                      touched.companyName && !fieldErrors.companyName && formData.companyName.length > 0
-                    )}
-                    placeholder="Enter your company name"
-                    value={formData.companyName}
-                    onChange={(e) => handleChange('companyName', e.target.value)}
-                    onBlur={() => handleBlur('companyName')}
-                  />
-                  {touched.companyName && fieldErrors.companyName && (
-                    <p className="mt-1 text-sm text-red-600">{fieldErrors.companyName}</p>
-                  )}
-                </div>
-              </>
-            )}
+        <div className="bg-surface rounded-2xl ring-1 ring-outline-variant shadow-sm p-8">
+          <h1 className="text-2xl font-extrabold font-display text-on-surface tracking-tight mb-1">
+            Sign in to your account
+          </h1>
+          <p className="text-on-surface-variant text-sm mb-8">Performance review platform</p>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-on-surface-variant mb-1">
-                Email Address <span className="text-red-500">*</span>
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-sm font-semibold text-on-surface-variant">
+                Email Address <span className="text-error">*</span>
               </label>
               <input
                 id="email"
-                name="email"
                 type="email"
                 autoComplete="email"
-                className={getInputClassName(
-                  touched.email && !!fieldErrors.email,
-                  touched.email && !fieldErrors.email && formData.email.length > 0
-                )}
                 placeholder="you@company.com"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                onBlur={() => handleBlur('email')}
+                className={inputCls(!!emailError)}
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); if (emailTouched) setEmailTouched(true) }}
+                onBlur={() => setEmailTouched(true)}
               />
-              {touched.email && fieldErrors.email && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
-              )}
+              {emailError && <p className="text-sm text-error">{emailError}</p>}
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-on-surface-variant mb-1">
-                Password <span className="text-red-500">*</span>
+            {/* Password */}
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="block text-sm font-semibold text-on-surface-variant">
+                Password <span className="text-error">*</span>
               </label>
               <input
                 id="password"
-                name="password"
                 type="password"
-                autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                className={getInputClassName(
-                  touched.password && !!fieldErrors.password,
-                  touched.password && !fieldErrors.password && formData.password.length >= 8
-                )}
-                placeholder={isSignUp ? 'Minimum 8 characters' : 'Enter your password'}
-                value={formData.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                onBlur={() => handleBlur('password')}
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                className={inputCls(!!passwordError)}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); if (passwordTouched) setPasswordTouched(true) }}
+                onBlur={() => setPasswordTouched(true)}
               />
-              {touched.password && fieldErrors.password && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
-              )}
-
-              {/* Password strength indicator for signup */}
-              {isSignUp && formData.password.length > 0 && (
-                <div className="mt-2">
-                  {(() => {
-                    const strength = validatePasswordStrength(formData.password)
-                    return (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all ${getPasswordStrengthColor(strength.score)}`}
-                              style={{ width: `${(strength.score / 4) * 100}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-medium text-on-surface-variant">
-                            {getPasswordStrengthLabel(strength.score)}
-                          </span>
-                        </div>
-                        {strength.feedback.length > 0 && (
-                          <p className="mt-1 text-xs text-on-surface-variant">{strength.feedback.join(', ')}</p>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-              )}
+              {passwordError && <p className="text-sm text-error">{passwordError}</p>}
             </div>
 
-            {isSignUp && (
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-on-surface-variant mb-1">
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  className={getInputClassName(
-                    touched.confirmPassword && !!fieldErrors.confirmPassword,
-                    touched.confirmPassword && !fieldErrors.confirmPassword && formData.confirmPassword.length > 0
-                  )}
-                  placeholder="Re-enter your password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                  onBlur={() => handleBlur('confirmPassword')}
-                />
-                {touched.confirmPassword && fieldErrors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>
-                )}
+            {/* Error / Success */}
+            {error && (
+              <div className="rounded-xl bg-error/10 px-4 py-3 flex items-start gap-3">
+                <svg className="h-5 w-5 text-error shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <p className="text-sm text-error">{error}</p>
               </div>
             )}
-          </div>
-
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
+            {success && (
+              <div className="rounded-xl bg-primary/10 px-4 py-3">
+                <p className="text-sm text-primary">{success}</p>
               </div>
+            )}
+
+            {/* Submit */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary hover:bg-primary-dim text-on-primary font-display font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {loading ? 'Signing in…' : (
+                  <>
+                    Sign in
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </button>
             </div>
-          )}
 
-          {success && (
-            <div className="rounded-md bg-green-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-green-700">{success}</p>
-                </div>
-              </div>
+            {/* Divider */}
+            <div className="flex items-center gap-4 py-1 opacity-60">
+              <div className="h-px flex-1 bg-outline-variant" />
+              <span className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">
+                Secure Login
+              </span>
+              <div className="h-px flex-1 bg-outline-variant" />
             </div>
-          )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : isSignUp ? 'Sign up' : 'Sign in'}
-            </button>
-          </div>
+            {/* Sign up link */}
+            <p className="text-center text-on-surface-variant font-medium text-sm">
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="text-primary font-bold hover:underline underline-offset-4 ml-1">
+                Sign up
+              </Link>
+            </p>
+          </form>
+        </div>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp)
-                setError('')
-                setSuccess('')
-                setFormData({
-                  email: '',
-                  password: '',
-                  confirmPassword: '',
-                  name: '',
-                  companyName: '',
-                })
-                setFieldErrors({
-                  email: '',
-                  password: '',
-                  confirmPassword: '',
-                  name: '',
-                  companyName: '',
-                })
-                setTouched({
-                  email: false,
-                  password: false,
-                  confirmPassword: false,
-                  name: false,
-                  companyName: false,
-                })
-              }}
-              className="text-sm text-primary hover:text-primary"
-            >
-              {isSignUp
-                ? 'Already have an account? Sign in'
-                : "Don't have an account? Sign up"}
-            </button>
-          </div>
-        </form>
+        {/* Footer */}
+        <p className="mt-8 text-center text-xs text-on-surface-variant opacity-60">
+          © {new Date().getFullYear()} Reviewly Performance Platform. All rights reserved.
+        </p>
       </div>
     </div>
   )
