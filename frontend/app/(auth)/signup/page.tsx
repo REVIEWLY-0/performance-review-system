@@ -161,10 +161,10 @@ export default function SignUpPage() {
 
         <div className="w-full max-w-md">
           <header className="mb-10">
-            <h1 className="text-3xl font-extrabold font-display text-on-surface tracking-tight mb-2">
+            <h1 className="text-4xl font-extrabold font-display text-on-surface tracking-tight leading-tight mb-1">
               Create your company account
             </h1>
-            <p className="text-on-surface-variant font-medium">Performance review platform</p>
+            <p className="text-base text-on-surface-variant font-medium">Performance review platform</p>
           </header>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
