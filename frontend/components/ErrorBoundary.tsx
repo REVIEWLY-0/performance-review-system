@@ -62,7 +62,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
       // Default fallback UI
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen flex items-center justify-center bg-surface-container-low py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-md w-full space-y-8">
             <div className="text-center">
               <div className="mx-auto h-12 w-12 text-red-600 flex items-center justify-center">
@@ -80,10 +80,10 @@ export default class ErrorBoundary extends Component<Props, State> {
                   />
                 </svg>
               </div>
-              <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+              <h2 className="mt-6 text-3xl font-extrabold text-on-surface">
                 Something went wrong
               </h2>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-on-surface-variant">
                 We're sorry for the inconvenience. An error occurred while rendering this page.
               </p>
 
@@ -109,7 +109,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 </button>
                 <button
                   onClick={() => (window.location.href = '/')}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  className="inline-flex items-center px-4 py-2 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
                 >
                   Go Home
                 </button>

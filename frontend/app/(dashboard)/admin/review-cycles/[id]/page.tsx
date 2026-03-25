@@ -62,7 +62,7 @@ export default function ReviewCycleDetailPage({
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto" />
-            <p className="mt-4 text-gray-600">Loading review cycle...</p>
+            <p className="mt-4 text-on-surface-variant">Loading review cycle...</p>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function ReviewCycleDetailPage({
         </div>
         <button
           onClick={() => router.push('/admin/review-cycles')}
-          className="mt-4 text-sm text-indigo-600 hover:text-indigo-800"
+          className="mt-4 text-sm text-primary hover:text-primary-dim"
         >
           ← Back to Review Cycles
         </button>
@@ -100,27 +100,27 @@ export default function ReviewCycleDetailPage({
   // DRAFT — edit form
   return (
     <div className="px-4 py-6 sm:px-0">
-      <div className="mb-4 flex items-center gap-2 text-sm text-gray-500">
+      <div className="mb-4 flex items-center gap-2 text-sm text-on-surface-variant">
         <button
           onClick={() => router.push('/admin')}
-          className="hover:text-indigo-600 transition-colors"
+          className="hover:text-primary transition-colors"
         >
           Dashboard
         </button>
-        <span className="text-gray-300">/</span>
+        <span className="text-outline-variant">/</span>
         <button
           onClick={() => router.push('/admin/review-cycles')}
-          className="hover:text-indigo-600 transition-colors"
+          className="hover:text-primary transition-colors"
         >
           Review Cycles
         </button>
-        <span className="text-gray-300">/</span>
-        <span className="text-gray-900 font-medium">Edit</span>
+        <span className="text-outline-variant">/</span>
+        <span className="text-on-surface font-medium">Edit</span>
       </div>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Review Cycle</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-on-surface">Edit Review Cycle</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Update the review cycle details and workflow configuration
         </p>
       </div>

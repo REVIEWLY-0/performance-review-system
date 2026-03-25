@@ -77,8 +77,8 @@ export default function EmployeeDashboard() {
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6 animate-pulse">
-          <div className="h-7 bg-gray-200 rounded w-48" />
-          <div className="mt-2 h-4 bg-gray-200 rounded w-72" />
+          <div className="h-7 bg-surface-container-high rounded w-48" />
+          <div className="mt-2 h-4 bg-surface-container-high rounded w-72" />
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
           <SkeletonCard />
@@ -87,8 +87,8 @@ export default function EmployeeDashboard() {
           <SkeletonCard />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
-          <div className="bg-white shadow rounded-lg h-72" />
-          <div className="bg-white shadow rounded-lg h-72" />
+          <div className="bg-surface-container-lowest shadow rounded-lg h-72" />
+          <div className="bg-surface-container-lowest shadow rounded-lg h-72" />
         </div>
       </div>
     );
@@ -139,8 +139,8 @@ export default function EmployeeDashboard() {
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Employee Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-on-surface">Employee Dashboard</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Welcome back, {user.name}! Track your performance and complete pending reviews.
         </p>
       </div>
@@ -148,14 +148,14 @@ export default function EmployeeDashboard() {
       {/* Cycle Selector */}
       {cycles.length > 0 && (
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-on-surface-variant mb-2">
             Review Cycle
           </label>
           <select
             value={selectedCycleId}
             onChange={(e) => handleCycleChange(e.target.value)}
             disabled={analyticsLoading}
-            className="block w-full md:w-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-60"
+            className="block w-full md:w-96 px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary disabled:opacity-60"
           >
             {cycles.map((cycle) => (
               <option key={cycle.id} value={cycle.id}>
@@ -168,13 +168,13 @@ export default function EmployeeDashboard() {
 
       {/* No cycles empty state */}
       {cycles.length === 0 && (
-        <div className="bg-white shadow rounded-lg p-10 text-center">
-          <svg className="mx-auto h-12 w-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-surface-container-lowest shadow rounded-lg p-10 text-center">
+          <svg className="mx-auto h-12 w-12 text-on-surface-variant mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <h3 className="text-base font-semibold text-gray-900 mb-1">No review cycles yet</h3>
-          <p className="text-sm text-gray-500">Your manager hasn't started a review cycle. Check back later.</p>
+          <h3 className="text-base font-semibold text-on-surface mb-1">No review cycles yet</h3>
+          <p className="text-sm text-on-surface-variant">Your manager hasn't started a review cycle. Check back later.</p>
         </div>
       )}
 
@@ -184,12 +184,12 @@ export default function EmployeeDashboard() {
       {/* Key Metrics */}
       {analytics && (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <svg
-                    className="h-6 w-6 text-gray-400"
+                    className="h-6 w-6 text-on-surface-variant"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -204,10 +204,10 @@ export default function EmployeeDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-on-surface-variant truncate">
                       Your Score
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-on-surface">
                       {analytics.personalScore !== null
                         ? analytics.personalScore.toFixed(2)
                         : (
@@ -222,12 +222,12 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <svg
-                    className="h-6 w-6 text-gray-400"
+                    className="h-6 w-6 text-on-surface-variant"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -242,10 +242,10 @@ export default function EmployeeDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-on-surface-variant truncate">
                       Company Average
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-on-surface">
                       {analytics.companyAverage?.toFixed(2) || 'N/A'}
                     </dd>
                   </dl>
@@ -254,12 +254,12 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <svg
-                    className="h-6 w-6 text-gray-400"
+                    className="h-6 w-6 text-on-surface-variant"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -274,10 +274,10 @@ export default function EmployeeDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-on-surface-variant truncate">
                       Self Review
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-on-surface">
                       {analytics.pendingTasks.selfReview ? (
                         <span className="text-orange-600">Pending</span>
                       ) : (
@@ -290,12 +290,12 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <svg
-                    className="h-6 w-6 text-gray-400"
+                    className="h-6 w-6 text-on-surface-variant"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -310,10 +310,10 @@ export default function EmployeeDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-on-surface-variant truncate">
                       Pending Peer Reviews
                     </dt>
-                    <dd className="text-lg font-semibold text-gray-900">
+                    <dd className="text-lg font-semibold text-on-surface">
                       {analytics.pendingTasks.peerReviews}
                     </dd>
                   </dl>
@@ -328,8 +328,8 @@ export default function EmployeeDashboard() {
       {analytics && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Score Breakdown Radar Chart */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-on-surface mb-4">
               Score Breakdown
             </h3>
             {analytics.personalScore !== null ? (
@@ -351,12 +351,12 @@ export default function EmployeeDashboard() {
             ) : (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <svg className="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="mx-auto h-10 w-10 text-on-surface-variant mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                       d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
-                  <p className="text-sm font-medium text-gray-700">Score not available yet</p>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="text-sm font-medium text-on-surface">Score not available yet</p>
+                  <p className="mt-1 text-sm text-on-surface-variant">
                     {analytics.allReviewsComplete
                       ? 'No rating questions have been answered.'
                       : 'Your score will appear once all required reviews are complete.'}
@@ -367,13 +367,13 @@ export default function EmployeeDashboard() {
           </div>
 
           {/* Review Status */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-on-surface mb-4">
               Review Status
             </h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                <span className="text-sm font-medium text-gray-600">Self Review</span>
+              <div className="flex justify-between items-center py-3 border-b border-outline-variant">
+                <span className="text-sm font-medium text-on-surface-variant">Self Review</span>
                 <span className="text-sm">
                   {analytics.reviewCounts.self > 0 ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
@@ -387,8 +387,8 @@ export default function EmployeeDashboard() {
                 </span>
               </div>
 
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                <span className="text-sm font-medium text-gray-600">Manager Reviews</span>
+              <div className="flex justify-between items-center py-3 border-b border-outline-variant">
+                <span className="text-sm font-medium text-on-surface-variant">Manager Reviews</span>
                 <span className="text-sm">
                   {analytics.reviewCounts.manager > 0 ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
@@ -402,8 +402,8 @@ export default function EmployeeDashboard() {
                 </span>
               </div>
 
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                <span className="text-sm font-medium text-gray-600">Peer Reviews Received</span>
+              <div className="flex justify-between items-center py-3 border-b border-outline-variant">
+                <span className="text-sm font-medium text-on-surface-variant">Peer Reviews Received</span>
                 <span className="text-sm">
                   {analytics.reviewCounts.peer > 0 ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
@@ -418,7 +418,7 @@ export default function EmployeeDashboard() {
               </div>
 
               <div className="flex justify-between items-center py-3">
-                <span className="text-sm font-medium text-gray-600">Peer Reviews to Complete</span>
+                <span className="text-sm font-medium text-on-surface-variant">Peer Reviews to Complete</span>
                 <span className="text-sm">
                   {analytics.pendingTasks.peerReviews > 0 ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-800">
@@ -438,21 +438,21 @@ export default function EmployeeDashboard() {
 
       {/* Score Comparison */}
       {analytics && analytics.personalScore !== null && (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <div className="bg-surface-container-lowest shadow rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-medium text-on-surface mb-4">
             Performance Comparison
           </h3>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-600">Your Score</span>
-                <span className="text-sm font-semibold text-indigo-600">
+                <span className="text-sm font-medium text-on-surface-variant">Your Score</span>
+                <span className="text-sm font-semibold text-primary">
                   {analytics.personalScore.toFixed(2)} / 5.00
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className="w-full bg-surface-container-high rounded-full h-3">
                 <div
-                  className="bg-indigo-600 h-3 rounded-full"
+                  className="bg-primary h-3 rounded-full"
                   style={{ width: `${(analytics.personalScore / 5) * 100}%` }}
                 ></div>
               </div>
@@ -461,14 +461,14 @@ export default function EmployeeDashboard() {
             {analytics.companyAverage && (
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-600">Company Average</span>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-medium text-on-surface-variant">Company Average</span>
+                  <span className="text-sm font-semibold text-on-surface">
                     {analytics.companyAverage.toFixed(2)} / 5.00
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full bg-surface-container-high rounded-full h-3">
                   <div
-                    className="bg-gray-500 h-3 rounded-full"
+                    className="bg-outline h-3 rounded-full"
                     style={{ width: `${(analytics.companyAverage / 5) * 100}%` }}
                   ></div>
                 </div>
@@ -476,9 +476,9 @@ export default function EmployeeDashboard() {
             )}
 
             {analytics.companyAverage && (
-              <div className="pt-4 border-t border-gray-200">
+              <div className="pt-4 border-t border-outline-variant">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Difference from Average</span>
+                  <span className="text-sm font-medium text-on-surface-variant">Difference from Average</span>
                   <span
                     className={`text-lg font-semibold ${
                       analytics.personalScore >= analytics.companyAverage
@@ -499,8 +499,8 @@ export default function EmployeeDashboard() {
       </div>{/* end analytics fade wrapper */}
 
       {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+      <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-on-surface mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {analytics?.pendingTasks?.selfReview && (
             <button
@@ -508,7 +508,7 @@ export default function EmployeeDashboard() {
                 selectedCycleId &&
                 router.push(`/employee/reviews/self?cycleId=${selectedCycleId}`)
               }
-              className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim"
             >
               Complete Self Review
             </button>
@@ -519,7 +519,7 @@ export default function EmployeeDashboard() {
                 selectedCycleId &&
                 router.push(`/employee/reviews/peer?cycleId=${selectedCycleId}`)
               }
-              className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim"
             >
               Complete Peer Reviews ({analytics?.pendingTasks?.peerReviews})
             </button>
@@ -529,13 +529,13 @@ export default function EmployeeDashboard() {
               selectedCycleId &&
               router.push(`/employee/scores?cycleId=${selectedCycleId}`)
             }
-            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             View Detailed Scores
           </button>
           <button
             onClick={() => router.push('/organogram')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             🏗️ Organogram
           </button>

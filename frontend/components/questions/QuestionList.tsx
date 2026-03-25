@@ -78,15 +78,15 @@ export default function QuestionList({
       case 'TASK_LIST':
         return 'bg-purple-100 text-purple-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-surface-container text-on-surface';
     }
   };
 
   if (questions.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
+      <div className="bg-surface-container-lowest rounded-lg shadow p-8 text-center">
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-on-surface-variant"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -98,8 +98,8 @@ export default function QuestionList({
             d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <h3 className="mt-4 text-sm font-medium text-gray-900">No questions yet</h3>
-        <p className="mt-2 text-sm text-gray-500">
+        <h3 className="mt-4 text-sm font-medium text-on-surface">No questions yet</h3>
+        <p className="mt-2 text-sm text-on-surface-variant">
           Get started by creating a new question for this review type.
         </p>
       </div>
@@ -107,13 +107,13 @@ export default function QuestionList({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-surface-container-lowest rounded-lg shadow">
       <div className="px-4 py-5 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-gray-900">
+          <h3 className="text-base font-semibold text-on-surface">
             Questions ({questions.length})
           </h3>
-          <p className="text-sm text-gray-500">Drag to reorder</p>
+          <p className="text-sm text-on-surface-variant">Drag to reorder</p>
         </div>
 
         <div className="space-y-3">
@@ -128,14 +128,14 @@ export default function QuestionList({
                 border rounded-lg p-4 cursor-move transition-all
                 ${
                   draggedIndex === index
-                    ? 'opacity-50 border-indigo-500'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'opacity-50 border-primary'
+                    : 'border-outline-variant hover:border-outline'
                 }
               `}
             >
               <div className="flex items-start gap-3">
                 {/* Drag Handle */}
-                <div className="flex-shrink-0 mt-1 text-gray-400">
+                <div className="flex-shrink-0 mt-1 text-on-surface-variant">
                   <svg
                     className="h-5 w-5"
                     fill="none"
@@ -161,13 +161,13 @@ export default function QuestionList({
                     >
                       {getQuestionTypeLabel(question.type)}
                     </span>
-                    <span className="text-xs text-gray-500">#{index + 1}</span>
+                    <span className="text-xs text-on-surface-variant">#{index + 1}</span>
                   </div>
 
-                  <p className="text-sm text-gray-900 mb-3">{question.text}</p>
+                  <p className="text-sm text-on-surface mb-3">{question.text}</p>
 
                   {question.maxChars && (
-                    <p className="text-xs text-gray-500 mb-3">
+                    <p className="text-xs text-on-surface-variant mb-3">
                       Max {question.maxChars} characters
                     </p>
                   )}
@@ -176,18 +176,18 @@ export default function QuestionList({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => onEdit(question)}
-                      className="text-xs text-indigo-600 hover:text-indigo-900 font-medium"
+                      className="text-xs text-primary hover:text-primary font-medium"
                     >
                       Edit
                     </button>
-                    <span className="text-gray-300">|</span>
+                    <span className="text-outline">|</span>
                     <button
                       onClick={() => onDuplicate(question.id)}
-                      className="text-xs text-gray-600 hover:text-gray-900 font-medium"
+                      className="text-xs text-on-surface-variant hover:text-on-surface font-medium"
                     >
                       Duplicate
                     </button>
-                    <span className="text-gray-300">|</span>
+                    <span className="text-outline">|</span>
                     <button
                       onClick={() => onDelete(question.id)}
                       className="text-xs text-red-600 hover:text-red-900 font-medium"

@@ -124,14 +124,14 @@ export default function ReviewCycleForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Basic Info */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-on-surface mb-4">
           Basic Information
         </h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Cycle Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -141,17 +141,17 @@ export default function ReviewCycleForm({
                 setFormData({ ...formData, name: e.target.value })
               }
               placeholder="e.g., Q1 2024 Performance Review"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               required
             />
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-on-surface-variant">
               Give this review cycle a descriptive name
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-on-surface-variant mb-1">
                 Start Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -160,13 +160,13 @@ export default function ReviewCycleForm({
                 onChange={(e) =>
                   setFormData({ ...formData, startDate: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-on-surface-variant mb-1">
                 End Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -176,7 +176,7 @@ export default function ReviewCycleForm({
                   setFormData({ ...formData, endDate: e.target.value })
                 }
                 min={formData.startDate}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 required
               />
             </div>
@@ -233,14 +233,14 @@ export default function ReviewCycleForm({
           type="button"
           onClick={handleCancel}
           disabled={loading}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+          className="px-4 py-2 border border-outline rounded-md shadow-sm text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dim disabled:opacity-50"
         >
           {loading
             ? mode === 'create'

@@ -97,17 +97,17 @@ export default function WorkflowStepBuilder({
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="bg-surface-container-lowest shadow rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Workflow Steps</h2>
-          <p className="text-sm text-gray-600">Define the review process and timeline</p>
+          <h2 className="text-lg font-semibold text-on-surface">Workflow Steps</h2>
+          <p className="text-sm text-on-surface-variant">Define the review process and timeline</p>
         </div>
         <button
           type="button"
           onClick={addStep}
           disabled={!cycleStart || !cycleEnd}
-          className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+          className="px-3 py-2 border border-outline rounded-md text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low disabled:opacity-50"
           title={!cycleStart || !cycleEnd ? 'Set cycle dates first' : 'Add a new workflow step'}
         >
           + Add Step
@@ -115,17 +115,17 @@ export default function WorkflowStepBuilder({
       </div>
 
       {!cycleStart || !cycleEnd ? (
-        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+        <div className="text-center py-8 text-on-surface-variant bg-surface-container-low rounded-lg">
           <p>Please set cycle start and end dates first</p>
         </div>
       ) : steps.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+        <div className="text-center py-8 text-on-surface-variant bg-surface-container-low rounded-lg">
           <p>No workflow steps yet. Click &quot;Add Step&quot; to begin.</p>
         </div>
       ) : (
         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
           {steps.map((step, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
+            <div key={index} className="border border-outline-variant rounded-lg p-4">
               <div className="flex items-start gap-4">
                 {/* Step Number */}
                 <div className="flex-shrink-0 w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -138,7 +138,7 @@ export default function WorkflowStepBuilder({
                 <div className="flex-1 space-y-3">
                   {/* Name field */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-on-surface-variant mb-1">
                       Step Label
                     </label>
                     <input
@@ -147,20 +147,20 @@ export default function WorkflowStepBuilder({
                       onChange={(e) => updateStep(index, 'name', e.target.value)}
                       placeholder="e.g. Self Review, Manager Feedback Round 1…"
                       maxLength={100}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                     />
                   </div>
 
                   {/* Type + dates row */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-on-surface-variant mb-1">
                         Review Type
                       </label>
                       <select
                         value={selectValueForStep(step)}
                         onChange={(e) => handleTypeChange(index, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                       >
                         {reviewTypeConfigs.map((config) => (
                           <option
@@ -189,7 +189,7 @@ export default function WorkflowStepBuilder({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-on-surface-variant mb-1">
                         Start Date
                       </label>
                       <input
@@ -198,12 +198,12 @@ export default function WorkflowStepBuilder({
                         onChange={(e) => updateStep(index, 'startDate', e.target.value)}
                         min={cycleStart}
                         max={cycleEnd}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-on-surface-variant mb-1">
                         End Date
                       </label>
                       <input
@@ -212,7 +212,7 @@ export default function WorkflowStepBuilder({
                         onChange={(e) => updateStep(index, 'endDate', e.target.value)}
                         min={cycleStart}
                         max={cycleEnd}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                       />
                     </div>
                   </div>

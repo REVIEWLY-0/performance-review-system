@@ -237,24 +237,24 @@ export default function SelfReviewPage() {
     return (
       <div className="px-4 py-6 max-w-4xl mx-auto">
         <div className="mb-6 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
-          <div className="h-7 bg-gray-200 rounded w-40 mb-1" />
-          <div className="h-4 bg-gray-200 rounded w-64" />
+          <div className="h-4 bg-surface-container-high rounded w-32 mb-4" />
+          <div className="h-7 bg-surface-container-high rounded w-40 mb-1" />
+          <div className="h-4 bg-surface-container-high rounded w-64" />
         </div>
-        <div className="mb-6 bg-white rounded-lg shadow p-6 animate-pulse">
+        <div className="mb-6 bg-surface-container-lowest rounded-lg shadow p-6 animate-pulse">
           <div className="flex items-center justify-between mb-2">
-            <div className="h-4 bg-gray-200 rounded w-48" />
-            <div className="h-6 bg-gray-200 rounded w-12" />
+            <div className="h-4 bg-surface-container-high rounded w-48" />
+            <div className="h-6 bg-surface-container-high rounded w-12" />
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5" />
+          <div className="w-full bg-surface-container-high rounded-full h-2.5" />
         </div>
         <div className="space-y-6">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4" />
+            <div key={i} className="bg-surface-container-lowest rounded-lg shadow p-6 animate-pulse">
+              <div className="h-4 bg-surface-container-high rounded w-3/4 mb-4" />
               <div className="flex gap-3">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <div key={n} className="flex-1 h-16 bg-gray-200 rounded-lg" />
+                  <div key={n} className="flex-1 h-16 bg-surface-container-high rounded-lg" />
                 ))}
               </div>
             </div>
@@ -283,12 +283,12 @@ export default function SelfReviewPage() {
       <div className="mb-6">
         <button
           onClick={() => router.push('/employee')}
-          className="text-sm text-indigo-600 hover:text-indigo-800 mb-2"
+          className="text-sm text-primary hover:text-primary-dim mb-2"
         >
           ← Back to Dashboard
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Self Review</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-on-surface">Self Review</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Complete your self-assessment for this review cycle
         </p>
       </div>
@@ -360,25 +360,25 @@ export default function SelfReviewPage() {
 
       {/* Progress Card */}
       {!isSubmitted && (
-        <div className="mb-6 bg-white rounded-lg shadow p-6">
+        <div className="mb-6 bg-surface-container-lowest rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-on-surface-variant">
                 Progress: {progress.answered} / {progress.total} questions
               </p>
               {lastSaved && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-on-surface-variant mt-1">
                   Last saved: {lastSaved.toLocaleTimeString()}
                 </p>
               )}
             </div>
-            <span className="text-2xl font-bold text-indigo-600">
+            <span className="text-2xl font-bold text-primary">
               {progress.percentage}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div className="w-full bg-surface-container-high rounded-full h-2.5">
             <div
-              className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300"
+              className="bg-primary h-2.5 rounded-full transition-all duration-300"
               style={{ width: `${progress.percentage}%` }}
             ></div>
           </div>
@@ -405,11 +405,11 @@ export default function SelfReviewPage() {
 
       {/* Actions */}
       {!isSubmitted && (
-        <div className="mt-8 flex justify-between items-center bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">
+        <div className="mt-8 flex justify-between items-center bg-surface-container-lowest rounded-lg shadow p-6">
+          <div className="text-sm text-on-surface-variant">
             {saving && (
               <span className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                 Saving draft...
               </span>
             )}
@@ -417,7 +417,7 @@ export default function SelfReviewPage() {
           <button
             onClick={handleSubmit}
             disabled={submitting || saving}
-            className="px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dim disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Submitting...' : 'Submit Review'}
           </button>
@@ -521,14 +521,14 @@ function QuestionCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-surface-container-lowest rounded-lg shadow p-6">
       <div className="mb-4">
-        <label className="block text-base font-medium text-gray-900 mb-1">
+        <label className="block text-base font-medium text-on-surface mb-1">
           {index + 1}. {question.text}
           <span className="text-red-500 ml-1">*</span>
         </label>
         {question.maxChars && (
-          <p className="text-sm text-gray-500">Maximum {question.maxChars} characters</p>
+          <p className="text-sm text-on-surface-variant">Maximum {question.maxChars} characters</p>
         )}
       </div>
 
@@ -544,29 +544,29 @@ function QuestionCard({
                 disabled={disabled}
                 className={`min-w-[48px] flex-1 px-3 py-4 border-2 rounded-lg text-center transition-colors ${
                   answer?.rating === num
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-gray-300 hover:border-indigo-300 hover:bg-gray-50'
+                    ? 'border-primary bg-indigo-50'
+                    : 'border-outline hover:border-primary hover:bg-surface-container-low'
                 } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <span className="block text-xl font-semibold text-gray-900">{num}</span>
+                <span className="block text-xl font-semibold text-on-surface">{num}</span>
               </button>
             ))}
           </div>
-          <div className="flex justify-between text-sm text-gray-500 px-1">
+          <div className="flex justify-between text-sm text-on-surface-variant px-1">
             <span>{ratingScale.labels[0]?.title ?? 'Poor'}</span>
             <span>{ratingScale.labels[ratingScale.maxRating - 1]?.title ?? 'Excellent'}</span>
           </div>
-          <details className="text-xs text-gray-500">
-            <summary className="cursor-pointer hover:text-gray-700 select-none">
+          <details className="text-xs text-on-surface-variant">
+            <summary className="cursor-pointer hover:text-on-surface select-none">
               View scale definitions
             </summary>
-            <div className="mt-2 space-y-1 bg-gray-50 rounded-md p-3">
+            <div className="mt-2 space-y-1 bg-surface-container-low rounded-md p-3">
               {ratingScale.labels.map((label) => (
                 <div key={label.value} className="flex gap-2">
-                  <span className="font-semibold w-4 shrink-0 text-gray-700">{label.value}</span>
-                  <span className="font-medium text-gray-800">{label.title}</span>
+                  <span className="font-semibold w-4 shrink-0 text-on-surface-variant">{label.value}</span>
+                  <span className="font-medium text-on-surface">{label.title}</span>
                   {label.description && (
-                    <span className="text-gray-500">— {label.description}</span>
+                    <span className="text-on-surface-variant">— {label.description}</span>
                   )}
                 </div>
               ))}
@@ -585,10 +585,10 @@ function QuestionCard({
             rows={5}
             maxLength={question.maxChars || undefined}
             placeholder="Type your response here..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 border border-outline rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           />
           {question.maxChars && (
-            <div className="mt-2 text-right text-sm text-gray-500">
+            <div className="mt-2 text-right text-sm text-on-surface-variant">
               {answer?.textAnswer?.length || 0} / {question.maxChars}
             </div>
           )}
@@ -599,25 +599,25 @@ function QuestionCard({
       {question.type === 'TASK_LIST' && hasPredefined && (
         <div className="space-y-2">
           {predefinedTasks.map((task) => (
-            <label key={task.id} className={`flex items-start gap-3 p-2 rounded-md transition-colors ${!disabled ? 'cursor-pointer hover:bg-gray-50' : ''}`}>
+            <label key={task.id} className={`flex items-start gap-3 p-2 rounded-md transition-colors ${!disabled ? 'cursor-pointer hover:bg-surface-container-low' : ''}`}>
               <input
                 type="checkbox"
                 checked={task.completed}
                 onChange={(e) => handlePredefinedToggle(task.id, e.target.checked)}
                 disabled={disabled}
-                className="mt-0.5 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+                className="mt-0.5 h-4 w-4 text-indigo-600 focus:ring-primary border-outline rounded disabled:opacity-50"
               />
               <div>
-                <span className={`text-sm font-medium ${task.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                <span className={`text-sm font-medium ${task.completed ? 'line-through text-on-surface-variant' : 'text-on-surface'}`}>
                   {task.label}
                 </span>
                 {task.description && (
-                  <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">{task.description}</p>
                 )}
               </div>
             </label>
           ))}
-          <p className="text-xs text-gray-400 pt-1">
+          <p className="text-xs text-on-surface-variant pt-1">
             {predefinedTasks.filter((t) => t.completed).length} / {predefinedTasks.length} completed
           </p>
         </div>
@@ -633,7 +633,7 @@ function QuestionCard({
                 checked={task.completed}
                 onChange={(e) => updateTask(taskIndex, { completed: e.target.checked })}
                 disabled={disabled}
-                className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
+                className="mt-1 h-4 w-4 text-indigo-600 focus:ring-primary border-outline rounded disabled:opacity-50"
               />
               <input
                 type="text"
@@ -641,7 +641,7 @@ function QuestionCard({
                 onChange={(e) => updateTask(taskIndex, { text: e.target.value })}
                 disabled={disabled}
                 placeholder="Add a task or goal..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
               />
               {!disabled && (
                 <button
@@ -661,7 +661,7 @@ function QuestionCard({
             <button
               type="button"
               onClick={addTask}
-              className="text-sm text-indigo-600 hover:text-indigo-900 font-medium"
+              className="text-sm text-primary hover:text-primary-dim font-medium"
             >
               + Add another item
             </button>

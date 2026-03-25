@@ -70,7 +70,7 @@ export default function PeerReviewsPage() {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      NOT_STARTED: 'bg-gray-100 text-gray-800',
+      NOT_STARTED: 'bg-surface-container text-on-surface',
       DRAFT: 'bg-yellow-100 text-yellow-800',
       SUBMITTED: 'bg-green-100 text-green-800',
     };
@@ -101,13 +101,13 @@ export default function PeerReviewsPage() {
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
-          <div className="h-7 bg-gray-200 rounded w-48 mb-1" />
-          <div className="h-4 bg-gray-200 rounded w-64" />
+          <div className="h-4 bg-surface-container-high rounded w-32 mb-4" />
+          <div className="h-7 bg-surface-container-high rounded w-48 mb-1" />
+          <div className="h-4 bg-surface-container-high rounded w-64" />
         </div>
         <div className="mb-6 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
-          <div className="h-10 bg-gray-200 rounded w-80" />
+          <div className="h-4 bg-surface-container-high rounded w-24 mb-2" />
+          <div className="h-10 bg-surface-container-high rounded w-80" />
         </div>
         <SkeletonTable rows={4} />
       </div>
@@ -126,15 +126,15 @@ export default function PeerReviewsPage() {
         >
           ← Back to Dashboard
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Peer Reviews</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-on-surface">Peer Reviews</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Review your assigned peers for the selected cycle
         </p>
       </div>
 
       {/* Cycle Selector */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-on-surface-variant mb-2">
           Review Cycle
         </label>
         {cycles.length === 0 ? (
@@ -147,7 +147,7 @@ export default function PeerReviewsPage() {
           <select
             value={selectedCycleId}
             onChange={(e) => handleCycleChange(e.target.value)}
-            className="block w-full md:w-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="block w-full md:w-96 px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
           >
             {cycles.map((cycle) => (
               <option key={cycle.id} value={cycle.id}>
@@ -182,16 +182,16 @@ export default function PeerReviewsPage() {
 
       {/* Statistics Card */}
       {selectedCycleId && employees.length > 0 && (
-        <div className="mb-6 bg-white shadow rounded-lg p-6">
+        <div className="mb-6 bg-surface-container-lowest shadow rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">
+              <p className="text-sm font-medium text-on-surface-variant">
                 Completion Status
               </p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
+              <p className="mt-2 text-3xl font-bold text-on-surface">
                 {stats.submitted} / {stats.total}
               </p>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-1 text-sm text-on-surface-variant">
                 {stats.total > 0
                   ? Math.round((stats.submitted / stats.total) * 100)
                   : 0}
@@ -222,18 +222,18 @@ export default function PeerReviewsPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">Loading employees...</p>
+            <p className="mt-2 text-sm text-on-surface-variant">Loading employees...</p>
           </div>
         </div>
       )}
 
       {/* Employees List */}
       {!loadingEmployees && selectedCycleId && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="bg-surface-container-lowest shadow overflow-hidden sm:rounded-md">
           {employees.length === 0 ? (
             <div className="text-center py-12 px-4">
               <svg
-                className="mx-auto h-12 w-12 text-gray-400"
+                className="mx-auto h-12 w-12 text-on-surface-variant"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -245,18 +245,18 @@ export default function PeerReviewsPage() {
                   d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
                 />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
+              <h3 className="mt-2 text-sm font-medium text-on-surface">
                 No peers assigned
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-on-surface-variant">
                 You haven't been assigned any peers to review for this cycle.
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-200">
+            <ul className="divide-y divide-outline-variant">
               {employees.map((employee) => (
                 <li key={employee.id}>
-                  <div className="px-4 py-4 flex items-center sm:px-6 hover:bg-gray-50">
+                  <div className="px-4 py-4 flex items-center sm:px-6 hover:bg-surface-container-low">
                     <div className="min-w-0 flex-1 flex items-center">
                       <div className="flex-shrink-0">
                         <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
@@ -274,7 +274,7 @@ export default function PeerReviewsPage() {
                           <p className="text-sm font-medium text-purple-600 truncate">
                             {employee.name}
                           </p>
-                          <p className="mt-1 text-sm text-gray-500 truncate">
+                          <p className="mt-1 text-sm text-on-surface-variant truncate">
                             {employee.email}
                           </p>
                         </div>

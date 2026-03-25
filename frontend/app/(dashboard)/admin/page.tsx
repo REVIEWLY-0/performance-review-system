@@ -87,8 +87,8 @@ export default function AdminDashboard() {
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6">
-          <div className="h-7 bg-gray-200 rounded w-48 animate-pulse" />
-          <div className="mt-2 h-4 bg-gray-200 rounded w-72 animate-pulse" />
+          <div className="h-7 bg-surface-container-high rounded w-48 animate-pulse" />
+          <div className="mt-2 h-4 bg-surface-container-high rounded w-72 animate-pulse" />
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
           <SkeletonCard />
@@ -117,8 +117,8 @@ export default function AdminDashboard() {
     <div className="px-4 py-6 sm:px-0">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-on-surface">Admin Dashboard</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Welcome back, {user.name}! Manage your organization's performance reviews.
         </p>
       </div>
@@ -126,14 +126,14 @@ export default function AdminDashboard() {
       {/* Cycle Selector */}
       {cycles.length > 0 && (
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-on-surface-variant mb-2">
             Review Cycle
           </label>
           <select
             value={selectedCycleId}
             onChange={(e) => handleCycleChange(e.target.value)}
             disabled={analyticsLoading}
-            className="block w-full md:w-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-60"
+            className="block w-full md:w-96 px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary disabled:opacity-60"
           >
             {cycles.map((cycle) => (
               <option key={cycle.id} value={cycle.id}>
@@ -146,12 +146,12 @@ export default function AdminDashboard() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg
-                  className="h-6 w-6 text-gray-400"
+                  className="h-6 w-6 text-on-surface-variant"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -166,10 +166,10 @@ export default function AdminDashboard() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-sm font-medium text-on-surface-variant truncate">
                     Total Employees
                   </dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dd className="text-lg font-semibold text-on-surface">
                     {analytics?.totalEmployees ?? 0}
                   </dd>
                 </dl>
@@ -178,12 +178,12 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg
-                  className="h-6 w-6 text-gray-400"
+                  className="h-6 w-6 text-on-surface-variant"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -198,10 +198,10 @@ export default function AdminDashboard() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-sm font-medium text-on-surface-variant truncate">
                     Average Score
                   </dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dd className="text-lg font-semibold text-on-surface">
                     {analytics?.averageScore?.toFixed(2) ?? 'N/A'}
                   </dd>
                 </dl>
@@ -210,12 +210,12 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg
-                  className="h-6 w-6 text-gray-400"
+                  className="h-6 w-6 text-on-surface-variant"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -230,10 +230,10 @@ export default function AdminDashboard() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-sm font-medium text-on-surface-variant truncate">
                     Completion Rate
                   </dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dd className="text-lg font-semibold text-on-surface">
                     {analytics?.completionRate ?? 0}%
                   </dd>
                 </dl>
@@ -242,12 +242,12 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg
-                  className="h-6 w-6 text-gray-400"
+                  className="h-6 w-6 text-on-surface-variant"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -262,10 +262,10 @@ export default function AdminDashboard() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-sm font-medium text-on-surface-variant truncate">
                     Pending Reviews
                   </dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dd className="text-lg font-semibold text-on-surface">
                     {analytics
                       ? analytics.pendingReviews.selfReviews +
                         analytics.pendingReviews.managerReviews +
@@ -310,12 +310,12 @@ export default function AdminDashboard() {
       {analytics && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Progress Chart */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-on-surface mb-4">
               Review Progress
             </h3>
             {chartEmpty ? (
-              <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
+              <div className="flex flex-col items-center justify-center h-[300px] text-on-surface-variant">
                 <svg className="h-12 w-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
@@ -347,8 +347,8 @@ export default function AdminDashboard() {
           </div>
 
           {/* Top Performers */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-on-surface mb-4">
               Top Performers
             </h3>
             <div className="space-y-3">
@@ -356,17 +356,17 @@ export default function AdminDashboard() {
                 analytics.topPerformers.map((emp, idx) => (
                   <div
                     key={emp.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                    className="flex items-center justify-between p-3 bg-surface-container-low rounded-md"
                   >
                     <div className="flex items-center">
                       <span className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-600">
                         {idx + 1}
                       </span>
                       <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-on-surface">
                           {emp.name}
                         </p>
-                        <p className="text-xs text-gray-500">{emp.email}</p>
+                        <p className="text-xs text-on-surface-variant">{emp.email}</p>
                       </div>
                     </div>
                     <span className="text-lg font-bold text-indigo-600">
@@ -375,7 +375,7 @@ export default function AdminDashboard() {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 text-center py-4">
+                <p className="text-sm text-on-surface-variant text-center py-4">
                   No scores available yet
                 </p>
               )}
@@ -386,44 +386,44 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
+      <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-on-surface mb-4">
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={() => router.push('/admin/review-cycles/new')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim"
           >
             🔄 Start New Cycle
           </button>
           <button
             onClick={() => router.push('/admin/employees')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             👥 Manage Employees
           </button>
           <button
             onClick={() => router.push('/admin/questions')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             ❓ Edit Questions
           </button>
           <button
             onClick={() => router.push('/admin/review-types')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             🏷️ Review Types
           </button>
           <button
             onClick={() => router.push('/admin/departments')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             🏢 Departments
           </button>
           <button
             onClick={() => router.push('/organogram')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             🏗️ Organogram
           </button>
@@ -432,7 +432,7 @@ export default function AdminDashboard() {
               selectedCycleId &&
               router.push(`/admin/cycles/${selectedCycleId}/scores`)
             }
-            className="inline-flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             📊 View Reports
           </button>

@@ -216,7 +216,7 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading review...</p>
+            <p className="mt-4 text-on-surface-variant">Loading review...</p>
           </div>
         </div>
       </div>
@@ -244,14 +244,14 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
       <div className="mb-6">
         <button
           onClick={() => router.push(`/manager/reviews?cycleId=${cycleId}`)}
-          className="text-sm text-indigo-600 hover:text-indigo-800 mb-2"
+          className="text-sm text-primary hover:text-primary-dim mb-2"
         >
           ← Back to Reviews
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-on-surface">
           Review: {reviewData.employee.name}
         </h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-on-surface-variant">
           {reviewData.employee.email}
         </p>
       </div>
@@ -284,26 +284,26 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
 
       {/* Progress Bar */}
       {!isSubmitted && (
-        <div className="mb-6 bg-white shadow rounded-lg p-4">
+        <div className="mb-6 bg-surface-container-lowest shadow rounded-lg p-4">
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-on-surface-variant">
                 Progress: {progress.answered}/{progress.total} (
                 {progress.percentage}%)
               </span>
               {saving && (
-                <span className="text-xs text-gray-500">Saving draft...</span>
+                <span className="text-xs text-on-surface-variant">Saving draft...</span>
               )}
               {lastSaved && !saving && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-on-surface-variant">
                   Last saved: {lastSaved.toLocaleTimeString()}
                 </span>
               )}
             </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-surface-container-high rounded-full h-2">
             <div
-              className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+              className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress.percentage}%` }}
             />
           </div>
@@ -337,8 +337,8 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
               ))}
             </div>
           ) : (
-            <div className="bg-white shadow rounded-lg p-6 text-center">
-              <p className="text-gray-500">
+            <div className="bg-surface-container-lowest shadow rounded-lg p-6 text-center">
+              <p className="text-on-surface-variant">
                 This employee has not completed their self-review yet.
               </p>
             </div>
@@ -372,16 +372,16 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
 
           {/* Submit Button */}
           {!isSubmitted && (
-            <div className="sticky bottom-6 bg-white shadow-lg rounded-lg p-4 border-2 border-indigo-200">
+            <div className="sticky bottom-6 bg-surface-container-lowest shadow-lg rounded-lg p-4 border-2 border-primary">
               <button
                 onClick={handleSubmit}
                 disabled={progress.percentage < 100 || saving}
-                className="w-full px-6 py-3 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full px-6 py-3 bg-primary text-white font-medium rounded-md hover:bg-primary-dim disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {saving ? 'Submitting...' : 'Submit Review'}
               </button>
               {progress.percentage < 100 && (
-                <p className="mt-2 text-xs text-center text-gray-500">
+                <p className="mt-2 text-xs text-center text-on-surface-variant">
                   Complete all questions to submit
                 </p>
               )}
@@ -404,14 +404,14 @@ function SelfReviewQuestionCard({
   ratingScale: RatingScale;
 }) {
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="bg-surface-container-lowest shadow rounded-lg p-6">
       <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-900">
+        <h3 className="text-sm font-medium text-on-surface">
           Q{number}. {question.text}
         </h3>
       </div>
 
-      <div className="bg-gray-50 rounded-md p-4">
+      <div className="bg-surface-container-low rounded-md p-4">
         {question.type === 'RATING' && (
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2">
@@ -421,14 +421,14 @@ function SelfReviewQuestionCard({
                   className={`min-w-[40px] flex-1 px-3 py-2 border-2 rounded-lg text-center font-medium ${
                     question.answer?.rating === num
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 text-gray-400'
+                      : 'border-outline-variant text-on-surface-variant'
                   }`}
                 >
                   {num}
                 </div>
               ))}
             </div>
-            <div className="flex justify-between text-xs text-gray-400 px-1">
+            <div className="flex justify-between text-xs text-on-surface-variant px-1">
               <span>{ratingScale.labels[0]?.title ?? 'Poor'}</span>
               <span>{ratingScale.labels[ratingScale.maxRating - 1]?.title ?? 'Excellent'}</span>
             </div>
@@ -436,9 +436,9 @@ function SelfReviewQuestionCard({
         )}
 
         {question.type === 'TEXT' && (
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+          <p className="text-sm text-on-surface-variant whitespace-pre-wrap">
             {question.answer?.textAnswer || (
-              <span className="text-gray-400 italic">No answer provided</span>
+              <span className="text-on-surface-variant italic">No answer provided</span>
             )}
           </p>
         )}
@@ -453,14 +453,14 @@ function SelfReviewQuestionCard({
                       type="checkbox"
                       checked={task.completed}
                       disabled
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 border-outline rounded"
                     />
-                    <span className="text-sm text-gray-700">{task.text}</span>
+                    <span className="text-sm text-on-surface-variant">{task.text}</span>
                   </div>
                 ),
               )
             ) : (
-              <span className="text-gray-400 italic text-sm">
+              <span className="text-on-surface-variant italic text-sm">
                 No tasks provided
               </span>
             )}
@@ -491,9 +491,9 @@ function ManagerQuestionCard({
   ratingScale: RatingScale;
 }) {
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="bg-surface-container-lowest shadow rounded-lg p-6">
       <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-900">
+        <h3 className="text-sm font-medium text-on-surface">
           Q{number}. {question.text}
         </h3>
       </div>
@@ -509,29 +509,29 @@ function ManagerQuestionCard({
                 disabled={disabled}
                 className={`min-w-[48px] flex-1 px-3 py-4 border-2 rounded-lg font-medium transition-colors ${
                   answer?.rating === num
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                    : 'border-gray-300 text-gray-700 hover:border-indigo-300 hover:bg-indigo-50'
+                    ? 'border-primary bg-indigo-50 text-indigo-700'
+                    : 'border-outline text-on-surface-variant hover:border-primary hover:bg-indigo-50'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {num}
               </button>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500 px-1">
+          <div className="flex justify-between text-xs text-on-surface-variant px-1">
             <span>{ratingScale.labels[0]?.title ?? 'Poor'}</span>
             <span>{ratingScale.labels[ratingScale.maxRating - 1]?.title ?? 'Excellent'}</span>
           </div>
-          <details className="text-xs text-gray-500">
-            <summary className="cursor-pointer hover:text-gray-700 select-none">
+          <details className="text-xs text-on-surface-variant">
+            <summary className="cursor-pointer hover:text-on-surface select-none">
               View scale definitions
             </summary>
-            <div className="mt-2 space-y-1 bg-gray-50 rounded-md p-3">
+            <div className="mt-2 space-y-1 bg-surface-container-low rounded-md p-3">
               {ratingScale.labels.map((label) => (
                 <div key={label.value} className="flex gap-2">
-                  <span className="font-semibold w-4 shrink-0 text-gray-700">{label.value}</span>
-                  <span className="font-medium text-gray-800">{label.title}</span>
+                  <span className="font-semibold w-4 shrink-0 text-on-surface-variant">{label.value}</span>
+                  <span className="font-medium text-on-surface">{label.title}</span>
                   {label.description && (
-                    <span className="text-gray-500">— {label.description}</span>
+                    <span className="text-on-surface-variant">— {label.description}</span>
                   )}
                 </div>
               ))}
@@ -550,11 +550,11 @@ function ManagerQuestionCard({
             disabled={disabled}
             maxLength={question.maxChars || undefined}
             rows={5}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 border border-outline rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-surface-container-high disabled:cursor-not-allowed"
             placeholder="Enter your response..."
           />
           {question.maxChars && (
-            <div className="text-right text-sm text-gray-500 mt-1">
+            <div className="text-right text-sm text-on-surface-variant mt-1">
               {answer?.textAnswer?.length || 0} / {question.maxChars}
             </div>
           )}
@@ -613,7 +613,7 @@ function TaskListInput({
             checked={task.completed}
             onChange={(e) => updateTask(idx, { completed: e.target.checked })}
             disabled={disabled}
-            className="h-5 w-5 text-indigo-600 border-gray-300 rounded mt-2"
+            className="h-5 w-5 text-indigo-600 border-outline rounded mt-2"
           />
           <input
             type="text"
@@ -621,7 +621,7 @@ function TaskListInput({
             onChange={(e) => updateTask(idx, { text: e.target.value })}
             disabled={disabled}
             placeholder="Enter task..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="flex-1 px-3 py-2 border border-outline rounded-md focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-surface-container-high disabled:cursor-not-allowed"
           />
           {!disabled && tasks.length > 1 && (
             <button
@@ -638,7 +638,7 @@ function TaskListInput({
         <button
           type="button"
           onClick={addTask}
-          className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+          className="text-sm text-primary hover:text-primary-dim font-medium"
         >
           + Add task
         </button>

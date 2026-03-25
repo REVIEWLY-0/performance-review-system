@@ -110,12 +110,12 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
   return (
     <div className="fixed z-10 inset-0 overflow-y-auto">
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose} />
+        <div className="fixed inset-0 bg-on-surface/50 transition-opacity" onClick={onClose} />
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div className="inline-block align-bottom bg-surface-container-lowest rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <form onSubmit={handleSubmit}>
-            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+            <div className="bg-surface-container-lowest px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+              <h3 className="text-lg leading-6 font-medium text-on-surface mb-4">
                 Add New Employee
               </h3>
 
@@ -127,7 +127,7 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="name" className="block text-sm font-medium text-on-surface-variant">
                     Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -148,7 +148,7 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="email" className="block text-sm font-medium text-on-surface-variant">
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -169,12 +169,12 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
                 </div>
 
                 <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="role" className="block text-sm font-medium text-on-surface-variant">
                     Role *
                   </label>
                   <select
                     id="role"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="mt-1 block w-full border border-outline rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
                     value={formData.role}
                     onChange={(e) =>
                       setFormData({
@@ -190,12 +190,12 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
                 </div>
 
                 <div>
-                  <label htmlFor="manager" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="manager" className="block text-sm font-medium text-on-surface-variant">
                     Manager (Optional)
                   </label>
                   <select
                     id="manager"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="mt-1 block w-full border border-outline rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
                     value={formData.managerId}
                     onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
                   >
@@ -209,7 +209,7 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-on-surface-variant">
                     Department(s) <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1">
@@ -224,9 +224,9 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
                     <p className="mt-1 text-sm text-red-600">{fieldErrors.departmentIds}</p>
                   )}
                   {departments.length === 0 && (
-                    <p className="mt-1 text-xs text-gray-400">
+                    <p className="mt-1 text-xs text-on-surface-variant">
                       No departments yet.{' '}
-                      <a href="/admin/departments" className="text-indigo-600 hover:underline">
+                      <a href="/admin/departments" className="text-primary hover:underline">
                         Create departments
                       </a>{' '}
                       first.
@@ -236,18 +236,18 @@ export default function CreateEmployeeModal({ onClose, onSuccess }: CreateEmploy
               </div>
             </div>
 
-            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <div className="bg-surface-container-low px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-dim focus:outline-none sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
               >
                 {loading ? 'Creating...' : 'Create Employee'}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-outline shadow-sm px-4 py-2 bg-surface-container-lowest text-base font-medium text-on-surface-variant hover:bg-surface-container-low focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
               >
                 Cancel
               </button>

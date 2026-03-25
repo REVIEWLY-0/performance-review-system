@@ -93,9 +93,9 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
-          <div className="h-7 bg-gray-200 rounded w-72 mb-1" />
-          <div className="h-4 bg-gray-200 rounded w-64" />
+          <div className="h-4 bg-surface-container-high rounded w-32 mb-4" />
+          <div className="h-7 bg-surface-container-high rounded w-72 mb-1" />
+          <div className="h-4 bg-surface-container-high rounded w-64" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <SkeletonCard />
@@ -132,14 +132,14 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
       <div className="mb-6">
         <button
           onClick={() => router.push('/admin/review-cycles')}
-          className="text-sm text-indigo-600 hover:text-indigo-800 mb-2"
+          className="text-sm text-primary hover:text-primary-dim mb-2"
         >
           ← Back to Review Cycles
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-on-surface">
           Performance Scores: {cycle.name}
         </h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-on-surface-variant">
           View and export performance scores for all employees
         </p>
       </div>
@@ -156,14 +156,14 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
         <button
           onClick={handleCalculateAll}
           disabled={calculating}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dim disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {calculating ? 'Calculating...' : 'Calculate All Scores'}
         </button>
         {scoresData && (
           <button
             onClick={exportToCSV}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-outline text-sm font-medium rounded-md shadow-sm text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             📥 Export to CSV
           </button>
@@ -175,7 +175,7 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-on-surface-variant">
               Calculating scores for all employees...
             </p>
           </div>
@@ -185,31 +185,31 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
       {/* Summary Stats */}
       {scoresData && !calculating && (
         <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white shadow rounded-lg p-6">
-            <p className="text-sm font-medium text-gray-500">Total Employees</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <p className="text-sm font-medium text-on-surface-variant">Total Employees</p>
+            <p className="mt-2 text-3xl font-bold text-on-surface">
               {scoresData.scores.length}
             </p>
           </div>
-          <div className="bg-white shadow rounded-lg p-6">
-            <p className="text-sm font-medium text-gray-500">Average Score</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <p className="text-sm font-medium text-on-surface-variant">Average Score</p>
+            <p className="mt-2 text-3xl font-bold text-on-surface">
               {averageScore?.toFixed(2) || 'N/A'}
             </p>
           </div>
-          <div className="bg-white shadow rounded-lg p-6">
-            <p className="text-sm font-medium text-gray-500">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <p className="text-sm font-medium text-on-surface-variant">
               Scores Calculated
             </p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
+            <p className="mt-2 text-3xl font-bold text-on-surface">
               {scoresData.scores.filter((s) => s.overall_score !== null).length}
             </p>
           </div>
-          <div className="bg-white shadow rounded-lg p-6">
-            <p className="text-sm font-medium text-gray-500">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <p className="text-sm font-medium text-on-surface-variant">
               Pending Reviews
             </p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">
+            <p className="mt-2 text-3xl font-bold text-on-surface">
               {scoresData.scores.filter((s) => s.overall_score === null).length}
             </p>
           </div>
@@ -218,59 +218,59 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
 
       {/* Scores Table */}
       {scoresData && !calculating && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="bg-surface-container-lowest shadow overflow-hidden sm:rounded-lg">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-outline-variant">
+              <thead className="bg-surface-container-low">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Employee
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Overall
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Self
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Manager
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Peer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Reviews
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-surface-container-lowest divide-y divide-outline-variant">
                 {scoresData.scores.map((score) => (
-                  <tr key={score.employeeId} className="hover:bg-gray-50">
+                  <tr key={score.employeeId} className="hover:bg-surface-container-low">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-on-surface">
                         {score.employeeName}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">
+                      <div className="text-sm font-bold text-on-surface">
                         {score.overall_score?.toFixed(2) || (
-                          <span className="text-gray-400">N/A</span>
+                          <span className="text-on-surface-variant">N/A</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-on-surface-variant">
                       {score.breakdown.self?.toFixed(2) || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-on-surface-variant">
                       {score.breakdown.manager?.toFixed(2) || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-on-surface-variant">
                       {score.breakdown.peer?.toFixed(2) || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-on-surface-variant">
                       <div className="flex gap-2">
                         <span title="Self">
                           {score.review_counts.self_reviews}S
@@ -290,7 +290,7 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                             `/employee/scores?cycleId=${params.id}`,
                           )
                         }
-                        className="text-indigo-600 hover:text-indigo-900"
+                        className="text-primary hover:text-primary-dim"
                       >
                         View Details
                       </button>
@@ -305,9 +305,9 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
 
       {/* No Data */}
       {!scoresData && !calculating && (
-        <div className="bg-white shadow sm:rounded-lg p-12 text-center">
+        <div className="bg-surface-container-lowest shadow sm:rounded-lg p-12 text-center">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className="mx-auto h-12 w-12 text-on-surface-variant"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -319,10 +319,10 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
               d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0h2a2 2 0 002-2v-6a2 2 0 012-2h2a2 2 0 012 2v6a2 2 0 01-2 2h-2"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
+          <h3 className="mt-2 text-sm font-medium text-on-surface">
             No scores calculated
           </h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-on-surface-variant">
             Click "Calculate All Scores" to generate performance scores for all
             employees.
           </p>

@@ -90,11 +90,11 @@ export default function AssignmentCard({
   const filterDeptName = availableDepartments.find((d) => d.id === filterDeptId)?.name ?? '';
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="bg-surface-container-lowest shadow rounded-lg p-6">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{employee.name}</h3>
-          <p className="text-sm text-gray-500">{employee.email}</p>
+          <h3 className="text-lg font-semibold text-on-surface">{employee.name}</h3>
+          <p className="text-sm text-on-surface-variant">{employee.email}</p>
           {/* Department pills */}
           {(employee.departments ?? []).length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
@@ -113,7 +113,7 @@ export default function AssignmentCard({
           <button
             onClick={handleSave}
             disabled={!hasValidAssignment || localSaving || saving}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dim disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
           >
             {localSaving ? 'Saving…' : 'Save'}
           </button>
@@ -121,14 +121,14 @@ export default function AssignmentCard({
       </div>
 
       {/* Department filter — step 1: select department */}
-      <div className="mb-5 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+      <div className="mb-5 flex items-center gap-3 p-3 bg-surface-container-low rounded-lg border border-outline-variant">
+        <span className="text-sm font-medium text-on-surface-variant whitespace-nowrap">
           Reviewers from:
         </span>
         <select
           value={filterDeptId}
           onChange={(e) => setFilterDeptId(e.target.value)}
-          className="flex-1 border border-gray-300 rounded-md py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+          className="flex-1 border border-outline rounded-md py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-surface-container-lowest"
         >
           <option value="">All departments</option>
           {availableDepartments.map((d) => (
@@ -141,7 +141,7 @@ export default function AssignmentCard({
           <button
             type="button"
             onClick={() => setFilterDeptId(defaultDeptId)}
-            className="text-xs text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
+            className="text-xs text-primary hover:text-primary whitespace-nowrap"
           >
             Reset
           </button>
@@ -151,7 +151,7 @@ export default function AssignmentCard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Manager Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-on-surface-variant mb-2">
             Managers (1+) <span className="text-red-500">*</span>
           </label>
           <ReviewerMultiSelect
@@ -166,7 +166,7 @@ export default function AssignmentCard({
             </p>
           )}
           {managerOptions.length === 0 && (
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-on-surface-variant">
               No managers{filterDeptName ? ` in ${filterDeptName}` : ''}
             </p>
           )}
@@ -174,7 +174,7 @@ export default function AssignmentCard({
 
         {/* Peer Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-on-surface-variant mb-2">
             Peers (1+) <span className="text-red-500">*</span>
           </label>
           <ReviewerMultiSelect
@@ -189,7 +189,7 @@ export default function AssignmentCard({
             </p>
           )}
           {peerOptions.length === 0 && (
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-on-surface-variant">
               No peers{filterDeptName ? ` in ${filterDeptName}` : ''}
             </p>
           )}

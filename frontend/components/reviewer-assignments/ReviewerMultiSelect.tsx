@@ -57,15 +57,15 @@ export default function ReviewerMultiSelect({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full flex items-center justify-between px-3 py-2 border border-outline rounded-md shadow-sm bg-surface-container-lowest text-sm text-left hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary"
       >
-        <span className="text-gray-700">
+        <span className="text-on-surface-variant">
           {selectedUsers.length > 0
             ? `${selectedUsers.length} selected`
             : placeholder}
         </span>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${
+          className={`w-5 h-5 text-on-surface-variant transition-transform ${
             isOpen ? 'transform rotate-180' : ''
           }`}
           fill="none"
@@ -83,26 +83,26 @@ export default function ReviewerMultiSelect({
 
       {/* Dropdown menu with checkboxes */}
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-10 mt-1 w-full bg-surface-container-lowest border border-outline rounded-md shadow-lg max-h-60 overflow-auto">
           {availableUsers.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+            <div className="px-4 py-3 text-sm text-on-surface-variant text-center">
               No users available
             </div>
           ) : (
             availableUsers.map((user) => (
               <label
                 key={user.id}
-                className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                className="flex items-center px-4 py-2 hover:bg-surface-container-low cursor-pointer"
               >
                 <input
                   type="checkbox"
                   checked={selectedIds.includes(user.id)}
                   onChange={() => handleToggle(user.id)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-outline rounded"
                 />
-                <span className="ml-3 text-sm text-gray-900">
+                <span className="ml-3 text-sm text-on-surface">
                   {user.name}
-                  <span className="ml-2 text-gray-500 text-xs">
+                  <span className="ml-2 text-on-surface-variant text-xs">
                     ({user.email})
                   </span>
                 </span>
@@ -112,7 +112,7 @@ export default function ReviewerMultiSelect({
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-on-surface-variant">
         Click the dropdown to select multiple reviewers
       </p>
     </div>

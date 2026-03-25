@@ -112,8 +112,8 @@ export default function EmployeesPage() {
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6">
-          <div className="h-7 bg-gray-200 rounded w-48 animate-pulse" />
-          <div className="mt-2 h-4 bg-gray-200 rounded w-72 animate-pulse" />
+          <div className="h-7 bg-surface-container-high rounded w-48 animate-pulse" />
+          <div className="mt-2 h-4 bg-surface-container-high rounded w-72 animate-pulse" />
         </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-4 mb-6">
           <SkeletonCard />
@@ -141,17 +141,17 @@ export default function EmployeesPage() {
       <BackButton href="/admin" label="← Back to Dashboard" />
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-on-surface">Employee Management</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">
             Manage your company's employees and their roles
           </p>
         </div>
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowCsvTemplateModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center px-4 py-2 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
-            <svg className="mr-2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="mr-2 h-4 w-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
@@ -159,9 +159,9 @@ export default function EmployeesPage() {
           </button>
           <button
             onClick={() => setShowImportModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center px-4 py-2 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
-            <svg className="mr-2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="mr-2 h-4 w-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
@@ -183,12 +183,12 @@ export default function EmployeesPage() {
 
       {showCsvTemplateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
+          <div className="bg-surface-container-lowest rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">CSV Import Template</h2>
+              <h2 className="text-lg font-semibold text-on-surface">CSV Import Template</h2>
               <button
                 onClick={() => setShowCsvTemplateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-on-surface-variant hover:text-on-surface"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -198,7 +198,7 @@ export default function EmployeesPage() {
 
             <div className="space-y-4 text-sm">
               <div>
-                <p className="font-medium text-gray-700 mb-2">Required fields</p>
+                <p className="font-medium text-on-surface-variant mb-2">Required fields</p>
                 <ul className="space-y-1">
                   {[
                     { col: 'name', note: 'Full name of the employee' },
@@ -208,31 +208,31 @@ export default function EmployeesPage() {
                   ].map(({ col, note }) => (
                     <li key={col} className="flex items-start gap-2">
                       <span className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono font-medium bg-red-50 text-red-700 border border-red-200">{col}</span>
-                      <span className="text-gray-600">{note}</span>
+                      <span className="text-on-surface-variant">{note}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <p className="font-medium text-gray-700 mb-2">Optional fields</p>
+                <p className="font-medium text-on-surface-variant mb-2">Optional fields</p>
                 <ul className="space-y-1">
                   {[
                     { col: 'manager_email', note: 'Email of the employee\'s manager (must already exist)' },
                     { col: 'employee_id', note: 'Custom ID (e.g. EMP-001). Auto-generated if blank.' },
                   ].map(({ col, note }) => (
                     <li key={col} className="flex items-start gap-2">
-                      <span className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono font-medium bg-gray-100 text-gray-600 border border-gray-200">{col}</span>
-                      <span className="text-gray-600">{note}</span>
+                      <span className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono font-medium bg-surface-container text-on-surface-variant border border-outline-variant">{col}</span>
+                      <span className="text-on-surface-variant">{note}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <p className="font-medium text-gray-700 mb-1">Example row</p>
-                <div className="bg-gray-50 rounded-md border border-gray-200 p-3 overflow-x-auto">
-                  <code className="text-xs text-gray-700 whitespace-nowrap">
+                <p className="font-medium text-on-surface-variant mb-1">Example row</p>
+                <div className="bg-surface-container-low rounded-md border border-outline-variant p-3 overflow-x-auto">
+                  <code className="text-xs text-on-surface-variant whitespace-nowrap">
                     Jane Smith, jane@company.com, EMPLOYEE, Engineering, manager@company.com, EMP-001
                   </code>
                 </div>
@@ -242,13 +242,13 @@ export default function EmployeesPage() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setShowCsvTemplateModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="px-4 py-2 border border-outline rounded-md text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
               >
                 Cancel
               </button>
               <button
                 onClick={() => { downloadCsvTemplate(); setShowCsvTemplateModal(false); }}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dim"
               >
                 <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -263,12 +263,12 @@ export default function EmployeesPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-4 mb-6">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg
-                  className="h-6 w-6 text-gray-400"
+                  className="h-6 w-6 text-on-surface-variant"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -283,17 +283,17 @@ export default function EmployeesPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-sm font-medium text-on-surface-variant truncate">
                     Total Employees
                   </dt>
-                  <dd className="text-lg font-semibold text-gray-900">{stats.total}</dd>
+                  <dd className="text-lg font-semibold text-on-surface">{stats.total}</dd>
                 </dl>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -313,15 +313,15 @@ export default function EmployeesPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Admins</dt>
-                  <dd className="text-lg font-semibold text-gray-900">{stats.byRole.admins}</dd>
+                  <dt className="text-sm font-medium text-on-surface-variant truncate">Admins</dt>
+                  <dd className="text-lg font-semibold text-on-surface">{stats.byRole.admins}</dd>
                 </dl>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -341,8 +341,8 @@ export default function EmployeesPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Managers</dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dt className="text-sm font-medium text-on-surface-variant truncate">Managers</dt>
+                  <dd className="text-lg font-semibold text-on-surface">
                     {stats.byRole.managers}
                   </dd>
                 </dl>
@@ -351,7 +351,7 @@ export default function EmployeesPage() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -371,8 +371,8 @@ export default function EmployeesPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Employees</dt>
-                  <dd className="text-lg font-semibold text-gray-900">
+                  <dt className="text-sm font-medium text-on-surface-variant truncate">Employees</dt>
+                  <dd className="text-lg font-semibold text-on-surface">
                     {stats.byRole.employees}
                   </dd>
                 </dl>
@@ -400,7 +400,7 @@ export default function EmployeesPage() {
             <div className="mb-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <div className="flex-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -410,13 +410,13 @@ export default function EmployeesPage() {
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search by name, email, or employee ID…"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full pl-10 pr-3 py-2 border border-outline rounded-md text-sm placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                 />
               </div>
               <select
                 value={roleFilter}
                 onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}
-                className="block w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full sm:w-40 px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
               >
                 <option value="ALL">All roles</option>
                 <option value="ADMIN">Admin</option>
@@ -426,7 +426,7 @@ export default function EmployeesPage() {
               {isFiltered && (
                 <button
                   onClick={() => { setSearch(''); setRoleFilter('ALL'); }}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
+                  className="text-sm text-primary hover:text-primary whitespace-nowrap"
                 >
                   Clear filters
                 </button>
@@ -434,7 +434,7 @@ export default function EmployeesPage() {
             </div>
 
             {isFiltered && (
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-xs text-on-surface-variant mb-2">
                 {filteredEmployees.length === 0
                   ? 'No employees match your filters on this page'
                   : `Showing ${filteredEmployees.length} of ${employees.length} on this page`}

@@ -35,7 +35,7 @@ export default function WorkflowTimeline({
     blue: 'bg-blue-500',
     green: 'bg-green-500',
     purple: 'bg-purple-500',
-    gray: 'bg-gray-500',
+    gray: 'bg-outline',
   };
 
   const formatDate = (dateStr: string) => {
@@ -46,21 +46,21 @@ export default function WorkflowTimeline({
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+      <h2 className="text-lg font-semibold text-on-surface mb-4">
         Timeline Preview
       </h2>
 
       {/* Timeline Container */}
       <div className="relative pt-8 pb-4">
         {/* Cycle Duration Background Bar */}
-        <div className="relative h-2 bg-gray-200 rounded-full mb-12">
+        <div className="relative h-2 bg-surface-container-high rounded-full mb-12">
           {/* Start Date Label */}
-          <div className="absolute left-0 -top-6 text-xs text-gray-500">
+          <div className="absolute left-0 -top-6 text-xs text-on-surface-variant">
             {formatDate(cycleStart)}
           </div>
           {/* End Date Label */}
-          <div className="absolute right-0 -top-6 text-xs text-gray-500 text-right">
+          <div className="absolute right-0 -top-6 text-xs text-on-surface-variant text-right">
             {formatDate(cycleEnd)}
           </div>
         </div>
@@ -90,23 +90,23 @@ export default function WorkflowTimeline({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-gray-200">
+      <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-outline-variant">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-sm text-gray-600">Self Review</span>
+          <span className="text-sm text-on-surface-variant">Self Review</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span className="text-sm text-gray-600">Manager Review</span>
+          <span className="text-sm text-on-surface-variant">Manager Review</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-purple-500 rounded"></div>
-          <span className="text-sm text-gray-600">Peer Review</span>
+          <span className="text-sm text-on-surface-variant">Peer Review</span>
         </div>
       </div>
 
       {/* Note about overlapping */}
-      <div className="mt-4 text-xs text-gray-500">
+      <div className="mt-4 text-xs text-on-surface-variant">
         <p>
           💡 <strong>Tip:</strong> Steps can overlap to allow parallel reviews
           (e.g., Self and Manager reviews happening simultaneously).

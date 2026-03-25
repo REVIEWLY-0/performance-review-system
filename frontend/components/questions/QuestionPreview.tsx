@@ -26,9 +26,9 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
 
   if (questions.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
+      <div className="bg-surface-container-lowest rounded-lg shadow p-8 text-center">
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-on-surface-variant"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -46,8 +46,8 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
           />
         </svg>
-        <h3 className="mt-4 text-sm font-medium text-gray-900">No preview available</h3>
-        <p className="mt-2 text-sm text-gray-500">
+        <h3 className="mt-4 text-sm font-medium text-on-surface">No preview available</h3>
+        <p className="mt-2 text-sm text-on-surface-variant">
           Create some questions to see how they&apos;ll appear to reviewers.
         </p>
       </div>
@@ -55,29 +55,29 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
   }
 
   return (
-    <div className="bg-white rounded-lg shadow sticky top-4">
+    <div className="bg-surface-container-lowest rounded-lg shadow sticky top-4">
       <div className="px-4 py-5 sm:p-6">
         <div className="mb-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Preview Mode</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-base font-semibold text-on-surface mb-1">Preview Mode</h3>
+          <p className="text-sm text-on-surface-variant">
             This is how reviewers will see the {getReviewTypeLabel(reviewType).toLowerCase()}
           </p>
         </div>
 
         {/* Mock Review Form Header */}
-        <div className="mb-6 pb-4 border-b border-gray-200">
+        <div className="mb-6 pb-4 border-b border-outline-variant">
           <div className="flex items-center gap-3 mb-3">
-            <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+            <div className="h-10 w-10 rounded-full bg-surface-container-high"></div>
             <div>
-              <p className="text-sm font-medium text-gray-900">John Doe</p>
-              <p className="text-xs text-gray-500">{getReviewTypeLabel(reviewType)}</p>
+              <p className="text-sm font-medium text-on-surface">John Doe</p>
+              <p className="text-xs text-on-surface-variant">{getReviewTypeLabel(reviewType)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
               Draft
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-on-surface-variant">
               {questions.length} {questions.length === 1 ? 'question' : 'questions'}
             </span>
           </div>
@@ -86,16 +86,16 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
         {/* Questions */}
         <div className="space-y-6 max-h-[600px] overflow-y-auto">
           {questions.map((question, index) => (
-            <div key={question.id} className="pb-6 border-b border-gray-100 last:border-b-0">
+            <div key={question.id} className="pb-6 border-b border-outline-variant last:border-b-0">
               <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-900 mb-1">
+                <label className="block text-sm font-medium text-on-surface mb-1">
                   {index + 1}. {question.text}
                   {question.type !== 'RATING' && (
                     <span className="text-red-500 ml-1">*</span>
                   )}
                 </label>
                 {question.maxChars && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-on-surface-variant">
                     Maximum {question.maxChars} characters
                   </p>
                 )}
@@ -109,15 +109,15 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
                       <button
                         key={num}
                         type="button"
-                        className="flex-1 min-w-[2.5rem] px-3 py-3 border-2 border-gray-300 rounded-lg text-center hover:border-indigo-500 hover:bg-indigo-50 transition-colors"
+                        className="flex-1 min-w-[2.5rem] px-3 py-3 border-2 border-outline rounded-lg text-center hover:border-primary hover:bg-indigo-50 transition-colors"
                       >
-                        <span className="block text-lg font-semibold text-gray-900">
+                        <span className="block text-lg font-semibold text-on-surface">
                           {num}
                         </span>
                       </button>
                     ))}
                   </div>
-                  <div className="flex justify-between text-xs text-gray-500 px-1">
+                  <div className="flex justify-between text-xs text-on-surface-variant px-1">
                     <span>{ratingScale?.labels[0]?.title ?? 'Poor'}</span>
                     <span>{ratingScale?.labels[maxRating - 1]?.title ?? 'Excellent'}</span>
                   </div>
@@ -130,7 +130,7 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
                   rows={4}
                   placeholder="Type your response here..."
                   maxLength={question.maxChars || undefined}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="w-full px-3 py-2 border border-outline rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
                 />
               )}
 
@@ -143,13 +143,13 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
                       <label key={task.id} className="flex items-start gap-3 cursor-pointer">
                         <input
                           type="checkbox"
-                          className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                          className="mt-1 h-4 w-4 text-primary focus:ring-primary border-outline rounded"
                         />
                         <div>
-                          <span className="text-sm text-gray-900">{task.label}</span>
+                          <span className="text-sm text-on-surface">{task.label}</span>
                           {task.required && <span className="ml-1 text-xs text-red-500">*</span>}
                           {task.description && (
-                            <p className="text-xs text-gray-500">{task.description}</p>
+                            <p className="text-xs text-on-surface-variant">{task.description}</p>
                           )}
                         </div>
                       </label>
@@ -160,17 +160,17 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
                       <div className="flex items-start gap-3">
                         <input
                           type="checkbox"
-                          className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                          className="mt-1 h-4 w-4 text-primary focus:ring-primary border-outline rounded"
                         />
                         <div className="flex-1">
                           <input
                             type="text"
                             placeholder="Add a task or goal..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-full px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                           />
                         </div>
                       </div>
-                      <button type="button" className="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
+                      <button type="button" className="text-sm text-primary hover:text-primary font-medium">
                         + Add another item
                       </button>
                     </>
@@ -182,24 +182,24 @@ export default function QuestionPreview({ questions, reviewType, ratingScale }: 
         </div>
 
         {/* Mock Actions */}
-        <div className="mt-6 pt-6 border-t border-gray-200 flex justify-between">
+        <div className="mt-6 pt-6 border-t border-outline-variant flex justify-between">
           <button
             type="button"
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="px-4 py-2 border border-outline rounded-md text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             Save as Draft
           </button>
           <button
             type="button"
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dim"
           >
             Submit Review
           </button>
         </div>
 
         {/* Preview Note */}
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <p className="text-xs text-gray-600">
+        <div className="mt-4 p-3 bg-surface-container-low rounded-lg">
+          <p className="text-xs text-on-surface-variant">
             📋 This is a preview. Actual reviews may include additional fields like
             reviewer name, date, and progress indicators.
           </p>

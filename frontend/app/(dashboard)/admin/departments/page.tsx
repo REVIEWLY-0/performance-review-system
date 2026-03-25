@@ -112,8 +112,8 @@ export default function DepartmentsPage() {
     <div className="px-4 py-6 sm:px-0">
       <div className="mb-6">
         <BackButton href="/admin" label="← Back to Dashboard" />
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">Departments</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-on-surface mt-2">Departments</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Manage departments for your company. Employees can belong to multiple departments.
         </p>
       </div>
@@ -123,25 +123,25 @@ export default function DepartmentsPage() {
       )}
 
       {/* Active departments */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-surface-container-lowest shadow rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-on-surface">
               Active Departments
               {!loading && (
-                <span className="ml-2 text-xs font-normal text-gray-400">
+                <span className="ml-2 text-xs font-normal text-on-surface-variant">
                   ({departments.length})
                 </span>
               )}
             </h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-on-surface-variant mt-0.5">
               Click a department pill to rename it. Hover to see actions.
             </p>
           </div>
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-dim"
             >
               + Add Department
             </button>
@@ -158,12 +158,12 @@ export default function DepartmentsPage() {
               placeholder="Department name (e.g. Engineering)"
               maxLength={100}
               autoFocus
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="flex-1 px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
             />
             <button
               type="submit"
               disabled={submitting || !formName.trim()}
-              className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-dim disabled:opacity-50"
             >
               {submitting ? 'Creating…' : 'Create'}
             </button>
@@ -173,7 +173,7 @@ export default function DepartmentsPage() {
                 setShowForm(false);
                 setFormName('');
               }}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="px-3 py-2 border border-outline rounded-md text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
             >
               Cancel
             </button>
@@ -183,13 +183,13 @@ export default function DepartmentsPage() {
         {loading ? (
           <div className="flex flex-wrap gap-2 animate-pulse">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-8 w-24 bg-gray-100 rounded-full" />
+              <div key={i} className="h-8 w-24 bg-surface-container rounded-full" />
             ))}
           </div>
         ) : departments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+          <div className="text-center py-8 text-on-surface-variant bg-surface-container-low rounded-lg">
             <p className="text-sm">No departments yet.</p>
-            <p className="text-xs mt-1 text-gray-400">
+            <p className="text-xs mt-1 text-on-surface-variant">
               Add departments to organize your employees.
             </p>
           </div>
@@ -221,7 +221,7 @@ export default function DepartmentsPage() {
                   <button
                     type="button"
                     onClick={() => setEditingId(null)}
-                    className="text-gray-400 hover:text-gray-600 text-sm"
+                    className="text-on-surface-variant hover:text-on-surface text-sm"
                     title="Cancel"
                   >
                     ✕
@@ -257,7 +257,7 @@ export default function DepartmentsPage() {
                   <button
                     type="button"
                     onClick={() => handleArchive(dept)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 text-outline-variant hover:text-red-500 transition-opacity"
                     title="Archive"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -273,11 +273,11 @@ export default function DepartmentsPage() {
 
       {/* Archived departments */}
       {(archived.length > 0 || !loading) && (
-        <div className="mt-4 bg-white shadow rounded-lg p-6">
+        <div className="mt-4 bg-surface-container-lowest shadow rounded-lg p-6">
           <button
             type="button"
             onClick={() => setShowArchived(!showArchived)}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+            className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface"
           >
             <svg
               className={`w-4 h-4 transition-transform ${showArchived ? 'rotate-90' : ''}`}
@@ -295,7 +295,7 @@ export default function DepartmentsPage() {
               {archived.map((dept) => (
                 <span
                   key={dept.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm border border-gray-200"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-sm border border-outline-variant"
                 >
                   <span className="line-through">{dept.name}</span>
                   <button
@@ -312,7 +312,7 @@ export default function DepartmentsPage() {
           )}
 
           {showArchived && archived.length === 0 && (
-            <p className="mt-3 text-sm text-gray-400">No archived departments.</p>
+            <p className="mt-3 text-sm text-on-surface-variant">No archived departments.</p>
           )}
         </div>
       )}

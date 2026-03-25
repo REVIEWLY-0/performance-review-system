@@ -76,21 +76,21 @@ export default function ReviewCycleList({
     return (
       <div className="grid gap-4 animate-pulse">
         {[1, 2, 3].map(i => (
-          <div key={i} className="bg-white shadow rounded-lg p-6">
+          <div key={i} className="bg-surface-container-lowest shadow rounded-lg p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-5 bg-gray-200 rounded w-48" />
-                  <div className="h-5 bg-gray-200 rounded w-20" />
+                  <div className="h-5 bg-surface-container-high rounded w-48" />
+                  <div className="h-5 bg-surface-container-high rounded w-20" />
                 </div>
                 <div className="flex gap-4">
-                  <div className="h-4 bg-gray-200 rounded w-40" />
-                  <div className="h-4 bg-gray-200 rounded w-28" />
+                  <div className="h-4 bg-surface-container-high rounded w-40" />
+                  <div className="h-4 bg-surface-container-high rounded w-28" />
                 </div>
               </div>
               <div className="flex gap-2 ml-4">
-                <div className="h-9 bg-gray-200 rounded-md w-14" />
-                <div className="h-9 bg-gray-200 rounded-md w-28" />
+                <div className="h-9 bg-surface-container-high rounded-md w-14" />
+                <div className="h-9 bg-surface-container-high rounded-md w-28" />
               </div>
             </div>
           </div>
@@ -101,9 +101,9 @@ export default function ReviewCycleList({
 
   if (cycles.length === 0) {
     return (
-      <div className="bg-white shadow rounded-lg p-8 text-center">
+      <div className="bg-surface-container-lowest shadow rounded-lg p-8 text-center">
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-on-surface-variant"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -115,10 +115,10 @@ export default function ReviewCycleList({
             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
           />
         </svg>
-        <h3 className="mt-2 text-sm font-medium text-gray-900">
+        <h3 className="mt-2 text-sm font-medium text-on-surface">
           No review cycles
         </h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-on-surface-variant">
           Get started by creating a new review cycle.
         </p>
       </div>
@@ -171,17 +171,17 @@ export default function ReviewCycleList({
         {cycles.map((cycle) => (
           <div
             key={cycle.id}
-            className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow"
+            className="bg-surface-container-lowest shadow rounded-lg p-6 hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-on-surface">
                     {cycle.name}
                   </h3>
                   <StatusBadge status={cycle.status} />
                 </div>
-                <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
+                <div className="mt-2 flex items-center gap-4 text-sm text-on-surface-variant">
                   <span>
                     📅 {formatDate(cycle.startDate)} -{' '}
                     {formatDate(cycle.endDate)}
@@ -198,7 +198,7 @@ export default function ReviewCycleList({
                 {cycle.status === 'DRAFT' && (
                   <Link
                     href={`/admin/review-cycles/${cycle.id}`}
-                    className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                    className="px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-dim"
                   >
                     Edit
                   </Link>
@@ -208,7 +208,7 @@ export default function ReviewCycleList({
                 {(cycle.status === 'ACTIVE' || cycle.status === 'COMPLETED') && (
                   <Link
                     href={`/admin/review-cycles/${cycle.id}`}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    className="px-3 py-2 border border-outline rounded-md text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
                   >
                     View
                   </Link>
@@ -218,7 +218,7 @@ export default function ReviewCycleList({
                 {(cycle.status === 'DRAFT' || cycle.status === 'ACTIVE') && (
                   <Link
                     href={`/admin/review-cycles/${cycle.id}/assign-reviewers`}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    className="px-3 py-2 border border-outline rounded-md text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
                   >
                     Assign Reviewers
                   </Link>

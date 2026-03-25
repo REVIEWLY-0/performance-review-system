@@ -43,7 +43,7 @@ function RequiredToggle({
       disabled={toggling}
       title={config.isRequired ? 'Click to make optional' : 'Click to make required'}
       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none disabled:opacity-60 ${
-        config.isRequired ? 'bg-indigo-600' : 'bg-gray-300'
+        config.isRequired ? 'bg-primary' : 'bg-outline'
       }`}
     >
       <span
@@ -151,8 +151,8 @@ export default function ReviewTypesPage() {
     <div className="px-4 py-6 sm:px-0">
       <div className="mb-6">
         <BackButton href="/admin" label="← Back to Dashboard" />
-        <h1 className="text-2xl font-bold text-gray-900 mt-2">Review Types</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-on-surface mt-2">Review Types</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Manage the reviewer roles available in your workflow steps. Toggle{' '}
           <strong>Required</strong> to control whether a type must be completed before an
           employee&apos;s score is shown.
@@ -166,25 +166,25 @@ export default function ReviewTypesPage() {
       {loading ? (
         <div className="space-y-3 animate-pulse">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white shadow rounded-lg p-5 h-16" />
+            <div key={i} className="bg-surface-container-lowest shadow rounded-lg p-5 h-16" />
           ))}
         </div>
       ) : (
         <div className="space-y-6">
           {/* Built-in types */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-1">Built-in Types</h2>
-            <p className="text-sm text-gray-500 mb-4">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+            <h2 className="text-base font-semibold text-on-surface mb-1">Built-in Types</h2>
+            <p className="text-sm text-on-surface-variant mb-4">
               These types are always available. You can change whether they are required.
             </p>
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-outline-variant">
               {builtIns.map((config) => (
                 <div
                   key={config.id}
                   className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-sm font-medium text-gray-900">{config.label}</span>
+                    <span className="text-sm font-medium text-on-surface">{config.label}</span>
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${BASE_TYPE_COLORS[config.baseType]}`}
                     >
@@ -197,7 +197,7 @@ export default function ReviewTypesPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-on-surface-variant">
                       {config.isRequired ? 'Required' : 'Optional'}
                     </span>
                     <RequiredToggle config={config} onToggle={handleToggleRequired} />
@@ -216,11 +216,11 @@ export default function ReviewTypesPage() {
           </div>
 
           {/* Custom types */}
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-semibold text-gray-900">Custom Types</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-base font-semibold text-on-surface">Custom Types</h2>
+                <p className="text-sm text-on-surface-variant">
                   {custom.length === 0
                     ? 'No custom types yet.'
                     : `${custom.length} custom type${custom.length !== 1 ? 's' : ''}`}
@@ -229,7 +229,7 @@ export default function ReviewTypesPage() {
               {!showForm && (
                 <button
                   onClick={() => setShowForm(true)}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-dim"
                 >
                   + Add Custom Type
                 </button>
@@ -247,7 +247,7 @@ export default function ReviewTypesPage() {
                 {formError && <p className="text-sm text-red-600">{formError}</p>}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-on-surface-variant mb-1">
                     Label <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -256,19 +256,19 @@ export default function ReviewTypesPage() {
                     onChange={(e) => setFormLabel(e.target.value)}
                     placeholder="e.g. Lead Review, Mentor Feedback, 360 Review"
                     maxLength={80}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-on-surface-variant mb-1">
                     Base Behavior <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formBaseType}
                     onChange={(e) => setFormBaseType(e.target.value as BaseReviewType)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                   >
                     {(['SELF', 'MANAGER', 'PEER'] as BaseReviewType[]).map((bt) => (
                       <option key={bt} value={bt}>
@@ -276,7 +276,7 @@ export default function ReviewTypesPage() {
                       </option>
                     ))}
                   </select>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-on-surface-variant">
                     Determines how this review type behaves in the system.
                   </p>
                 </div>
@@ -285,7 +285,7 @@ export default function ReviewTypesPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary hover:bg-primary-dim disabled:opacity-50"
                   >
                     {submitting ? 'Creating…' : 'Create'}
                   </button>
@@ -296,7 +296,7 @@ export default function ReviewTypesPage() {
                       setFormLabel('');
                       setFormError('');
                     }}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    className="px-4 py-2 border border-outline rounded-md text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
                   >
                     Cancel
                   </button>
@@ -306,20 +306,20 @@ export default function ReviewTypesPage() {
 
             {/* Custom types list */}
             {custom.length > 0 && (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-outline-variant">
                 {custom.map((config) => (
                   <div
                     key={config.id}
                     className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-sm font-medium text-gray-900">{config.label}</span>
+                      <span className="text-sm font-medium text-on-surface">{config.label}</span>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${BASE_TYPE_COLORS[config.baseType]}`}
                       >
                         {config.baseType}
                       </span>
-                      <span className="text-xs text-gray-400 font-mono">{config.key}</span>
+                      <span className="text-xs text-on-surface-variant font-mono">{config.key}</span>
                       {config.isRequired && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
                           Required
@@ -328,7 +328,7 @@ export default function ReviewTypesPage() {
                     </div>
                     <div className="flex items-center gap-4 flex-shrink-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-on-surface-variant">
                           {config.isRequired ? 'Required' : 'Optional'}
                         </span>
                         <RequiredToggle config={config} onToggle={handleToggleRequired} />
@@ -347,7 +347,7 @@ export default function ReviewTypesPage() {
             )}
 
             {custom.length === 0 && !showForm && (
-              <p className="text-sm text-gray-400 text-center py-4">
+              <p className="text-sm text-on-surface-variant text-center py-4">
                 No custom types yet. Click &quot;Add Custom Type&quot; to create one.
               </p>
             )}

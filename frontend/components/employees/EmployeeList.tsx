@@ -30,7 +30,7 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
       case 'EMPLOYEE':
         return 'bg-green-100 text-green-800'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-surface-container text-on-surface'
     }
   }
 
@@ -48,10 +48,10 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
 
   if (employees.length === 0) {
     return (
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+      <div className="bg-surface-container-lowest shadow overflow-hidden sm:rounded-md">
         <div className="px-6 py-12 text-center">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className="mx-auto h-12 w-12 text-on-surface-variant"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -63,8 +63,8 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
               d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No employees</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-on-surface">No employees</h3>
+          <p className="mt-1 text-sm text-on-surface-variant">
             Get started by creating a new employee.
           </p>
         </div>
@@ -74,11 +74,11 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
 
   return (
     <>
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
+      <div className="bg-surface-container-lowest shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-outline-variant">
           {employees.map((employee) => (
             <li key={employee.id}>
-              <div className="px-4 py-4 flex items-center sm:px-6 hover:bg-gray-50">
+              <div className="px-4 py-4 flex items-center sm:px-6 hover:bg-surface-container-low">
                 <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
                   <div className="flex-1">
                     <div className="flex items-center flex-wrap gap-1.5">
@@ -91,15 +91,15 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
                         {employee.role}
                       </span>
                       {employee.employeeId && (
-                        <span className="px-2 py-0.5 text-xs font-mono font-medium rounded bg-gray-100 text-gray-600 border border-gray-200">
+                        <span className="px-2 py-0.5 text-xs font-mono font-medium rounded bg-surface-container text-on-surface-variant border border-outline-variant">
                           {employee.employeeId}
                         </span>
                       )}
                     </div>
                     <div className="mt-2 flex">
-                      <div className="flex items-center text-sm text-gray-500">
+                      <div className="flex items-center text-sm text-on-surface-variant">
                         <svg
-                          className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
+                          className="flex-shrink-0 mr-1.5 h-5 w-5 text-on-surface-variant"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -128,9 +128,9 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
                     )}
                     {employee.manager && (
                       <div className="mt-1 flex">
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-on-surface-variant">
                           <svg
-                            className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
+                            className="flex-shrink-0 mr-1.5 h-5 w-5 text-on-surface-variant"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -148,9 +148,9 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
                     )}
                     {employee.directReports && employee.directReports.length > 0 && (
                       <div className="mt-1 flex">
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-on-surface-variant">
                           <svg
-                            className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
+                            className="flex-shrink-0 mr-1.5 h-5 w-5 text-on-surface-variant"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -174,13 +174,13 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
                 <div className="ml-5 flex-shrink-0 flex space-x-2">
                   <button
                     onClick={() => setEditingEmployee(employee)}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    className="inline-flex items-center px-3 py-2 border border-outline shadow-sm text-sm leading-4 font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => setDeletingEmployee(employee)}
-                    className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+                    className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-surface-container-lowest hover:bg-red-50"
                   >
                     Delete
                   </button>

@@ -8,7 +8,7 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
   const colorClass = getStatusColor(status);
 
   const colorMap = {
-    gray: 'bg-gray-100 text-gray-800',
+    gray: 'bg-surface-container text-on-surface',
     green: 'bg-green-100 text-green-800',
     blue: 'bg-blue-100 text-blue-800',
   };

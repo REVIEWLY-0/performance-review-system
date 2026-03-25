@@ -103,22 +103,22 @@ export default function AssignReviewersPage({
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
-          <div className="h-7 bg-gray-200 rounded w-56 mb-1" />
-          <div className="h-4 bg-gray-200 rounded w-72" />
+          <div className="h-4 bg-surface-container-high rounded w-32 mb-4" />
+          <div className="h-7 bg-surface-container-high rounded w-56 mb-1" />
+          <div className="h-4 bg-surface-container-high rounded w-72" />
         </div>
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white shadow rounded-lg p-6 animate-pulse">
+            <div key={i} className="bg-surface-container-lowest shadow rounded-lg p-6 animate-pulse">
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-10 w-10 rounded-full bg-gray-200" />
+                <div className="h-10 w-10 rounded-full bg-surface-container-high" />
                 <div>
-                  <div className="h-4 bg-gray-200 rounded w-32 mb-1" />
-                  <div className="h-3 bg-gray-200 rounded w-48" />
+                  <div className="h-4 bg-surface-container-high rounded w-32 mb-1" />
+                  <div className="h-3 bg-surface-container-high rounded w-48" />
                 </div>
               </div>
-              <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
-              <div className="h-8 bg-gray-200 rounded w-full" />
+              <div className="h-4 bg-surface-container-high rounded w-24 mb-2" />
+              <div className="h-8 bg-surface-container-high rounded w-full" />
             </div>
           ))}
         </div>
@@ -142,16 +142,16 @@ export default function AssignReviewersPage({
       <BackButton href="/admin/review-cycles" label="← Back to Review Cycles" />
       <div className="mb-6 flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-on-surface">
             Assign Reviewers
           </h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-on-surface-variant">
             {cycle?.name} - Assign managers and peers for each employee
           </p>
         </div>
         <button
           onClick={() => setShowBulkUpload(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium"
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dim text-sm font-medium"
         >
           📄 Bulk Upload (CSV)
         </button>
@@ -186,9 +186,9 @@ export default function AssignReviewersPage({
       {/* Assignment Cards */}
       <div className="mt-6 space-y-4">
         {allUsers.length === 0 ? (
-          <div className="bg-white shadow rounded-lg p-8 text-center">
+          <div className="bg-surface-container-lowest shadow rounded-lg p-8 text-center">
             <svg
-              className="mx-auto h-12 w-12 text-gray-400"
+              className="mx-auto h-12 w-12 text-on-surface-variant"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -200,10 +200,10 @@ export default function AssignReviewersPage({
                 d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
               />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
+            <h3 className="mt-2 text-sm font-medium text-on-surface">
               No employees found
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-on-surface-variant">
               Add employees to your company first before assigning reviewers.
             </p>
           </div>

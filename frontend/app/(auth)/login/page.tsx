@@ -230,22 +230,22 @@ export default function LoginPage() {
 
   if (isSetPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-surface-container-low py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="flex flex-col items-center">
-            <div className="h-12 w-12 rounded-xl bg-indigo-600 flex items-center justify-center mb-3">
+            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-3">
               <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-indigo-600">Reviewly</h1>
-            <h2 className="mt-2 text-xl font-semibold text-gray-900">Set your password</h2>
-            <p className="mt-1 text-sm text-gray-500">Choose a password to activate your account</p>
+            <h2 className="mt-2 text-xl font-semibold text-on-surface">Set your password</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">Choose a password to activate your account</p>
           </div>
 
           <form className="mt-8 space-y-4" onSubmit={handleSetPassword}>
             <div>
-              <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="new-password" className="block text-sm font-medium text-on-surface-variant mb-1">
                 New Password <span className="text-red-500">*</span>
               </label>
               <input
@@ -253,14 +253,14 @@ export default function LoginPage() {
                 type="password"
                 required
                 autoComplete="new-password"
-                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full border border-outline rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
                 placeholder="Minimum 8 characters"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="confirm-new-password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirm-new-password" className="block text-sm font-medium text-on-surface-variant mb-1">
                 Confirm Password <span className="text-red-500">*</span>
               </label>
               <input
@@ -268,7 +268,7 @@ export default function LoginPage() {
                 type="password"
                 required
                 autoComplete="new-password"
-                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full border border-outline rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
                 placeholder="Re-enter your password"
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
@@ -289,7 +289,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:opacity-50"
+              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim focus:outline-none disabled:opacity-50"
             >
               {loading ? 'Saving…' : 'Set Password & Sign In'}
             </button>
@@ -300,21 +300,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-surface-container-low py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex flex-col items-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-indigo-600 flex items-center justify-center mb-3">
+            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-3">
               <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-indigo-600">Reviewly</h1>
           </div>
-          <h2 className="text-center text-xl font-semibold text-gray-900">
+          <h2 className="text-center text-xl font-semibold text-on-surface">
             {isSignUp ? 'Create your company account' : 'Sign in to your account'}
           </h2>
-          <p className="mt-1 text-center text-sm text-gray-500">
+          <p className="mt-1 text-center text-sm text-on-surface-variant">
             Performance review platform
           </p>
         </div>
@@ -324,7 +324,7 @@ export default function LoginPage() {
             {isSignUp && (
               <>
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="name" className="block text-sm font-medium text-on-surface-variant mb-1">
                     Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -345,7 +345,7 @@ export default function LoginPage() {
                   )}
                 </div>
                 <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="company" className="block text-sm font-medium text-on-surface-variant mb-1">
                     Company Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -369,7 +369,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-on-surface-variant mb-1">
                 Email Address <span className="text-red-500">*</span>
               </label>
               <input
@@ -392,7 +392,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-on-surface-variant mb-1">
                 Password <span className="text-red-500">*</span>
               </label>
               <input
@@ -421,18 +421,18 @@ export default function LoginPage() {
                     return (
                       <>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
                             <div
                               className={`h-full transition-all ${getPasswordStrengthColor(strength.score)}`}
                               style={{ width: `${(strength.score / 4) * 100}%` }}
                             />
                           </div>
-                          <span className="text-xs font-medium text-gray-600">
+                          <span className="text-xs font-medium text-on-surface-variant">
                             {getPasswordStrengthLabel(strength.score)}
                           </span>
                         </div>
                         {strength.feedback.length > 0 && (
-                          <p className="mt-1 text-xs text-gray-500">{strength.feedback.join(', ')}</p>
+                          <p className="mt-1 text-xs text-on-surface-variant">{strength.feedback.join(', ')}</p>
                         )}
                       </>
                     )
@@ -443,7 +443,7 @@ export default function LoginPage() {
 
             {isSignUp && (
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-on-surface-variant mb-1">
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -501,7 +501,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
             >
               {loading ? 'Loading...' : isSignUp ? 'Sign up' : 'Sign in'}
             </button>
@@ -536,7 +536,7 @@ export default function LoginPage() {
                   companyName: false,
                 })
               }}
-              className="text-sm text-indigo-600 hover:text-indigo-500"
+              className="text-sm text-primary hover:text-primary"
             >
               {isSignUp
                 ? 'Already have an account? Sign in'

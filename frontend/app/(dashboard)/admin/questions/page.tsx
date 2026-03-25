@@ -173,33 +173,33 @@ export default function QuestionsPage() {
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-36 mb-4" />
+          <div className="h-4 bg-surface-container-high rounded w-36 mb-4" />
           <div className="flex items-center justify-between">
             <div className="space-y-2">
-              <div className="h-7 bg-gray-200 rounded w-48" />
-              <div className="h-4 bg-gray-200 rounded w-72" />
+              <div className="h-7 bg-surface-container-high rounded w-48" />
+              <div className="h-4 bg-surface-container-high rounded w-72" />
             </div>
             <div className="flex gap-2">
-              <div className="h-9 bg-gray-200 rounded-md w-28" />
-              <div className="h-9 bg-gray-200 rounded-md w-32" />
+              <div className="h-9 bg-surface-container-high rounded-md w-28" />
+              <div className="h-9 bg-surface-container-high rounded-md w-32" />
             </div>
           </div>
         </div>
-        <div className="border-b border-gray-200 mb-6">
+        <div className="border-b border-outline-variant mb-6">
           <div className="flex space-x-8 pb-1 animate-pulse">
-            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-gray-200 rounded w-28" />)}
+            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-surface-container-high rounded w-28" />)}
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
           <div className="space-y-3">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="bg-white shadow rounded-lg p-4">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
+              <div key={i} className="bg-surface-container-lowest shadow rounded-lg p-4">
+                <div className="h-4 bg-surface-container-high rounded w-3/4 mb-2" />
+                <div className="h-3 bg-surface-container-high rounded w-1/2" />
               </div>
             ))}
           </div>
-          <div className="bg-white shadow rounded-lg h-48" />
+          <div className="bg-surface-container-lowest shadow rounded-lg h-48" />
         </div>
       </div>
     );
@@ -212,15 +212,15 @@ export default function QuestionsPage() {
         <BackButton href="/admin" label="Back to Admin Dashboard" />
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Question Builder</h1>
-            <p className="mt-1 text-sm text-gray-600">
+            <h1 className="text-2xl font-bold text-on-surface">Question Builder</h1>
+            <p className="mt-1 text-sm text-on-surface-variant">
               Create and manage questions for different review types
             </p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="inline-flex items-center px-4 py-2 border border-outline rounded-md shadow-sm text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
             >
               {showPreview ? 'Hide' : 'Show'} Preview
             </button>
@@ -229,7 +229,7 @@ export default function QuestionsPage() {
                 setEditingQuestion(null);
                 setShowForm(true);
               }}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dim"
             >
               + New Question
             </button>
@@ -276,7 +276,7 @@ export default function QuestionsPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-outline-variant mb-6">
         <nav className="-mb-px flex space-x-8">
           {tabs.map((tab) => (
             <button
@@ -286,8 +286,8 @@ export default function QuestionsPage() {
                 group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
                 ${
                   selectedTab === tab.value
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-on-surface-variant hover:text-on-surface hover:border-outline'
                 }
               `}
             >
@@ -296,7 +296,7 @@ export default function QuestionsPage() {
                 className={`ml-2 py-0.5 px-2 rounded-full text-xs font-medium ${
                   selectedTab === tab.value
                     ? 'bg-indigo-100 text-indigo-600'
-                    : 'bg-gray-100 text-gray-600'
+                    : 'bg-surface-container text-on-surface-variant'
                 }`}
               >
                 {questions[tab.value].length}
@@ -365,9 +365,9 @@ export default function QuestionsPage() {
           ) : showPreview ? (
             <QuestionPreview questions={questions[selectedTab]} reviewType={selectedTab} ratingScale={ratingScale} />
           ) : (
-            <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            <div className="bg-surface-container-lowest rounded-lg shadow p-8 text-center text-on-surface-variant">
               <svg
-                className="mx-auto h-12 w-12 text-gray-400"
+                className="mx-auto h-12 w-12 text-on-surface-variant"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

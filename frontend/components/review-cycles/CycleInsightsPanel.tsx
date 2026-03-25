@@ -28,7 +28,7 @@ function ReviewPill({ status, overdue }: { status: ReviewStatus; overdue?: boole
       ? 'bg-red-100 text-red-700'
       : status === 'DRAFT'
       ? 'bg-yellow-100 text-yellow-800'
-      : 'bg-gray-100 text-gray-500';
+      : 'bg-surface-container text-on-surface-variant';
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
       {status === 'SUBMITTED' ? 'Submitted' : overdue ? 'Overdue' : reviewStatusLabel(status)}
@@ -79,18 +79,18 @@ function StatCard({
 }) {
   const pct = total && total > 0 ? Math.round((value / total) * 100) : null;
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
-      <p className="text-sm text-gray-500">{label}</p>
+    <div className="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-4">
+      <p className="text-sm text-on-surface-variant">{label}</p>
       <p className={`mt-1 text-2xl font-bold ${colorClass}`}>{value}</p>
       {pct !== null && (
         <div className="mt-2">
-          <div className="w-full bg-gray-100 rounded-full h-1.5">
+          <div className="w-full bg-surface-container rounded-full h-1.5">
             <div
               className={`h-1.5 rounded-full ${colorClass.replace('text-', 'bg-')}`}
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="mt-0.5 text-xs text-gray-400">{pct}%</p>
+          <p className="mt-0.5 text-xs text-on-surface-variant">{pct}%</p>
         </div>
       )}
     </div>
@@ -111,7 +111,7 @@ function PeerReviewsCell({
   const total = peerReviews.length;
   const submitted = peerReviews.filter((r) => r.status === 'SUBMITTED').length;
 
-  if (total === 0) return <span className="text-xs text-gray-400">Not assigned</span>;
+  if (total === 0) return <span className="text-xs text-on-surface-variant">Not assigned</span>;
 
   const visible = expanded ? peerReviews : peerReviews.slice(0, PEER_COLLAPSE_THRESHOLD);
   const hasMore = total > PEER_COLLAPSE_THRESHOLD;
@@ -120,7 +120,7 @@ function PeerReviewsCell({
     <div className="flex flex-col gap-1">
       {visible.map((r) => (
         <div key={r.reviewer.id} className="flex items-center gap-2">
-          <span className="text-xs text-gray-600 truncate max-w-[110px]" title={r.reviewer.name}>
+          <span className="text-xs text-on-surface-variant truncate max-w-[110px]" title={r.reviewer.name}>
             {r.reviewer.name}
           </span>
           <ReviewPill status={r.status} overdue={overdue && r.status !== 'SUBMITTED'} />
@@ -130,13 +130,13 @@ function PeerReviewsCell({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-xs text-indigo-600 hover:text-indigo-800 text-left mt-0.5"
+          className="text-xs text-primary hover:text-primary text-left mt-0.5"
         >
           {expanded ? 'Show less' : `+${total - PEER_COLLAPSE_THRESHOLD} more (${submitted}/${total} submitted)`}
         </button>
       )}
       {!hasMore && (
-        <span className="text-xs text-gray-400">{submitted}/{total} submitted</span>
+        <span className="text-xs text-on-surface-variant">{submitted}/{total} submitted</span>
       )}
     </div>
   );
@@ -215,22 +215,22 @@ export default function CycleInsightsPanel({
   return (
     <div className="px-4 py-6 sm:px-0">
       {/* Breadcrumb */}
-      <nav className="mb-5 flex items-center space-x-1 text-sm text-gray-500">
+      <nav className="mb-5 flex items-center space-x-1 text-sm text-on-surface-variant">
         <button
           onClick={() => router.push('/admin')}
           className="hover:text-indigo-600 transition-colors"
         >
           Dashboard
         </button>
-        <span className="text-gray-300">/</span>
+        <span className="text-outline">/</span>
         <button
           onClick={() => router.push('/admin/review-cycles')}
           className="hover:text-indigo-600 transition-colors"
         >
           Review Cycles
         </button>
-        <span className="text-gray-300">/</span>
-        <span className="text-gray-900 font-medium truncate max-w-[240px]">
+        <span className="text-outline">/</span>
+        <span className="text-on-surface font-medium truncate max-w-[240px]">
           {cycle.name}
         </span>
       </nav>
@@ -238,15 +238,15 @@ export default function CycleInsightsPanel({
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">{cycle.name}</h1>
+          <h1 className="text-2xl font-bold text-on-surface">{cycle.name}</h1>
           <StatusBadge status={cycle.status} />
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push(`/admin/review-cycles/${cycleId}/assign-reviewers`)}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center px-3 py-2 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low transition-colors"
           >
-            <svg className="mr-1.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="mr-1.5 h-4 w-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -254,7 +254,7 @@ export default function CycleInsightsPanel({
           </button>
           <button
             onClick={() => router.push(`/admin/cycles/${cycleId}/scores`)}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim transition-colors"
           >
             <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -266,22 +266,22 @@ export default function CycleInsightsPanel({
       </div>
 
       {/* Cycle meta */}
-      <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-100 px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-600">
+      <div className="mb-6 bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-on-surface-variant">
         <span>
-          <span className="font-medium text-gray-900">Period: </span>
+          <span className="font-medium text-on-surface">Period: </span>
           {new Date(cycle.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           {' – '}
           {new Date(cycle.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </span>
         <span>
-          <span className="font-medium text-gray-900">Steps: </span>
+          <span className="font-medium text-on-surface">Steps: </span>
           {stepsSummary}
         </span>
       </div>
 
       {/* Stats cards */}
       <div className="mb-6 grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <StatCard label="Total Employees" value={stats.total} colorClass="text-gray-900" />
+        <StatCard label="Total Employees" value={stats.total} colorClass="text-on-surface" />
         <StatCard label="Fully Complete" value={stats.fullyComplete} colorClass="text-green-600" total={stats.total} />
         <StatCard label="In Progress"    value={stats.inProgress}   colorClass="text-yellow-600" total={stats.total} />
         <StatCard label="Not Started"    value={stats.notStarted}   colorClass="text-red-500" total={stats.total} />
@@ -293,7 +293,7 @@ export default function CycleInsightsPanel({
         {/* Search */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -303,14 +303,14 @@ export default function CycleInsightsPanel({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email…"
-            className="block pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+            className="block pl-9 pr-3 py-2 border border-outline rounded-md text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
           />
         </div>
 
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="block px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+          className="block px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
         >
           <option value="ALL">All departments</option>
           {departments.map((d) => (
@@ -321,7 +321,7 @@ export default function CycleInsightsPanel({
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-          className="block px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+          className="block px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
         >
           <option value="ALL">All statuses</option>
           <option value="COMPLETE">Complete</option>
@@ -333,65 +333,65 @@ export default function CycleInsightsPanel({
         {isFiltered && (
           <button
             onClick={() => { setDeptFilter('ALL'); setStatusFilter('ALL'); setSearch(''); }}
-            className="text-sm text-indigo-600 hover:text-indigo-800"
+            className="text-sm text-primary hover:text-primary"
           >
             Clear filters
           </button>
         )}
 
         {isFiltered && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-on-surface-variant">
             {filtered.length} of {employees.length} employees
           </span>
         )}
       </div>
 
       {/* Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-surface-container-lowest shadow rounded-lg overflow-hidden">
         {filtered.length === 0 ? (
-          <div className="py-12 text-center text-gray-500 text-sm">
+          <div className="py-12 text-center text-on-surface-variant text-sm">
             {employees.length === 0
               ? 'No reviewer assignments have been created for this cycle yet.'
               : 'No employees match the selected filters.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-outline-variant">
+              <thead className="bg-surface-container-low">
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Employee
                   </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Department
                   </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Self Review
                     {selfDeadline && (
-                      <span className="ml-1 text-gray-400 normal-case font-normal">
+                      <span className="ml-1 text-on-surface-variant normal-case font-normal">
                         (due {selfDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
                       </span>
                     )}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Manager Review(s)
                     {managerDeadline && (
-                      <span className="ml-1 text-gray-400 normal-case font-normal">
+                      <span className="ml-1 text-on-surface-variant normal-case font-normal">
                         (due {managerDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
                       </span>
                     )}
                   </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Peer Reviews
                     {peerDeadline && (
-                      <span className="ml-1 text-gray-400 normal-case font-normal">
+                      <span className="ml-1 text-on-surface-variant normal-case font-normal">
                         (due {peerDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})
                       </span>
                     )}
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="bg-surface-container-lowest divide-y divide-outline-variant">
                 {filtered.map((emp) => {
                   const completionStatus = employeeCompletionStatus(emp);
                   const empIsOverdue = overdueEmployees.includes(emp);
@@ -413,8 +413,8 @@ export default function CycleInsightsPanel({
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{emp.name}</div>
-                            <div className="text-xs text-gray-400">{emp.email}</div>
+                            <div className="text-sm font-medium text-on-surface">{emp.name}</div>
+                            <div className="text-xs text-on-surface-variant">{emp.email}</div>
                           </div>
                           {empIsOverdue && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
@@ -438,7 +438,7 @@ export default function CycleInsightsPanel({
                             ))}
                           </div>
                         ) : (
-                          <span className="text-gray-300">—</span>
+                          <span className="text-outline">—</span>
                         )}
                       </td>
 
@@ -453,12 +453,12 @@ export default function CycleInsightsPanel({
                       {/* Manager Reviews */}
                       <td className="px-4 py-3">
                         {emp.managerReviews.length === 0 ? (
-                          <span className="text-xs text-gray-400">Not assigned</span>
+                          <span className="text-xs text-on-surface-variant">Not assigned</span>
                         ) : (
                           <div className="flex flex-col gap-1">
                             {emp.managerReviews.map((r) => (
                               <div key={r.reviewer.id} className="flex items-center gap-2">
-                                <span className="text-xs text-gray-600 truncate max-w-[120px]" title={r.reviewer.name}>
+                                <span className="text-xs text-on-surface-variant truncate max-w-[120px]" title={r.reviewer.name}>
                                   {r.reviewer.name}
                                 </span>
                                 <ReviewPill

@@ -119,12 +119,12 @@ export default function QuestionForm({
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-surface-container-lowest rounded-lg shadow p-6">
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-on-surface">
           {question ? 'Edit Question' : 'New Question'}
         </h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-on-surface-variant">
           Create a question for {reviewType.toLowerCase().replace('_', ' ')} reviews
         </p>
       </div>
@@ -138,7 +138,7 @@ export default function QuestionForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Question Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-on-surface-variant mb-2">
             Question Type
           </label>
           <div className="space-y-3">
@@ -153,11 +153,11 @@ export default function QuestionForm({
                   onChange={(e) =>
                     setFormData({ ...formData, type: e.target.value as QuestionType })
                   }
-                  className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                  className="mt-1 h-4 w-4 text-primary focus:ring-primary border-outline"
                 />
                 <label htmlFor={`type-${type.value}`} className="ml-3 flex-1 cursor-pointer">
-                  <span className="block text-sm font-medium text-gray-700">{type.label}</span>
-                  <span className="block text-sm text-gray-500">{type.description}</span>
+                  <span className="block text-sm font-medium text-on-surface-variant">{type.label}</span>
+                  <span className="block text-sm text-on-surface-variant">{type.description}</span>
                 </label>
               </div>
             ))}
@@ -166,7 +166,7 @@ export default function QuestionForm({
 
         {/* Question Text */}
         <div>
-          <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="text" className="block text-sm font-medium text-on-surface-variant mb-2">
             Question Text <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -175,10 +175,10 @@ export default function QuestionForm({
             value={formData.text}
             onChange={(e) => setFormData({ ...formData, text: e.target.value })}
             placeholder="Enter your question here..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
             required
           />
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-on-surface-variant">
             Be clear and specific. This is what reviewers will see.
           </p>
         </div>
@@ -186,7 +186,7 @@ export default function QuestionForm({
         {/* Max Characters (TEXT type) */}
         {formData.type === 'TEXT' && (
           <div>
-            <label htmlFor="maxChars" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="maxChars" className="block text-sm font-medium text-on-surface-variant mb-2">
               Maximum Characters (Optional)
             </label>
             <input
@@ -202,9 +202,9 @@ export default function QuestionForm({
                 })
               }
               placeholder="e.g., 500"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
             />
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-on-surface-variant">
               Leave empty for no limit. Recommended: 200–500 characters.
             </p>
           </div>
@@ -213,16 +213,16 @@ export default function QuestionForm({
         {/* Task Items (TASK_LIST type) */}
         {formData.type === 'TASK_LIST' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Task Items
             </label>
-            <p className="text-sm text-gray-500 mb-3">
+            <p className="text-sm text-on-surface-variant mb-3">
               Define the tasks employees will mark as complete. Leave empty to let employees add their own.
             </p>
 
             <div className="space-y-2">
               {tasks.map((task, index) => (
-                <div key={task.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div key={task.id} className="flex items-start gap-2 p-3 bg-surface-container-low rounded-md border border-outline-variant">
                   <div className="flex-1 space-y-2">
                     <input
                       type="text"
@@ -230,7 +230,7 @@ export default function QuestionForm({
                       onChange={(e) => updateTask(index, { label: e.target.value })}
                       placeholder="Task label (e.g., Complete code review)"
                       maxLength={500}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-1.5 border border-outline rounded text-sm focus:outline-none focus:ring-primary focus:border-primary"
                     />
                     <input
                       type="text"
@@ -240,23 +240,23 @@ export default function QuestionForm({
                       }
                       placeholder="Description (optional)"
                       maxLength={500}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-1.5 border border-outline rounded text-sm focus:outline-none focus:ring-primary focus:border-primary"
                     />
                   </div>
                   <div className="flex items-center gap-2 pt-1.5">
-                    <label className="flex items-center gap-1.5 text-xs text-gray-600 whitespace-nowrap cursor-pointer">
+                    <label className="flex items-center gap-1.5 text-xs text-on-surface-variant whitespace-nowrap cursor-pointer">
                       <input
                         type="checkbox"
                         checked={task.required}
                         onChange={(e) => updateTask(index, { required: e.target.checked })}
-                        className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600"
+                        className="h-3.5 w-3.5 rounded border-outline text-primary"
                       />
                       Required
                     </label>
                     <button
                       type="button"
                       onClick={() => removeTask(index)}
-                      className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+                      className="p-1 text-on-surface-variant hover:text-red-500 rounded transition-colors"
                       title="Remove task"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,27 +272,27 @@ export default function QuestionForm({
             <button
               type="button"
               onClick={addTask}
-              className="mt-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              className="mt-2 text-sm text-primary hover:text-primary font-medium"
             >
               + Add task item
             </button>
 
             {/* Inline preview */}
             {tasks.filter((t) => t.label.trim()).length > 0 && (
-              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                <p className="text-xs font-medium text-gray-500 mb-2">Preview</p>
-                <p className="text-sm text-gray-900 mb-2">{formData.text || 'Your question...'}</p>
+              <div className="mt-4 p-3 bg-surface-container-low border border-outline-variant rounded-md">
+                <p className="text-xs font-medium text-on-surface-variant mb-2">Preview</p>
+                <p className="text-sm text-on-surface mb-2">{formData.text || 'Your question...'}</p>
                 <div className="space-y-1.5">
                   {tasks.filter((t) => t.label.trim()).map((task) => (
                     <label key={task.id} className="flex items-start gap-2">
-                      <input type="checkbox" disabled className="mt-0.5 h-4 w-4 rounded border-gray-300" />
+                      <input type="checkbox" disabled className="mt-0.5 h-4 w-4 rounded border-outline" />
                       <div>
-                        <span className="text-sm text-gray-700">{task.label}</span>
+                        <span className="text-sm text-on-surface-variant">{task.label}</span>
                         {task.required && (
                           <span className="ml-1 text-xs text-red-500">*</span>
                         )}
                         {task.description && (
-                          <p className="text-xs text-gray-500">{task.description}</p>
+                          <p className="text-xs text-on-surface-variant">{task.description}</p>
                         )}
                       </div>
                     </label>
@@ -306,9 +306,9 @@ export default function QuestionForm({
         {/* Preview (RATING / TEXT) */}
         {formData.type !== 'TASK_LIST' && (
           <div className="border-t pt-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Preview</h3>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <p className="text-sm text-gray-900 mb-3">
+            <h3 className="text-sm font-medium text-on-surface-variant mb-3">Preview</h3>
+            <div className="bg-surface-container-low rounded-lg p-4 border border-outline-variant">
+              <p className="text-sm text-on-surface mb-3">
                 {formData.text || 'Your question will appear here...'}
               </p>
               {formData.type === 'RATING' && (
@@ -318,13 +318,13 @@ export default function QuestionForm({
                       <button
                         key={num}
                         type="button"
-                        className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-100"
+                        className="px-4 py-2 border border-outline rounded-md text-sm text-on-surface-variant hover:bg-surface-container"
                       >
                         {num}
                       </button>
                     ))}
                   </div>
-                  <div className="flex justify-between mt-1 text-xs text-gray-400">
+                  <div className="flex justify-between mt-1 text-xs text-on-surface-variant">
                     <span>{ratingScale?.labels[0]?.title ?? 'Poor'}</span>
                     <span>{ratingScale?.labels[maxRating - 1]?.title ?? 'Excellent'}</span>
                   </div>
@@ -335,11 +335,11 @@ export default function QuestionForm({
                   <textarea
                     rows={3}
                     placeholder="Reviewer's answer will go here..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full px-3 py-2 border border-outline rounded-md text-sm"
                     disabled
                   />
                   {formData.maxChars && (
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-on-surface-variant">
                       Max {formData.maxChars} characters
                     </p>
                   )}
@@ -354,14 +354,14 @@ export default function QuestionForm({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="px-4 py-2 border border-outline rounded-md text-sm font-medium text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dim disabled:opacity-50"
           >
             {loading ? 'Saving...' : question ? 'Update Question' : 'Create Question'}
           </button>

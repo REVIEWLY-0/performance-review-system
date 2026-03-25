@@ -122,21 +122,21 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          className="fixed inset-0 bg-on-surface/50 transition-opacity"
           onClick={step !== 'result' ? onClose : undefined}
         />
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+        <div className="inline-block align-bottom bg-surface-container-lowest rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
 
           {/* ── Header ── */}
-          <div className="bg-white px-6 pt-5 pb-4">
+          <div className="bg-surface-container-lowest px-6 pt-5 pb-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-on-surface">
                 Import Employees from CSV
               </h3>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-on-surface-variant hover:text-on-surface-variant transition-colors"
                 aria-label="Close"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +169,7 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
 
                 {/* File picker */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-on-surface-variant mb-2">
                     Choose CSV file
                   </label>
                   <input
@@ -177,7 +177,7 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
                     type="file"
                     accept=".csv"
                     onChange={handleFileChange}
-                    className="block w-full text-sm text-gray-500
+                    className="block w-full text-sm text-on-surface-variant
                       file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0
                       file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700
                       hover:file:bg-indigo-100 cursor-pointer"
@@ -191,8 +191,8 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
               <>
                 {/* Summary bar */}
                 <div className="flex items-center space-x-4 mb-3">
-                  <span className="text-sm text-gray-600">
-                    <span className="font-semibold text-gray-900">{rows.length}</span> rows parsed from{' '}
+                  <span className="text-sm text-on-surface-variant">
+                    <span className="font-semibold text-on-surface">{rows.length}</span> rows parsed from{' '}
                     <span className="font-medium">{file?.name}</span>
                   </span>
                   {warnRows.length > 0 && (
@@ -203,29 +203,29 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
                 </div>
 
                 {/* Preview table */}
-                <div className="border border-gray-200 rounded-md overflow-hidden mb-3">
-                  <table className="min-w-full text-xs divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                <div className="border border-outline-variant rounded-md overflow-hidden mb-3">
+                  <table className="min-w-full text-xs divide-y divide-outline-variant">
+                    <thead className="bg-surface-container-low">
                       <tr>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600 w-6">#</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Name</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Email</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Role</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Department</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Manager email</th>
+                        <th className="px-3 py-2 text-left font-semibold text-on-surface-variant w-6">#</th>
+                        <th className="px-3 py-2 text-left font-semibold text-on-surface-variant">Name</th>
+                        <th className="px-3 py-2 text-left font-semibold text-on-surface-variant">Email</th>
+                        <th className="px-3 py-2 text-left font-semibold text-on-surface-variant">Role</th>
+                        <th className="px-3 py-2 text-left font-semibold text-on-surface-variant">Department</th>
+                        <th className="px-3 py-2 text-left font-semibold text-on-surface-variant">Manager email</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 bg-white">
+                    <tbody className="divide-y divide-outline-variant bg-surface-container-lowest">
                       {rows.slice(0, PREVIEW_LIMIT).map((row) => (
                         <tr
                           key={row.rowNum}
                           className={row.warning ? 'bg-yellow-50' : ''}
                         >
-                          <td className="px-3 py-1.5 text-gray-400">{row.rowNum}</td>
-                          <td className="px-3 py-1.5 text-gray-900 font-medium">
+                          <td className="px-3 py-1.5 text-on-surface-variant">{row.rowNum}</td>
+                          <td className="px-3 py-1.5 text-on-surface font-medium">
                             {row.name || <span className="text-red-500 italic">missing</span>}
                           </td>
-                          <td className="px-3 py-1.5 text-gray-600">
+                          <td className="px-3 py-1.5 text-on-surface-variant">
                             {row.email || <span className="text-red-500 italic">missing</span>}
                           </td>
                           <td className="px-3 py-1.5">
@@ -236,18 +236,18 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
                               {row.role}
                             </span>
                           </td>
-                          <td className="px-3 py-1.5 text-gray-700">
+                          <td className="px-3 py-1.5 text-on-surface-variant">
                             {row.department || <span className="text-red-400 italic">missing</span>}
                           </td>
-                          <td className="px-3 py-1.5 text-gray-500">
-                            {row.managerEmail || <span className="text-gray-300">—</span>}
+                          <td className="px-3 py-1.5 text-on-surface-variant">
+                            {row.managerEmail || <span className="text-outline">—</span>}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                   {rows.length > PREVIEW_LIMIT && (
-                    <div className="px-3 py-2 bg-gray-50 text-xs text-gray-500 border-t border-gray-200">
+                    <div className="px-3 py-2 bg-surface-container-low text-xs text-on-surface-variant border-t border-outline-variant">
                       + {rows.length - PREVIEW_LIMIT} more rows not shown
                     </div>
                   )}
@@ -268,7 +268,7 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
                 {/* Re-pick */}
                 <button
                   onClick={() => { setStep('upload'); setFile(null); setRows([]); if (fileRef.current) fileRef.current.value = ''; }}
-                  className="text-xs text-indigo-600 hover:text-indigo-800 underline"
+                  className="text-xs text-primary hover:text-primary underline"
                 >
                   Choose a different file
                 </button>
@@ -304,8 +304,8 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
                 </p>
                 {result.errors.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-700 mb-1">Errors:</p>
-                    <ul className="list-disc list-inside text-xs text-gray-600 max-h-36 overflow-y-auto space-y-0.5">
+                    <p className="text-xs font-semibold text-on-surface-variant mb-1">Errors:</p>
+                    <ul className="list-disc list-inside text-xs text-on-surface-variant max-h-36 overflow-y-auto space-y-0.5">
                       {result.errors.slice(0, 20).map((e, i) => (
                         <li key={i}>{e}</li>
                       ))}
@@ -320,11 +320,11 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
           </div>
 
           {/* ── Footer buttons ── */}
-          <div className="bg-gray-50 px-6 py-3 flex items-center justify-between">
+          <div className="bg-surface-container-low px-6 py-3 flex items-center justify-between">
             <button
               onClick={step === 'result' ? handleDone : onClose}
               disabled={importing}
-              className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="inline-flex justify-center rounded-md border border-outline shadow-sm px-4 py-2 bg-surface-container-lowest text-sm font-medium text-on-surface-variant hover:bg-surface-container-low disabled:opacity-50"
             >
               {step === 'result' ? 'Done' : 'Cancel'}
             </button>
@@ -333,7 +333,7 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
               <button
                 onClick={handleImport}
                 disabled={importing || validRows.length === 0}
-                className="inline-flex items-center justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-sm font-medium text-white hover:bg-primary-dim disabled:opacity-50"
               >
                 {importing ? (
                   <>

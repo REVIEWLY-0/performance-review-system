@@ -18,12 +18,12 @@ export default function NewReviewCyclePage() {
       <div className="mb-6">
         <BackButton href="/admin" label="← Back to Dashboard" />
         <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-2xl font-bold text-gray-900">Create Review Cycle</h1>
+          <h1 className="text-2xl font-bold text-on-surface">Create Review Cycle</h1>
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-on-surface-variant">
           <button
             onClick={() => router.push('/admin/review-cycles')}
-            className="text-indigo-600 hover:underline"
+            className="text-primary hover:underline"
           >
             Review Cycles
           </button>

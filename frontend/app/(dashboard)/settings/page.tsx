@@ -153,32 +153,32 @@ export default function SettingsPage() {
     return (
       <div className="px-4 py-6 sm:px-0">
         <div className="mb-6 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
-          <div className="h-7 bg-gray-200 rounded w-24 mb-1" />
-          <div className="h-4 bg-gray-200 rounded w-72" />
+          <div className="h-4 bg-surface-container-high rounded w-32 mb-4" />
+          <div className="h-7 bg-surface-container-high rounded w-24 mb-1" />
+          <div className="h-4 bg-surface-container-high rounded w-72" />
         </div>
-        <div className="bg-white shadow rounded-lg p-6 mb-6 animate-pulse">
-          <div className="h-5 bg-gray-200 rounded w-44 mb-4" />
+        <div className="bg-surface-container-lowest shadow rounded-lg p-6 mb-6 animate-pulse">
+          <div className="h-5 bg-surface-container-high rounded w-44 mb-4" />
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
               <div key={i} className="flex justify-between">
-                <div className="h-4 bg-gray-200 rounded w-16" />
-                <div className="h-4 bg-gray-200 rounded w-40" />
+                <div className="h-4 bg-surface-container-high rounded w-16" />
+                <div className="h-4 bg-surface-container-high rounded w-40" />
               </div>
             ))}
           </div>
         </div>
-        <div className="bg-white shadow rounded-lg p-6 animate-pulse">
-          <div className="h-5 bg-gray-200 rounded w-40 mb-2" />
-          <div className="h-4 bg-gray-200 rounded w-64 mb-6" />
+        <div className="bg-surface-container-lowest shadow rounded-lg p-6 animate-pulse">
+          <div className="h-5 bg-surface-container-high rounded w-40 mb-2" />
+          <div className="h-4 bg-surface-container-high rounded w-64 mb-6" />
           <div className="space-y-5">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <div className="h-4 bg-gray-200 rounded w-32" />
-                  <div className="h-3 bg-gray-200 rounded w-52" />
+                  <div className="h-4 bg-surface-container-high rounded w-32" />
+                  <div className="h-3 bg-surface-container-high rounded w-52" />
                 </div>
-                <div className="h-6 w-11 bg-gray-200 rounded-full" />
+                <div className="h-6 w-11 bg-surface-container-high rounded-full" />
               </div>
             ))}
           </div>
@@ -196,20 +196,20 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="mb-6">
         <BackButton label="Back" />
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-on-surface">Settings</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
           Manage your account settings and notification preferences
         </p>
       </div>
 
       {/* Account Information */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Account Information</h2>
+      <div className="bg-surface-container-lowest shadow rounded-lg p-6 mb-6">
+        <h2 className="text-lg font-medium text-on-surface mb-4">Account Information</h2>
 
         <div className="space-y-4">
           {/* Name — editable */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-600 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-on-surface-variant mb-1">
               Name
             </label>
             <input
@@ -219,26 +219,26 @@ export default function SettingsPage() {
               onChange={(e) => setNameInput(e.target.value)}
               minLength={2}
               maxLength={100}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="block w-full rounded-md border border-outline px-3 py-2 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
           {/* Email — read-only */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Email
-              <span className="ml-1 text-xs text-gray-400">(read-only)</span>
+              <span className="ml-1 text-xs text-on-surface-variant">(read-only)</span>
             </label>
-            <p className="text-sm text-gray-900 py-2">{user.email}</p>
+            <p className="text-sm text-on-surface py-2">{user.email}</p>
           </div>
 
           {/* Role — read-only */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">
               Role
-              <span className="ml-1 text-xs text-gray-400">(managed by admin)</span>
+              <span className="ml-1 text-xs text-on-surface-variant">(managed by admin)</span>
             </label>
-            <p className="text-sm text-gray-900 py-2">{user.role}</p>
+            <p className="text-sm text-on-surface py-2">{user.role}</p>
           </div>
         </div>
 
@@ -246,7 +246,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSaveProfile}
             disabled={savingProfile || !profileDirty}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dim focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-outline disabled:cursor-not-allowed"
           >
             {savingProfile ? 'Saving...' : 'Save Profile'}
           </button>
@@ -255,17 +255,17 @@ export default function SettingsPage() {
 
       {/* Rating Scale — admin only */}
       {user.role === 'ADMIN' && (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-1">Rating Scale</h2>
-          <p className="text-sm text-gray-600 mb-5">
+        <div className="bg-surface-container-lowest shadow rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-medium text-on-surface mb-1">Rating Scale</h2>
+          <p className="text-sm text-on-surface-variant mb-5">
             Configure the rating scale used in all reviews. Employees see the label definitions when submitting answers.
           </p>
 
           {/* Max rating input */}
           <div className="mb-5">
-            <label htmlFor="maxRating" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="maxRating" className="block text-sm font-medium text-on-surface-variant mb-1">
               Maximum rating value
-              <span className="ml-1 text-xs text-gray-400">(1 – 10)</span>
+              <span className="ml-1 text-xs text-on-surface-variant">(1 – 10)</span>
             </label>
             <input
               id="maxRating"
@@ -274,13 +274,13 @@ export default function SettingsPage() {
               max={10}
               value={ratingScaleInput.maxRating}
               onChange={(e) => handleMaxRatingChange(parseInt(e.target.value, 10) || 1)}
-              className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-24 rounded-md border border-outline px-3 py-2 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
           {/* Per-value label editor */}
           <div className="space-y-3">
-            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase tracking-wide pb-1 border-b">
+            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-on-surface-variant uppercase tracking-wide pb-1 border-b">
               <div className="col-span-1">#</div>
               <div className="col-span-3">Title</div>
               <div className="col-span-8">Description</div>
@@ -299,7 +299,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleLabelChange(label.value, 'title', e.target.value)}
                     maxLength={40}
                     placeholder="Title"
-                    className="block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="block w-full rounded-md border border-outline px-2 py-1.5 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div className="col-span-8">
@@ -309,7 +309,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleLabelChange(label.value, 'description', e.target.value)}
                     maxLength={100}
                     placeholder="Short description visible to employees"
-                    className="block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="block w-full rounded-md border border-outline px-2 py-1.5 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -320,7 +320,7 @@ export default function SettingsPage() {
             <button
               onClick={handleSaveRatingScale}
               disabled={savingRatingScale}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dim focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-outline disabled:cursor-not-allowed"
             >
               {savingRatingScale ? 'Saving...' : 'Save Rating Scale'}
             </button>
@@ -329,23 +329,23 @@ export default function SettingsPage() {
       )}
 
       {/* Security */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-1">Security</h2>
-        <p className="text-sm text-gray-600 mb-4">
+      <div className="bg-surface-container-lowest shadow rounded-lg p-6 mb-6">
+        <h2 className="text-lg font-medium text-on-surface mb-1">Security</h2>
+        <p className="text-sm text-on-surface-variant mb-4">
           Manage your password and account security
         </p>
 
-        <div className="flex items-center justify-between py-3 border-t border-gray-100">
+        <div className="flex items-center justify-between py-3 border-t border-outline-variant">
           <div>
-            <h3 className="text-sm font-medium text-gray-900">Password</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="text-sm font-medium text-on-surface">Password</h3>
+            <p className="text-sm text-on-surface-variant">
               We'll send a reset link to <span className="font-medium">{user.email}</span>
             </p>
           </div>
           <button
             onClick={handlePasswordReset}
             disabled={sendingReset}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {sendingReset ? 'Sending...' : 'Send Reset Email'}
           </button>
@@ -353,11 +353,11 @@ export default function SettingsPage() {
       </div>
 
       {/* Notification Preferences */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">
+      <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+        <h2 className="text-lg font-medium text-on-surface mb-4">
           Email Notifications
         </h2>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-on-surface-variant mb-6">
           Choose which email notifications you want to receive
         </p>
 
@@ -365,10 +365,10 @@ export default function SettingsPage() {
           {/* Cycle Started */}
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900">
+              <h3 className="text-sm font-medium text-on-surface">
                 Cycle Started
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-on-surface-variant">
                 Get notified when a new review cycle begins
               </p>
             </div>
@@ -376,7 +376,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => handleToggle('cycleStarted')}
               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
-                preferences.cycleStarted ? 'bg-indigo-600' : 'bg-gray-200'
+                preferences.cycleStarted ? 'bg-primary' : 'bg-surface-container-high'
               }`}
             >
               <span
@@ -390,10 +390,10 @@ export default function SettingsPage() {
           {/* Review Assigned */}
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900">
+              <h3 className="text-sm font-medium text-on-surface">
                 Review Assigned
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-on-surface-variant">
                 Get notified when you're assigned a review
               </p>
             </div>
@@ -401,7 +401,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => handleToggle('reviewAssigned')}
               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
-                preferences.reviewAssigned ? 'bg-indigo-600' : 'bg-gray-200'
+                preferences.reviewAssigned ? 'bg-primary' : 'bg-surface-container-high'
               }`}
             >
               <span
@@ -415,10 +415,10 @@ export default function SettingsPage() {
           {/* Reminders */}
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900">
+              <h3 className="text-sm font-medium text-on-surface">
                 Review Reminders
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-on-surface-variant">
                 Get reminded about pending reviews 3 days before deadline
               </p>
             </div>
@@ -426,7 +426,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => handleToggle('reminders')}
               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
-                preferences.reminders ? 'bg-indigo-600' : 'bg-gray-200'
+                preferences.reminders ? 'bg-primary' : 'bg-surface-container-high'
               }`}
             >
               <span
@@ -440,10 +440,10 @@ export default function SettingsPage() {
           {/* Score Available */}
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900">
+              <h3 className="text-sm font-medium text-on-surface">
                 Score Available
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-on-surface-variant">
                 Get notified when your performance score is ready
               </p>
             </div>
@@ -451,7 +451,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => handleToggle('scoreAvailable')}
               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
-                preferences.scoreAvailable ? 'bg-indigo-600' : 'bg-gray-200'
+                preferences.scoreAvailable ? 'bg-primary' : 'bg-surface-container-high'
               }`}
             >
               <span
@@ -467,7 +467,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dim focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:bg-outline"
           >
             {saving ? 'Saving...' : 'Save Preferences'}
           </button>

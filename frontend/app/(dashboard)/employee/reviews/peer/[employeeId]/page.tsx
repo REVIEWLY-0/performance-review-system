@@ -223,7 +223,7 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading review...</p>
+            <p className="mt-4 text-on-surface-variant">Loading review...</p>
           </div>
         </div>
       </div>
@@ -255,10 +255,10 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
         >
           ← Back to Peer Reviews
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-on-surface">
           Peer Review: {reviewData.employee.name}
         </h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-on-surface-variant">
           {reviewData.employee.email}
         </p>
       </div>
@@ -291,24 +291,24 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
 
       {/* Progress Bar */}
       {!isSubmitted && (
-        <div className="mb-6 bg-white shadow rounded-lg p-4">
+        <div className="mb-6 bg-surface-container-lowest shadow rounded-lg p-4">
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-on-surface-variant">
                 Progress: {progress.answered}/{progress.total} (
                 {progress.percentage}%)
               </span>
               {saving && (
-                <span className="text-xs text-gray-500">Saving draft...</span>
+                <span className="text-xs text-on-surface-variant">Saving draft...</span>
               )}
               {lastSaved && !saving && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-on-surface-variant">
                   Last saved: {lastSaved.toLocaleTimeString()}
                 </span>
               )}
             </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-surface-container-high rounded-full h-2">
             <div
               className="bg-purple-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress.percentage}%` }}
@@ -345,7 +345,7 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
 
           {/* Submit Button */}
           {!isSubmitted && (
-            <div className="sticky bottom-6 bg-white shadow-lg rounded-lg p-4 border-2 border-purple-200">
+            <div className="sticky bottom-6 bg-surface-container-lowest shadow-lg rounded-lg p-4 border-2 border-purple-200">
               <button
                 onClick={handleSubmit}
                 disabled={progress.percentage < 100 || saving}
@@ -354,7 +354,7 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
                 {saving ? 'Submitting...' : 'Submit Peer Review'}
               </button>
               {progress.percentage < 100 && (
-                <p className="mt-2 text-xs text-center text-gray-500">
+                <p className="mt-2 text-xs text-center text-on-surface-variant">
                   Complete all questions to submit
                 </p>
               )}
@@ -386,9 +386,9 @@ function QuestionCard({
   ratingScale: RatingScale;
 }) {
   return (
-    <div className="bg-white shadow rounded-lg p-6">
+    <div className="bg-surface-container-lowest shadow rounded-lg p-6">
       <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-900">
+        <h3 className="text-sm font-medium text-on-surface">
           Q{number}. {question.text}
         </h3>
       </div>
@@ -405,28 +405,28 @@ function QuestionCard({
                 className={`min-w-[48px] flex-1 px-3 py-4 border-2 rounded-lg font-medium transition-colors ${
                   answer?.rating === num
                     ? 'border-purple-500 bg-purple-50 text-purple-700'
-                    : 'border-gray-300 text-gray-700 hover:border-purple-300 hover:bg-purple-50'
+                    : 'border-outline text-on-surface-variant hover:border-purple-300 hover:bg-purple-50'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {num}
               </button>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500 px-1">
+          <div className="flex justify-between text-xs text-on-surface-variant px-1">
             <span>{ratingScale.labels[0]?.title ?? 'Poor'}</span>
             <span>{ratingScale.labels[ratingScale.maxRating - 1]?.title ?? 'Excellent'}</span>
           </div>
-          <details className="text-xs text-gray-500">
-            <summary className="cursor-pointer hover:text-gray-700 select-none">
+          <details className="text-xs text-on-surface-variant">
+            <summary className="cursor-pointer hover:text-on-surface select-none">
               View scale definitions
             </summary>
-            <div className="mt-2 space-y-1 bg-gray-50 rounded-md p-3">
+            <div className="mt-2 space-y-1 bg-surface-container-low rounded-md p-3">
               {ratingScale.labels.map((label) => (
                 <div key={label.value} className="flex gap-2">
-                  <span className="font-semibold w-4 shrink-0 text-gray-700">{label.value}</span>
-                  <span className="font-medium text-gray-800">{label.title}</span>
+                  <span className="font-semibold w-4 shrink-0 text-on-surface-variant">{label.value}</span>
+                  <span className="font-medium text-on-surface">{label.title}</span>
                   {label.description && (
-                    <span className="text-gray-500">— {label.description}</span>
+                    <span className="text-on-surface-variant">— {label.description}</span>
                   )}
                 </div>
               ))}
@@ -445,11 +445,11 @@ function QuestionCard({
             disabled={disabled}
             maxLength={question.maxChars || undefined}
             rows={5}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 border border-outline rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-surface-container-high disabled:cursor-not-allowed"
             placeholder="Enter your response..."
           />
           {question.maxChars && (
-            <div className="text-right text-sm text-gray-500 mt-1">
+            <div className="text-right text-sm text-on-surface-variant mt-1">
               {answer?.textAnswer?.length || 0} / {question.maxChars}
             </div>
           )}
@@ -515,19 +515,19 @@ function TaskListInput({
               checked={task.completed}
               onChange={(e) => toggle(task.id, e.target.checked)}
               disabled={disabled}
-              className="mt-0.5 h-4 w-4 text-purple-600 border-gray-300 rounded disabled:opacity-50"
+              className="mt-0.5 h-4 w-4 text-purple-600 border-outline rounded disabled:opacity-50"
             />
             <div>
-              <span className={`text-sm font-medium ${task.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+              <span className={`text-sm font-medium ${task.completed ? 'line-through text-on-surface-variant' : 'text-on-surface'}`}>
                 {task.label}
               </span>
               {task.description && (
-                <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">{task.description}</p>
               )}
             </div>
           </label>
         ))}
-        <p className="text-xs text-gray-400 pt-1">
+        <p className="text-xs text-on-surface-variant pt-1">
           {completedCount} / {taskState.length} completed
         </p>
       </div>
@@ -560,7 +560,7 @@ function TaskListInput({
             checked={task.completed}
             onChange={(e) => updateTask(idx, { completed: e.target.checked })}
             disabled={disabled}
-            className="h-5 w-5 text-purple-600 border-gray-300 rounded mt-2"
+            className="h-5 w-5 text-purple-600 border-outline rounded mt-2"
           />
           <input
             type="text"
@@ -568,7 +568,7 @@ function TaskListInput({
             onChange={(e) => updateTask(idx, { text: e.target.value })}
             disabled={disabled}
             placeholder="Enter task..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="flex-1 px-3 py-2 border border-outline rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-surface-container-high disabled:cursor-not-allowed"
           />
           {!disabled && tasks.length > 1 && (
             <button type="button" onClick={() => removeTask(idx)}

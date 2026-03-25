@@ -34,7 +34,7 @@ export default function DepartmentMultiSelect({
       {/* Selected pills */}
       <div
         className={`min-h-[42px] flex flex-wrap gap-1.5 p-2 border rounded-md ${
-          error ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+          error ? 'border-red-300 bg-red-50' : 'border-outline bg-surface-container-lowest'
         }`}
       >
         {selected.map((d) => (
@@ -56,7 +56,7 @@ export default function DepartmentMultiSelect({
           </span>
         ))}
         {selected.length === 0 && (
-          <span className="text-sm text-gray-400 py-0.5">No departments selected</span>
+          <span className="text-sm text-on-surface-variant py-0.5">No departments selected</span>
         )}
       </div>
 
@@ -67,7 +67,7 @@ export default function DepartmentMultiSelect({
           onChange={(e) => {
             if (e.target.value) add(e.target.value);
           }}
-          className="mt-1.5 block w-full text-sm border border-gray-300 rounded-md py-1.5 px-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+          className="mt-1.5 block w-full text-sm border border-outline rounded-md py-1.5 px-2 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-on-surface-variant"
         >
           <option value="">+ Add department…</option>
           {unselected.map((d) => (
