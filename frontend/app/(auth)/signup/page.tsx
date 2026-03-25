@@ -13,12 +13,9 @@ import {
   getPasswordStrengthLabel,
 } from '@/lib/validation'
 
-// ── Input style helper (Stitch design) ────────────────────────────────────
 const inputCls = (hasError: boolean) =>
   `w-full bg-surface-container-lowest border-none ring-1 ${
-    hasError
-      ? 'ring-error focus:ring-error'
-      : 'ring-outline-variant focus:ring-primary'
+    hasError ? 'ring-red-400 focus:ring-red-500' : 'ring-outline-variant focus:ring-primary'
   } focus:ring-2 rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant transition-all focus:outline-none`
 
 export default function SignUpPage() {
@@ -28,54 +25,32 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState('')
 
   const [formData, setFormData] = useState({
-    name: '',
-    companyName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: '', companyName: '', email: '', password: '', confirmPassword: '',
   })
-
   const [fieldErrors, setFieldErrors] = useState({
-    name: '',
-    companyName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: '', companyName: '', email: '', password: '', confirmPassword: '',
   })
-
   const [touched, setTouched] = useState({
-    name: false,
-    companyName: false,
-    email: false,
-    password: false,
-    confirmPassword: false,
+    name: false, companyName: false, email: false, password: false, confirmPassword: false,
   })
 
   const validateField = (field: string, value: string): string => {
     switch (field) {
-      case 'email':
-        return validateEmail(value) || ''
+      case 'email': return validateEmail(value) || ''
       case 'password': {
-        const strength = validatePasswordStrength(value)
-        return strength.isValid ? '' : strength.feedback.join(', ')
+        const s = validatePasswordStrength(value)
+        return s.isValid ? '' : s.feedback.join(', ')
       }
-      case 'confirmPassword':
-        return validatePasswordConfirm(formData.password, value) || ''
-      case 'name':
-        return validateName(value, 'Full Name') || ''
-      case 'companyName':
-        return validateName(value, 'Company Name') || ''
-      default:
-        return ''
+      case 'confirmPassword': return validatePasswordConfirm(formData.password, value) || ''
+      case 'name': return validateName(value, 'Full Name') || ''
+      case 'companyName': return validateName(value, 'Company Name') || ''
+      default: return ''
     }
   }
 
   const handleBlur = (field: string) => {
     setTouched({ ...touched, [field]: true })
-    setFieldErrors({
-      ...fieldErrors,
-      [field]: validateField(field, formData[field as keyof typeof formData]),
-    })
+    setFieldErrors({ ...fieldErrors, [field]: validateField(field, formData[field as keyof typeof formData]) })
   }
 
   const handleChange = (field: string, value: string) => {
@@ -102,12 +77,7 @@ export default function SignUpPage() {
     e.preventDefault()
     setError('')
     setSuccess('')
-
-    if (!validateForm()) {
-      setError('Please fix the errors above')
-      return
-    }
-
+    if (!validateForm()) { setError('Please fix the errors above'); return }
     setLoading(true)
     try {
       const result = await signUp(formData.email, formData.password, formData.name, formData.companyName)
@@ -126,62 +96,65 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-surface text-on-surface">
 
-      {/* ── Left: Brand Panel ──────────────────────────────────────────────── */}
-      <aside className="hidden md:flex md:w-1/2 lg:w-3/5 bg-surface-container-high relative overflow-hidden flex-col justify-between p-12">
+      {/* ── Left: Brand Panel (narrower — ~40%) ───────────────────────────── */}
+      <aside className="hidden md:flex md:w-2/5 bg-surface-container-high relative overflow-hidden flex-col justify-between p-10">
         {/* Logo */}
         <div className="z-10 flex items-center gap-3">
           <div className="bg-primary p-2 rounded-xl shadow-lg">
-            <svg className="h-8 w-8 text-on-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-7 w-7 text-on-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
             </svg>
           </div>
-          <span className="text-2xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
+          <span className="text-xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
         </div>
 
         {/* Editorial content */}
-        <div className="z-10 max-w-xl">
-          <h2 className="text-5xl font-extrabold font-display leading-tight tracking-tight text-on-surface mb-6">
+        <div className="z-10">
+          <h2 className="text-4xl font-extrabold font-display leading-tight tracking-tight text-on-surface mb-4">
             Redefining the{' '}
             <span className="text-primary">Standard</span>{' '}
             of Performance.
           </h2>
-          <p className="text-lg text-on-surface-variant leading-relaxed mb-8">
+          <p className="text-base text-on-surface-variant leading-relaxed mb-8">
             Join forward-thinking companies using Reviewly to cultivate a culture of radical transparency and high-performance growth.
           </p>
 
           {/* Feature cards */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
-              <svg className="h-6 w-6 text-primary mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="grid grid-cols-1 gap-3">
+            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex items-start gap-4">
+              <svg className="h-5 w-5 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              <h4 className="font-display font-bold text-on-surface">Data-Driven</h4>
-              <p className="text-xs text-on-surface-variant mt-1">Advanced metrics for talent mapping.</p>
+              <div>
+                <h4 className="font-display font-bold text-on-surface text-sm">Data-Driven Insights</h4>
+                <p className="text-xs text-on-surface-variant mt-0.5">Advanced metrics for talent mapping.</p>
+              </div>
             </div>
-            <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
-              <svg className="h-6 w-6 text-primary mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex items-start gap-4">
+              <svg className="h-5 w-5 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <h4 className="font-display font-bold text-on-surface">Secure</h4>
-              <p className="text-xs text-on-surface-variant mt-1">Enterprise-grade privacy controls.</p>
+              <div>
+                <h4 className="font-display font-bold text-on-surface text-sm">Enterprise Security</h4>
+                <p className="text-xs text-on-surface-variant mt-0.5">Enterprise-grade privacy controls.</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Decorative blobs */}
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 -right-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/3 -right-16 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Footer */}
         <footer className="z-10 text-xs text-on-surface-variant font-medium opacity-60">
           © {new Date().getFullYear()} Reviewly Performance Platform. All rights reserved.
         </footer>
       </aside>
 
-      {/* ── Right: Signup Form ─────────────────────────────────────────────── */}
-      <main className="flex-1 bg-surface flex flex-col items-center justify-center p-6 md:p-12 lg:p-24 overflow-y-auto">
+      {/* ── Right: Signup Form (60%) ───────────────────────────────────────── */}
+      <main className="flex-1 bg-surface flex flex-col items-center justify-center p-8 md:p-14 overflow-y-auto">
         {/* Mobile logo */}
-        <div className="md:hidden flex items-center gap-2 mb-12">
+        <div className="md:hidden flex items-center gap-2 mb-10">
           <div className="bg-primary p-1.5 rounded-xl">
             <svg className="h-6 w-6 text-on-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -190,17 +163,19 @@ export default function SignUpPage() {
           <span className="text-xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
         </div>
 
-        <div className="w-full max-w-md">
-          {/* Header */}
+        <div className="w-full max-w-lg">
+          {/* Header — more breathing room */}
           <header className="mb-10">
-            <h1 className="text-3xl font-extrabold font-display text-on-surface tracking-tight mb-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">Get started for free</p>
+            <h1 className="text-3xl font-extrabold font-display text-on-surface tracking-tight leading-snug mb-2">
               Create your company account
             </h1>
-            <p className="text-on-surface-variant font-medium">Performance review platform</p>
+            <p className="text-on-surface-variant">
+              Set up Reviewly for your team in minutes.
+            </p>
           </header>
 
-          {/* Form */}
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-5">
 
               {/* Full Name */}
@@ -209,18 +184,13 @@ export default function SignUpPage() {
                   Full Name <span className="text-error">*</span>
                 </label>
                 <input
-                  id="name"
-                  type="text"
-                  autoComplete="name"
-                  placeholder="John Doe"
+                  id="name" type="text" autoComplete="name" placeholder="John Doe"
                   className={inputCls(touched.name && !!fieldErrors.name)}
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   onBlur={() => handleBlur('name')}
                 />
-                {touched.name && fieldErrors.name && (
-                  <p className="text-sm text-error">{fieldErrors.name}</p>
-                )}
+                {touched.name && fieldErrors.name && <p className="text-sm text-red-600">{fieldErrors.name}</p>}
               </div>
 
               {/* Company Name */}
@@ -229,121 +199,94 @@ export default function SignUpPage() {
                   Company Name <span className="text-error">*</span>
                 </label>
                 <input
-                  id="companyName"
-                  type="text"
-                  autoComplete="organization"
-                  placeholder="Acme Corp"
+                  id="companyName" type="text" autoComplete="organization" placeholder="Acme Corp"
                   className={inputCls(touched.companyName && !!fieldErrors.companyName)}
                   value={formData.companyName}
                   onChange={(e) => handleChange('companyName', e.target.value)}
                   onBlur={() => handleBlur('companyName')}
                 />
-                {touched.companyName && fieldErrors.companyName && (
-                  <p className="text-sm text-error">{fieldErrors.companyName}</p>
-                )}
+                {touched.companyName && fieldErrors.companyName && <p className="text-sm text-red-600">{fieldErrors.companyName}</p>}
               </div>
 
               {/* Email */}
               <div className="space-y-1.5">
                 <label htmlFor="email" className="block text-sm font-semibold text-on-surface-variant">
-                  Email Address <span className="text-error">*</span>
+                  Work Email <span className="text-error">*</span>
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="work@company.com"
+                  id="email" type="email" autoComplete="email" placeholder="you@company.com"
                   className={inputCls(touched.email && !!fieldErrors.email)}
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   onBlur={() => handleBlur('email')}
                 />
-                {touched.email && fieldErrors.email && (
-                  <p className="text-sm text-error">{fieldErrors.email}</p>
-                )}
+                {touched.email && fieldErrors.email && <p className="text-sm text-red-600">{fieldErrors.email}</p>}
               </div>
 
-              {/* Password + Confirm (side by side on sm+) */}
+              {/* Password + Confirm side by side */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label htmlFor="password" className="block text-sm font-semibold text-on-surface-variant">
                     Password <span className="text-error">*</span>
                   </label>
                   <input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="••••••••"
+                    id="password" type="password" autoComplete="new-password" placeholder="••••••••"
                     className={inputCls(touched.password && !!fieldErrors.password)}
                     value={formData.password}
                     onChange={(e) => handleChange('password', e.target.value)}
                     onBlur={() => handleBlur('password')}
                   />
-                  {touched.password && fieldErrors.password && (
-                    <p className="text-sm text-error">{fieldErrors.password}</p>
-                  )}
-                  {/* Strength indicator */}
+                  {touched.password && fieldErrors.password && <p className="text-sm text-red-600">{fieldErrors.password}</p>}
                   {formData.password.length > 0 && (() => {
                     const s = validatePasswordStrength(formData.password)
                     return (
-                      <div className="mt-2 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all ${getPasswordStrengthColor(s.score)}`}
-                              style={{ width: `${(s.score / 4) * 100}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-medium text-on-surface-variant">
-                            {getPasswordStrengthLabel(s.score)}
-                          </span>
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                          <div className={`h-full transition-all ${getPasswordStrengthColor(s.score)}`} style={{ width: `${(s.score / 4) * 100}%` }} />
                         </div>
+                        <span className="text-xs font-medium text-on-surface-variant whitespace-nowrap">
+                          {getPasswordStrengthLabel(s.score)}
+                        </span>
                       </div>
                     )
                   })()}
                 </div>
-
                 <div className="space-y-1.5">
                   <label htmlFor="confirmPassword" className="block text-sm font-semibold text-on-surface-variant">
                     Confirm Password <span className="text-error">*</span>
                   </label>
                   <input
-                    id="confirmPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="••••••••"
+                    id="confirmPassword" type="password" autoComplete="new-password" placeholder="••••••••"
                     className={inputCls(touched.confirmPassword && !!fieldErrors.confirmPassword)}
                     value={formData.confirmPassword}
                     onChange={(e) => handleChange('confirmPassword', e.target.value)}
                     onBlur={() => handleBlur('confirmPassword')}
                   />
-                  {touched.confirmPassword && fieldErrors.confirmPassword && (
-                    <p className="text-sm text-error">{fieldErrors.confirmPassword}</p>
-                  )}
+                  {touched.confirmPassword && fieldErrors.confirmPassword && <p className="text-sm text-red-600">{fieldErrors.confirmPassword}</p>}
                 </div>
               </div>
             </div>
 
-            {/* Error / Success banners */}
+            {/* ── Banners ── */}
             {error && (
-              <div className="rounded-xl bg-error/10 px-4 py-3 flex items-start gap-3">
-                <svg className="h-5 w-5 text-error shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+              <div className="rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3 flex items-start gap-3">
+                <svg className="h-5 w-5 text-red-500 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
-                <p className="text-sm text-error">{error}</p>
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             )}
             {success && (
-              <div className="rounded-xl bg-primary/10 px-4 py-3 flex items-start gap-3">
-                <svg className="h-5 w-5 text-primary shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 px-4 py-3 flex items-start gap-3">
+                <svg className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <p className="text-sm text-primary">{success}</p>
+                <p className="text-sm text-emerald-700 dark:text-emerald-400">{success}</p>
               </div>
             )}
 
             {/* Submit */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={loading}
@@ -351,7 +294,7 @@ export default function SignUpPage() {
               >
                 {loading ? 'Creating account…' : (
                   <>
-                    Sign up
+                    Create account
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
@@ -361,16 +304,14 @@ export default function SignUpPage() {
             </div>
 
             {/* Divider */}
-            <div className="flex items-center gap-4 py-1 opacity-60">
+            <div className="flex items-center gap-4 opacity-50">
               <div className="h-px flex-1 bg-outline-variant" />
-              <span className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">
-                Trusted Deployment
-              </span>
+              <span className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Trusted Deployment</span>
               <div className="h-px flex-1 bg-outline-variant" />
             </div>
 
             {/* Sign in link */}
-            <p className="text-center text-on-surface-variant font-medium text-sm">
+            <p className="text-center text-on-surface-variant text-sm">
               Already have an account?{' '}
               <Link href="/login" className="text-primary font-bold hover:underline underline-offset-4 ml-1">
                 Sign in
