@@ -17,7 +17,6 @@ export default function Pagination({
 }: PaginationProps) {
   if (totalPages <= 1) return null;
 
-  // Build the list of page numbers to display, with null = ellipsis
   const pages: (number | null)[] = [];
 
   if (totalPages <= 7) {
@@ -35,11 +34,11 @@ export default function Pagination({
   const btnBase =
     'inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors';
   const btnActive =
-    'bg-indigo-600 text-white';
+    'bg-primary text-on-primary';
   const btnInactive =
-    'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700';
+    'text-on-surface bg-surface-container-lowest border border-outline hover:bg-surface-container-low';
   const btnDisabled =
-    'text-gray-300 bg-white border border-gray-200 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600 dark:border-gray-700';
+    'text-on-surface-variant bg-surface-container-lowest border border-outline-variant cursor-not-allowed opacity-50';
 
   return (
     <nav
@@ -55,7 +54,7 @@ export default function Pagination({
         >
           Previous
         </button>
-        <span className="text-sm text-gray-700 dark:text-gray-400 self-center">
+        <span className="text-sm text-on-surface-variant self-center">
           {page} / {totalPages}
         </span>
         <button
@@ -69,13 +68,12 @@ export default function Pagination({
 
       {/* Desktop: full controls */}
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-        <p className="text-sm text-gray-700 dark:text-gray-400">
-          Page <span className="font-medium">{page}</span> of{' '}
-          <span className="font-medium">{totalPages}</span>
+        <p className="text-sm text-on-surface-variant">
+          Page <span className="font-medium text-on-surface">{page}</span> of{' '}
+          <span className="font-medium text-on-surface">{totalPages}</span>
         </p>
 
         <div className="flex items-center space-x-1">
-          {/* Prev */}
           <button
             onClick={() => onPageChange(page - 1)}
             disabled={page === 1}
@@ -85,10 +83,9 @@ export default function Pagination({
             ←
           </button>
 
-          {/* Page numbers */}
           {pages.map((p, i) =>
             p === null ? (
-              <span key={`ellipsis-${i}`} className="px-2 text-gray-400 select-none">
+              <span key={`ellipsis-${i}`} className="px-2 text-on-surface-variant select-none">
                 …
               </span>
             ) : (
@@ -103,7 +100,6 @@ export default function Pagination({
             )
           )}
 
-          {/* Next */}
           <button
             onClick={() => onPageChange(page + 1)}
             disabled={page === totalPages}

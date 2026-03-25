@@ -21,7 +21,7 @@ export default function BackButton({ href, label = 'Back' }: BackButtonProps) {
   return (
     <button
       onClick={handleClick}
-      className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+      className="inline-flex items-center text-sm text-on-surface-variant hover:text-on-surface mb-4 transition-colors"
     >
       <svg
         className="w-4 h-4 mr-1"

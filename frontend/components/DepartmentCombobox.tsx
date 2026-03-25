@@ -33,7 +33,6 @@ export default function DepartmentCombobox({
           d.toLowerCase().includes(query.toLowerCase()),
         )
 
-  // Show a "Create new" option when the typed value isn't in the list
   const showCreate =
     query.trim().length > 0 &&
     !departments.some(
@@ -41,8 +40,8 @@ export default function DepartmentCombobox({
     )
 
   const borderClass = error
-    ? 'border-red-300 focus:ring-red-300 focus:border-red-400'
-    : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+    ? 'border-error focus:ring-error/30 focus:border-error'
+    : 'border-outline focus:ring-primary/30 focus:border-primary'
 
   return (
     <Combobox
@@ -55,7 +54,7 @@ export default function DepartmentCombobox({
     >
       <div className="relative">
         <ComboboxInput
-          className={`block w-full border ${borderClass} rounded-md shadow-sm py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-1`}
+          className={`block w-full border ${borderClass} rounded-md shadow-sm py-2 pl-3 pr-10 text-sm text-on-surface bg-surface-container-lowest placeholder:text-on-surface-variant focus:outline-none focus:ring-2`}
           placeholder={placeholder}
           displayValue={(v: string) => v}
           onChange={(e) => {
@@ -64,20 +63,20 @@ export default function DepartmentCombobox({
           }}
           autoComplete="off"
         />
-        <ComboboxButton className="absolute inset-y-0 right-0 flex items-center px-2 text-gray-400 hover:text-gray-600">
+        <ComboboxButton className="absolute inset-y-0 right-0 flex items-center px-2 text-on-surface-variant hover:text-on-surface">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </ComboboxButton>
 
-        <ComboboxOptions className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white shadow-lg border border-gray-200 py-1 text-sm focus:outline-none">
+        <ComboboxOptions className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md bg-surface-container-lowest shadow-lg border border-outline-variant py-1 text-sm focus:outline-none">
           {filtered.map((dept) => (
             <ComboboxOption
               key={dept}
               value={dept}
               className={({ active }: { active: boolean }) =>
                 `cursor-pointer select-none py-2 px-3 ${
-                  active ? 'bg-indigo-50 text-indigo-900' : 'text-gray-900'
+                  active ? 'bg-surface-container-high text-on-surface' : 'text-on-surface'
                 }`
               }
             >
@@ -90,17 +89,17 @@ export default function DepartmentCombobox({
               value={query.trim()}
               className={({ active }: { active: boolean }) =>
                 `cursor-pointer select-none py-2 px-3 ${
-                  active ? 'bg-indigo-50' : ''
+                  active ? 'bg-surface-container-high' : ''
                 }`
               }
             >
-              <span className="text-indigo-600 font-medium">Create: </span>
-              <span className="text-gray-900">"{query.trim()}"</span>
+              <span className="text-primary font-medium">Create: </span>
+              <span className="text-on-surface">"{query.trim()}"</span>
             </ComboboxOption>
           )}
 
           {filtered.length === 0 && !showCreate && (
-            <div className="py-2 px-3 text-gray-400">No departments found</div>
+            <div className="py-2 px-3 text-on-surface-variant">No departments found</div>
           )}
         </ComboboxOptions>
       </div>

@@ -34,23 +34,23 @@ export default function ConfirmDialog({
 
   const confirmBtnClass =
     variant === 'danger'
-      ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-      : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500';
+      ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500 text-white'
+      : 'bg-primary hover:bg-primary-dim text-on-primary focus:ring-primary';
 
   return (
     <div className="fixed z-20 inset-0 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          className="fixed inset-0 bg-on-surface/40 transition-opacity"
           onClick={loading ? undefined : onCancel}
         />
 
         {/* Panel */}
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+        <div className="relative bg-surface-container-lowest rounded-lg shadow-xl max-w-md w-full p-6 z-10">
           {/* Icon */}
           <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full mb-4 ${
-            variant === 'danger' ? 'bg-red-100' : 'bg-indigo-100'
+            variant === 'danger' ? 'bg-red-100' : 'bg-surface-container-high'
           }`}>
             {variant === 'danger' ? (
               <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,17 +58,17 @@ export default function ConfirmDialog({
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             ) : (
-              <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             )}
           </div>
 
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+          <h3 className="text-lg font-semibold text-on-surface text-center mb-2">
             {title}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-6">
+          <p className="text-sm text-on-surface-variant text-center mb-6">
             {message}
           </p>
 
@@ -76,14 +76,14 @@ export default function ConfirmDialog({
             <button
               onClick={onCancel}
               disabled={loading}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+              className="px-4 py-2 border border-outline rounded-md text-sm font-medium text-on-surface bg-surface-container-lowest hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-outline disabled:opacity-50 transition-colors"
             >
               {cancelLabel}
             </button>
             <button
               onClick={handleConfirm}
               disabled={loading}
-              className={`px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${confirmBtnClass}`}
+              className={`px-4 py-2 border border-transparent rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 transition-colors ${confirmBtnClass}`}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
