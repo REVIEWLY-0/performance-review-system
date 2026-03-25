@@ -97,7 +97,7 @@ export default function SignUpPage() {
     <div className="min-h-screen flex flex-col md:flex-row bg-surface text-on-surface">
 
       {/* ── Left: Brand Panel (narrower — ~40%) ───────────────────────────── */}
-      <aside className="hidden md:flex md:w-2/5 bg-surface-container-high relative overflow-hidden flex-col justify-between p-10">
+      <aside className="hidden md:flex md:w-1/2 bg-surface-container-high relative overflow-hidden flex-col justify-between p-10">
         {/* Logo */}
         <div className="z-10 flex items-center gap-3">
           <div className="bg-primary p-2 rounded-xl shadow-lg">
