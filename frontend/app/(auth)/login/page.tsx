@@ -12,16 +12,16 @@ const inputCls = (hasError: boolean) =>
     hasError ? 'ring-red-400 focus:ring-red-500' : 'ring-outline-variant focus:ring-primary'
   } focus:ring-2 rounded-xl px-4 py-3 text-on-surface placeholder:text-on-surface-variant transition-all focus:outline-none`
 
-// ── Top logo row — shared across all login views ───────────────────────────
+// ── Stacked centred logo — sits above the card ────────────────────────────
 function TopLogo() {
   return (
-    <div className="px-8 py-6 flex items-center justify-center gap-3">
-      <div className="bg-primary p-2 rounded-xl shadow-lg">
-        <svg className="h-6 w-6 text-on-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <div className="flex flex-col items-center gap-3 mb-8">
+      <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20">
+        <svg className="h-8 w-8 text-on-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
         </svg>
       </div>
-      <span className="text-xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
+      <span className="text-2xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
     </div>
   )
 }
@@ -126,9 +126,9 @@ export default function LoginPage() {
   if (isSetPassword) {
     return (
       <div className="min-h-screen bg-surface-container-low flex flex-col">
-        <TopLogo />
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
           <div className="w-full max-w-lg">
+            <TopLogo />
             <div className="bg-surface rounded-2xl ring-1 ring-outline-variant shadow-sm p-10">
               <h1 className="text-2xl font-extrabold font-display text-on-surface tracking-tight mb-1">
                 Set your password
@@ -182,12 +182,9 @@ export default function LoginPage() {
   // ── Login view ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-surface-container-low flex flex-col">
-      {/* Logo row — top left, side by side */}
-      <TopLogo />
-
-      {/* Card — centered in remaining space, much wider */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8">
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
+          <TopLogo />
           <div className="bg-surface rounded-2xl ring-1 ring-outline-variant shadow-sm p-10 md:p-12">
             <h1 className="text-3xl font-extrabold font-display text-on-surface tracking-tight mb-1">
               Sign in to your account
