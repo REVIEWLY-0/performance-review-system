@@ -154,13 +154,13 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
                   <pre className="text-xs text-blue-800 font-mono whitespace-pre-wrap leading-relaxed">
 {`name,email,role,department,manager_email,employee_id
 Alice Smith,alice@company.com,EMPLOYEE,Engineering,bob@company.com,EMP-001
-Bob Jones,bob@company.com,MANAGER,Engineering,,
+Bob Jones,bob@company.com,MANAGER,Engineering;Product,,
 Carol White,carol@company.com,ADMIN,Operations,,`}
                   </pre>
                   <ul className="mt-2 text-xs text-blue-800 space-y-0.5">
                     <li>• First row is the header (required)</li>
                     <li>• <strong>role</strong> must be: <code>EMPLOYEE</code>, <code>MANAGER</code>, or <code>ADMIN</code></li>
-                    <li>• <strong>department</strong> is <strong>required</strong> — e.g. Engineering, Sales, Marketing</li>
+                    <li>• <strong>department</strong> is <strong>required</strong> — use <code>;</code> to assign multiple: <code>Engineering;Product</code></li>
                     <li>• <strong>manager_email</strong> is optional — leave blank for top-level managers</li>
                     <li>• <strong>employee_id</strong> is optional — leave blank to auto-generate (e.g. EMP-XK4J9R)</li>
                     <li>• All emails must be unique within your company</li>
@@ -236,8 +236,14 @@ Carol White,carol@company.com,ADMIN,Operations,,`}
                               {row.role}
                             </span>
                           </td>
-                          <td className="px-3 py-1.5 text-on-surface-variant">
-                            {row.department || <span className="text-red-400 italic">missing</span>}
+                          <td className="px-3 py-1.5">
+                            {row.department
+                              ? row.department.split(';').map((d) => d.trim()).filter(Boolean).map((d, i) => (
+                                  <span key={i} className="inline-block mr-1 px-1.5 py-0.5 rounded text-xs bg-surface-container-high text-on-surface-variant">
+                                    {d}
+                                  </span>
+                                ))
+                              : <span className="text-red-400 italic">missing</span>}
                           </td>
                           <td className="px-3 py-1.5 text-on-surface-variant">
                             {row.managerEmail || <span className="text-outline">—</span>}

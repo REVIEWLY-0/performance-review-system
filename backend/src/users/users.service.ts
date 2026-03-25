@@ -597,12 +597,16 @@ export class UsersService {
         createdUsers.set(userData.email, user.id);
         results.successful++;
 
-        // Link user to Department model (find or create dept, then create UserDepartment record)
+        // Link user to Department model — supports semicolon-separated multi-dept values
+        // e.g. "Engineering;Product" creates two UserDepartment records
         if (userData.department) {
-          const dept = await this.findOrCreateDepartment(companyId, userData.department);
-          await this.prisma.userDepartment
-            .create({ data: { userId: user.id, departmentId: dept.id } })
-            .catch(() => {}); // ignore duplicate (shouldn't happen on fresh import)
+          const deptNames = userData.department.split(';').map((d) => d.trim()).filter(Boolean);
+          for (const deptName of deptNames) {
+            const dept = await this.findOrCreateDepartment(companyId, deptName);
+            await this.prisma.userDepartment
+              .create({ data: { userId: user.id, departmentId: dept.id } })
+              .catch(() => {}); // ignore duplicate
+          }
         }
 
         // Fire welcome email with setup link — non-blocking, failure must not affect import results

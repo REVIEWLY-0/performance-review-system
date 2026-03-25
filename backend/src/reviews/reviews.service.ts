@@ -22,7 +22,7 @@ export class AnswerDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
-  @Max(5)
+  @Max(10)
   rating?: number | null;
 
   @IsOptional()
