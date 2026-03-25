@@ -97,7 +97,7 @@ export default function SignUpPage() {
     <div className="min-h-screen flex flex-col md:flex-row bg-surface text-on-surface">
 
       {/* ── Left: Brand Panel (narrower — ~40%) ───────────────────────────── */}
-      <aside className="hidden md:flex md:w-1/2 lg:w-3/5 bg-surface-container-high relative overflow-hidden flex-col justify-between p-10">
+      <aside className="hidden md:flex md:w-1/2 lg:w-3/5 bg-surface-container-high relative overflow-hidden flex-col justify-between p-12">
         {/* Logo */}
         <div className="z-10 flex items-center gap-3">
           <div className="bg-primary p-2 rounded-xl shadow-lg">
@@ -110,34 +110,30 @@ export default function SignUpPage() {
 
         {/* Editorial content */}
         <div className="z-10">
-          <h2 className="text-4xl font-extrabold font-display leading-tight tracking-tight text-on-surface mb-4">
+          <h2 className="text-5xl font-extrabold font-display leading-tight tracking-tight text-on-surface mb-6">
             Redefining the{' '}
             <span className="text-primary">Standard</span>{' '}
             of Performance.
           </h2>
-          <p className="text-base text-on-surface-variant leading-relaxed mb-8">
+          <p className="text-lg text-on-surface-variant leading-relaxed mb-8">
             Join forward-thinking companies using Reviewly to cultivate a culture of radical transparency and high-performance growth.
           </p>
 
-          {/* Feature cards */}
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex items-start gap-4">
-              <svg className="h-5 w-5 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          {/* Feature cards — 2-column square grid matching Stitch */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+              <svg className="h-6 w-6 text-primary mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              <div>
-                <h4 className="font-display font-bold text-on-surface text-sm">Data-Driven Insights</h4>
-                <p className="text-xs text-on-surface-variant mt-0.5">Advanced metrics for talent mapping.</p>
-              </div>
+              <h4 className="font-display font-bold text-on-surface">Data-Driven</h4>
+              <p className="text-xs text-on-surface-variant mt-1">Advanced metrics for talent mapping.</p>
             </div>
-            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex items-start gap-4">
-              <svg className="h-5 w-5 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+              <svg className="h-6 w-6 text-primary mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <div>
-                <h4 className="font-display font-bold text-on-surface text-sm">Enterprise Security</h4>
-                <p className="text-xs text-on-surface-variant mt-0.5">Enterprise-grade privacy controls.</p>
-              </div>
+              <h4 className="font-display font-bold text-on-surface">Secure</h4>
+              <p className="text-xs text-on-surface-variant mt-1">Enterprise-grade privacy controls.</p>
             </div>
           </div>
         </div>
@@ -152,7 +148,7 @@ export default function SignUpPage() {
       </aside>
 
       {/* ── Right: Signup Form (60%) ───────────────────────────────────────── */}
-      <main className="flex-1 bg-surface flex flex-col items-center justify-center p-8 md:p-14 overflow-y-auto">
+      <main className="flex-1 bg-surface flex flex-col items-center justify-center p-6 md:p-12 lg:p-24 overflow-y-auto">
         {/* Mobile logo */}
         <div className="md:hidden flex items-center gap-2 mb-10">
           <div className="bg-primary p-1.5 rounded-xl">
@@ -163,16 +159,12 @@ export default function SignUpPage() {
           <span className="text-xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
         </div>
 
-        <div className="w-full max-w-lg">
-          {/* Header — more breathing room */}
+        <div className="w-full max-w-md">
           <header className="mb-10">
-            <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">Get started for free</p>
-            <h1 className="text-3xl font-extrabold font-display text-on-surface tracking-tight leading-snug mb-2">
+            <h1 className="text-3xl font-extrabold font-display text-on-surface tracking-tight mb-2">
               Create your company account
             </h1>
-            <p className="text-on-surface-variant">
-              Set up Reviewly for your team in minutes.
-            </p>
+            <p className="text-on-surface-variant font-medium">Performance review platform</p>
           </header>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
@@ -211,7 +203,7 @@ export default function SignUpPage() {
               {/* Email */}
               <div className="space-y-1.5">
                 <label htmlFor="email" className="block text-sm font-semibold text-on-surface-variant">
-                  Work Email <span className="text-error">*</span>
+                  Email Address <span className="text-error">*</span>
                 </label>
                 <input
                   id="email" type="email" autoComplete="email" placeholder="you@company.com"
