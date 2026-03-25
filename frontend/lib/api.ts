@@ -84,6 +84,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
       ...options.headers,
       'Authorization': `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
     },
   })
 

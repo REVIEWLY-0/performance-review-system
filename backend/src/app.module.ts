@@ -17,6 +17,7 @@ import { RatingScaleModule } from './rating-scale/rating-scale.module';
 import { OrgChartModule } from './org-chart/org-chart.module';
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 import { PrismaService } from './common/services/prisma.service';
 
 @Module({
@@ -62,5 +63,8 @@ export class AppModule implements NestModule {
       .apply(TenantContextMiddleware)
       .exclude('auth/signin', 'auth/signup', 'health', 'notifications/unsubscribe')
       .forRoutes('*');
+
+    // CSRF defense-in-depth: validates Origin header on mutations in production
+    consumer.apply(CsrfMiddleware).forRoutes('*');
   }
 }
