@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { getCurrentUser, User } from '@/lib/auth'
 import DashboardNav from '@/components/DashboardNav'
 
@@ -11,6 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -62,6 +63,11 @@ export default function DashboardLayout({
 
   if (!user) {
     return null
+  }
+
+  // Admin routes use their own layout shell (AdminSidebar)
+  if (pathname?.startsWith('/admin')) {
+    return <>{children}</>
   }
 
   return (

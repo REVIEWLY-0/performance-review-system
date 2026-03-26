@@ -486,3 +486,92 @@ Acceptance criteria:
 #### Verification
 - Backend `npx tsc --noEmit` — clean
 - Frontend `npx tsc --noEmit` — clean
+
+
+---
+
+## 2026-03-12 — Post-testing Issues (Rating Scale + CSV Template Clarity)
+
+### P0 — Rating Scale discoverability + stale UI range
+1) Rating scale discoverability problem
+- Users don’t naturally know they must go to Settings to define rating range.
+Expected:
+- Clear guidance in Question Builder when adding/editing rating questions:
+  - show current scale (e.g., 1–5)
+  - include a direct link/CTA: “Configure rating scale” (goes to Settings)
+  - if not configured, show helper text explaining where to set it
+
+2) Rating range updates don’t reflect in Question Builder
+Repro:
+- Go to Settings → change rating range from 1–5 to 1–7 → shows “successful”
+- Go to Question Builder → still shows 1–5
+Expected:
+- Question Builder always reflects the latest saved rating range for the company (1–7).
+Suspected:
+- stale cached fetch / missing refetch / server component cache
+- question builder reading a default instead of company setting
+
+Acceptance criteria:
+- After saving rating range, Question Builder shows the updated range without hard refresh.
+- On page refresh, it still shows correct updated range.
+- Rating questions render options matching the range consistently.
+
+---
+
+### P1 — CSV template download clarity
+3) Template is confusing (required vs optional not obvious)
+Expected:
+- Downloaded CSV template should clearly indicate required vs optional fields.
+- Reduce vagueness: include header comments (if supported) OR provide a README-style preview modal before download.
+
+Acceptance criteria (choose one approach):
+Option A (recommended):
+- When clicking “Download template”, show a modal with:
+  - Required fields list
+  - Optional fields list
+  - Example row
+  - “Download template” button
+- Template header includes only actual column names (no confusion).
+
+Option B:
+- Provide two templates:
+  - minimal required template
+  - full template with optional columns
+
+---
+
+### Requested QA pass
+4) Run a system consistency audit
+- Run checks across the system to confirm UI + backend align with business logic:
+  - rating scale applied consistently (settings → question builder → review forms)
+  - employee import uses same rules as create employee (required fields, department, employeeId, company email rules if enabled)
+  - reviewer assignment respects tenant and department scoping
+Output:
+- short report: “OK / broken / needs attention”
+- do not refactor, only identify mismatches and propose targeted fixes
+
+
+---
+
+## 2026-03-13 — Sidebar/Layout Polish Issues (Post Stitch Admin Shell)
+
+### P1 — Sidebar styling mismatches + readability
+1) Sidebar text color mismatch (light mode)
+- Expected: sidebar nav labels look slightly greyed/muted (as in Stitch design)
+- Actual: labels are black in light mode
+
+2) Company name + “Reviewly” branding not visible enough (light mode)
+- “Reviewly” line and company name are hard to see / not pronounced
+- Expected: both should be bigger and more prominent in the sidebar/header area
+
+3) Sidebar nav items too close to top
+- Tabs (Dashboard, Reviews, etc.) are stuck too close to the top
+- Expected: add a bit more spacing/padding above the nav list
+
+4) Navbar/topbar height too small
+- Expected: slightly taller topbar for better visual balance
+
+### P0 — Broken sidebar link
+5) “Reports” tab breaks navigation
+- Expected: Reports should link to “View Reports” route (existing route or create placeholder page that doesn’t crash)
+- Actual: clicking Reports breaks/throws/does nothing

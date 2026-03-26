@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { getAdminAnalytics, AdminAnalytics } from '@/lib/analytics';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import SkeletonCard from '@/components/skeletons/SkeletonCard';
 
 export default function AdminDashboard() {
@@ -16,6 +16,7 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [cyclePickerOpen, setCyclePickerOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -23,14 +24,12 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      // Fetch user + cycles in parallel — both only need the stored JWT token
       const [currentUser, cyclesResult] = await Promise.all([
         getCurrentUser(),
         reviewCyclesApi.getAll().catch(() => ({ data: [] as ReviewCycle[] })),
       ]);
 
       if (!currentUser) {
-        console.log('⚠️  No user found, redirecting to login');
         const { signOut } = await import('@/lib/auth');
         await signOut();
         router.push('/login');
@@ -38,7 +37,6 @@ export default function AdminDashboard() {
       }
 
       if (currentUser.role !== 'ADMIN') {
-        console.log('⚠️  Not admin, redirecting');
         router.push('/employee');
         return;
       }
@@ -48,9 +46,7 @@ export default function AdminDashboard() {
       const allCycles = cyclesResult.data;
       setCycles(allCycles);
 
-      // Select first active cycle or first cycle, then load analytics inline
-      const initialCycle =
-        allCycles.find((c) => c.status === 'ACTIVE') ?? allCycles[0];
+      const initialCycle = allCycles.find((c) => c.status === 'ACTIVE') ?? allCycles[0];
       if (initialCycle) {
         setSelectedCycleId(initialCycle.id);
         try {
@@ -72,6 +68,7 @@ export default function AdminDashboard() {
 
   const handleCycleChange = async (newCycleId: string) => {
     setSelectedCycleId(newCycleId);
+    setCyclePickerOpen(false);
     setAnalyticsLoading(true);
     try {
       const data = await getAdminAnalytics(newCycleId);
@@ -85,12 +82,12 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="px-4 py-6 sm:px-0">
-        <div className="mb-6">
-          <div className="h-7 bg-surface-container-high rounded w-48 animate-pulse" />
-          <div className="mt-2 h-4 bg-surface-container-high rounded w-72 animate-pulse" />
+      <div className="space-y-8">
+        <div>
+          <div className="h-8 bg-surface-container-high rounded w-56 animate-pulse" />
+          <div className="mt-2 h-5 bg-surface-container-high rounded w-80 animate-pulse" />
         </div>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
@@ -102,237 +99,190 @@ export default function AdminDashboard() {
 
   if (!user) return null;
 
+  const selectedCycle = cycles.find((c) => c.id === selectedCycleId);
+
   const allChartData = analytics
     ? [
-        { name: 'Submitted', value: analytics.reviewProgress.submitted, color: '#10b981' },
-        { name: 'Draft', value: analytics.reviewProgress.draft, color: '#f59e0b' },
-        { name: 'Not Started', value: analytics.reviewProgress.notStarted, color: '#6b7280' },
+        { name: 'Submitted', value: analytics.reviewProgress.submitted, color: '#0053dc' },
+        { name: 'Draft',     value: analytics.reviewProgress.draft,     color: '#f59e0b' },
+        { name: 'Not Started', value: analytics.reviewProgress.notStarted, color: '#e2e7ff' },
       ]
     : [];
-  // Only pass non-zero slices to Recharts — zero-value entries cause label overlap
   const chartData = allChartData.filter((d) => d.value > 0);
   const chartEmpty = analytics !== null && chartData.length === 0;
+  const totalPending = analytics
+    ? analytics.pendingReviews.selfReviews + analytics.pendingReviews.managerReviews + analytics.pendingReviews.peerReviews
+    : 0;
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-on-surface">Admin Dashboard</h1>
-        <p className="mt-1 text-sm text-on-surface-variant">
-          Welcome back, {user.name}! Manage your organization's performance reviews.
+    <div className="space-y-8">
+      {/* ── Hero Header ─────────────────────────────────────────────────── */}
+      <div className="space-y-1">
+        <h1 className="text-3xl font-extrabold tracking-tight text-on-surface font-display">
+          Admin Dashboard
+        </h1>
+        <p className="text-on-surface-variant font-medium text-lg">
+          Welcome back, {user.name}! Manage your organization&apos;s performance reviews.
         </p>
       </div>
 
-      {/* Cycle Selector */}
-      {cycles.length > 0 && (
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-on-surface-variant mb-2">
-            Review Cycle
-          </label>
-          <select
-            value={selectedCycleId}
-            onChange={(e) => handleCycleChange(e.target.value)}
-            disabled={analyticsLoading}
-            className="block w-full md:w-96 px-3 py-2 border border-outline rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary disabled:opacity-60"
-          >
-            {cycles.map((cycle) => (
-              <option key={cycle.id} value={cycle.id}>
-                {cycle.name} ({cycle.status})
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      {/* ── Bento Grid ──────────────────────────────────────────────────── */}
+      <div className={`grid grid-cols-12 gap-6 ${analyticsLoading ? 'opacity-60 pointer-events-none' : ''} transition-opacity`}>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-6 w-6 text-on-surface-variant"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-on-surface-variant truncate">
-                    Total Employees
-                  </dt>
-                  <dd className="text-lg font-semibold text-on-surface">
-                    {analytics?.totalEmployees ?? 0}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-6 w-6 text-on-surface-variant"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                  />
-                </svg>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-on-surface-variant truncate">
-                    Average Score
-                  </dt>
-                  <dd className="text-lg font-semibold text-on-surface">
-                    {analytics?.averageScore?.toFixed(2) ?? 'N/A'}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-6 w-6 text-on-surface-variant"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0h2a2 2 0 002-2v-6a2 2 0 012-2h2a2 2 0 012 2v6a2 2 0 01-2 2h-2"
-                  />
-                </svg>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-on-surface-variant truncate">
-                    Completion Rate
-                  </dt>
-                  <dd className="text-lg font-semibold text-on-surface">
-                    {analytics?.completionRate ?? 0}%
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface-container-lowest overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-6 w-6 text-on-surface-variant"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-on-surface-variant truncate">
-                    Pending Reviews
-                  </dt>
-                  <dd className="text-lg font-semibold text-on-surface">
-                    {analytics
-                      ? analytics.pendingReviews.selfReviews +
-                        analytics.pendingReviews.managerReviews +
-                        analytics.pendingReviews.peerReviews
-                      : 0}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Empty State for No Cycle Selected */}
-      {!selectedCycleId && cycles.length > 0 && (
-        <div className="mb-6 rounded-md bg-blue-50 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-blue-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clipRule="evenodd"
-                />
+        {/* Cycle selector card */}
+        <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl flex items-center justify-between shadow-sm border border-outline-variant/10">
+          <div className="flex items-center gap-4">
+            <div className="bg-surface-container p-3 rounded-lg text-on-surface-variant">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-blue-700">
-                Select a review cycle above to view analytics and insights.
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">
+                Current Active Cycle
               </p>
+              <h2 className="text-xl font-extrabold font-display">
+                {selectedCycle ? `${selectedCycle.name} ${selectedCycle.status}` : cycles.length > 0 ? 'Select a cycle' : 'No cycles yet'}
+              </h2>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Charts and Top Performers */}
-      <div className={analyticsLoading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
-      {analytics && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Progress Chart */}
-          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-on-surface mb-4">
-              Review Progress
-            </h3>
-            {chartEmpty ? (
-              <div className="flex flex-col items-center justify-center h-[300px] text-on-surface-variant">
-                <svg className="h-12 w-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+          {cycles.length > 1 && (
+            <div className="relative">
+              <button
+                onClick={() => setCyclePickerOpen((v) => !v)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container text-primary font-bold text-sm hover:bg-surface-container-high transition-colors"
+              >
+                <span>Change Cycle</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
-                <p className="text-sm">No reviews started yet</p>
+              </button>
+              {cyclePickerOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-surface rounded-xl shadow-lg border border-outline-variant/20 z-10 overflow-hidden">
+                  {cycles.map((cycle) => (
+                    <button
+                      key={cycle.id}
+                      onClick={() => handleCycleChange(cycle.id)}
+                      className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-surface-container transition-colors ${
+                        cycle.id === selectedCycleId ? 'text-primary font-bold bg-surface-container-low' : 'text-on-surface'
+                      }`}
+                    >
+                      {cycle.name}
+                      <span className="ml-2 text-xs text-on-surface-variant">{cycle.status}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Primary CTA card */}
+        <div className="col-span-12 lg:col-span-4 bg-primary text-on-primary p-6 rounded-xl shadow-lg shadow-primary/20 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-bold font-display leading-tight">Ready for a new review phase?</h3>
+            <p className="text-on-primary/70 text-sm mt-1 font-medium">Initiate and configure the next performance window.</p>
+          </div>
+          <button
+            onClick={() => router.push('/admin/review-cycles/new')}
+            className="mt-4 bg-on-primary text-primary w-full py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
+          >
+            Start New Cycle
+          </button>
+        </div>
+
+        {/* ── Stat Cards ────────────────────────────────────────────────── */}
+        <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Employees */}
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+            <div className="flex justify-between items-start mb-4">
+              <span className="p-2 bg-blue-50 dark:bg-blue-950 text-primary rounded-lg">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </span>
+            </div>
+            <p className="text-on-surface-variant text-sm font-bold">Total Employees</p>
+            <h4 className="text-3xl font-extrabold font-display mt-1">{analytics?.totalEmployees ?? 0}</h4>
+          </div>
+
+          {/* Average Score */}
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+            <div className="flex justify-between items-start mb-4">
+              <span className="p-2 bg-surface-container text-on-surface-variant rounded-lg">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              </span>
+            </div>
+            <p className="text-on-surface-variant text-sm font-bold">Average Score</p>
+            <h4 className={`text-3xl font-extrabold font-display mt-1 ${!analytics?.averageScore ? 'text-on-surface-variant/40' : ''}`}>
+              {analytics?.averageScore?.toFixed(2) ?? 'N/A'}
+            </h4>
+          </div>
+
+          {/* Completion Rate */}
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+            <div className="flex justify-between items-start mb-4">
+              <span className="p-2 bg-surface-container text-secondary rounded-lg">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </span>
+            </div>
+            <p className="text-on-surface-variant text-sm font-bold">Completion Rate</p>
+            <h4 className="text-3xl font-extrabold font-display mt-1">{analytics?.completionRate ?? 0}%</h4>
+          </div>
+
+          {/* Pending Reviews */}
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+            <div className="flex justify-between items-start mb-4">
+              <span className="p-2 bg-red-50 dark:bg-red-950 text-error rounded-lg">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>
+            </div>
+            <p className="text-on-surface-variant text-sm font-bold">Pending Reviews</p>
+            <h4 className="text-3xl font-extrabold font-display mt-1">{totalPending}</h4>
+          </div>
+        </div>
+
+        {/* ── Charts ────────────────────────────────────────────────────── */}
+        <div className="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Review Progress */}
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col items-center justify-between min-h-[300px]">
+            <div className="w-full flex justify-between items-start mb-4">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Review Progress</h3>
+              {!chartEmpty && chartData.length > 0 && (
+                <div className="flex gap-4 text-[10px] font-bold">
+                  {chartData.map((d) => (
+                    <div key={d.name} className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: d.color }} />
+                      {d.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {chartEmpty ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <div className="relative w-40 h-40 rounded-full border-[16px] border-surface-container flex items-center justify-center">
+                  <span className="text-3xl font-black font-display text-on-surface-variant/30">0%</span>
+                </div>
+                <p className="text-sm text-on-surface-variant font-bold mt-4">No reviews submitted yet</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.name}: ${entry.value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
+                    innerRadius={60}
+                    outerRadius={100}
                     dataKey="value"
                   >
                     {chartData.map((entry, index) => (
@@ -340,104 +290,76 @@ export default function AdminDashboard() {
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
             )}
           </div>
 
           {/* Top Performers */}
-          <div className="bg-surface-container-lowest shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-on-surface mb-4">
-              Top Performers
-            </h3>
-            <div className="space-y-3">
-              {analytics.topPerformers.length > 0 ? (
-                analytics.topPerformers.map((emp, idx) => (
-                  <div
-                    key={emp.id}
-                    className="flex items-center justify-between p-3 bg-surface-container-low rounded-md"
-                  >
-                    <div className="flex items-center">
-                      <span className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-600">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col min-h-[300px]">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-4">Top Performers</h3>
+            {analytics && analytics.topPerformers.length > 0 ? (
+              <div className="space-y-3">
+                {analytics.topPerformers.map((emp, idx) => (
+                  <div key={emp.id} className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-bold text-primary shrink-0">
                         {idx + 1}
                       </span>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-on-surface">
-                          {emp.name}
-                        </p>
+                      <div>
+                        <p className="text-sm font-bold text-on-surface">{emp.name}</p>
                         <p className="text-xs text-on-surface-variant">{emp.email}</p>
                       </div>
                     </div>
-                    <span className="text-lg font-bold text-indigo-600">
-                      {emp.score?.toFixed(2)}
-                    </span>
+                    <span className="text-lg font-bold text-primary">{emp.score?.toFixed(2)}</span>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-on-surface-variant text-center py-4">
-                  No scores available yet
-                </p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
+                <div className="w-16 h-16 mb-4 bg-surface-container rounded-full flex items-center justify-center">
+                  <svg className="h-8 w-8 text-on-surface-variant/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <p className="text-on-surface font-bold text-base">No scores available yet</p>
+                <p className="text-on-surface-variant text-sm mt-1 font-medium">Scores will appear once reviews are finalized.</p>
+              </div>
+            )}
           </div>
         </div>
-      )}
-      </div>
 
-      {/* Quick Actions */}
-      <div className="bg-surface-container-lowest shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-on-surface mb-4">
-          Quick Actions
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button
-            onClick={() => router.push('/admin/review-cycles/new')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim"
-          >
-            🔄 Start New Cycle
-          </button>
-          <button
-            onClick={() => router.push('/admin/employees')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
-          >
-            👥 Manage Employees
-          </button>
-          <button
-            onClick={() => router.push('/admin/questions')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
-          >
-            ❓ Edit Questions
-          </button>
-          <button
-            onClick={() => router.push('/admin/review-types')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
-          >
-            🏷️ Review Types
-          </button>
-          <button
-            onClick={() => router.push('/admin/departments')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
-          >
-            🏢 Departments
-          </button>
-          <button
-            onClick={() => router.push('/organogram')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
-          >
-            🏗️ Organogram
-          </button>
-          <button
-            onClick={() =>
-              selectedCycleId &&
-              router.push(`/admin/cycles/${selectedCycleId}/scores`)
-            }
-            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
-          >
-            📊 View Reports
-          </button>
+        {/* ── Quick Management ──────────────────────────────────────────── */}
+        <div className="col-span-12 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-6">Quick Management</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { emoji: '👥', label: 'Manage Employees', href: '/admin/employees' },
+              { emoji: '❓', label: 'Edit Questions',   href: '/admin/questions' },
+              { emoji: '📁', label: 'Review Types',     href: '/admin/review-types' },
+              { emoji: '🏢', label: 'Departments',      href: '/admin/departments' },
+              { emoji: '🏗️', label: 'Organogram',      href: '/organogram' },
+              {
+                emoji: '📊',
+                label: 'View Reports',
+                href: selectedCycleId ? `/admin/cycles/${selectedCycleId}/scores` : '/admin/review-cycles',
+              },
+            ].map(({ emoji, label, href }) => (
+              <button
+                key={label}
+                onClick={() => router.push(href)}
+                className="flex items-center justify-center gap-2 p-4 rounded-xl border border-outline-variant/10 bg-surface-container-lowest hover:bg-surface-container-low transition-all font-bold text-sm text-on-surface"
+              >
+                <span className="text-lg">{emoji}</span> {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Decorative blobs */}
+      <div className="fixed top-0 right-0 -z-10 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="fixed bottom-0 left-64 -z-10 w-[300px] h-[300px] bg-tertiary/5 blur-[80px] rounded-full pointer-events-none" />
     </div>
   );
 }
