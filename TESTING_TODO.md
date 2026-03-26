@@ -45,7 +45,7 @@ Run this end-to-end before any release. All P0 items must pass.
 ### 2. Create Departments ⏱ 2 min
 
 **Steps:**
-1. Admin → sidebar → (navigate to `/admin/departments`)
+1. Admin → use the **Departments** link in the sidebar (route may vary)
 2. Create 2 departments: `Engineering`, `Sales`
 
 **Expected:**
@@ -257,8 +257,10 @@ Run this end-to-end before any release. All P0 items must pass.
 - ✅ Emails arrive for opted-in events
 - ✅ Emails do NOT arrive for opted-out events
 
-🔍 Backend logs: look for `Skipping notification — user preference disabled` or similar.
-🔍 If Mailtrap is not configured, check backend terminal for `nodemailer` send logs.
+🔍 Backend logs — grep for these exact lines:
+- Successful send: `Email sent to <address>: <subject> (messageId: ...)`
+- Opted-out skip: `Skipping cycle started email for <address> (opted out)`
+- No Mailtrap configured: `[DEV MODE] Email to <address>` followed by `Subject: ...`
 
 ---
 
@@ -286,6 +288,8 @@ Run this end-to-end before any release. All P0 items must pass.
 | DB state | Adminer at http://localhost:8080 |
 | Frontend errors | Browser DevTools → Console |
 | Network requests | Browser DevTools → Network tab |
+
+> **Tip:** Keep Adminer open in a separate tab throughout testing. If a UI action appears to succeed but nothing shows up, refresh the relevant Adminer table to confirm whether the DB write actually happened. This quickly distinguishes a frontend rendering bug from a backend failure.
 
 ---
 

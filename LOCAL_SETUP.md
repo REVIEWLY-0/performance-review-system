@@ -8,7 +8,7 @@ Time to first run: ~15 minutes.
 
 | Tool | Version | Check |
 |------|---------|-------|
-| Node.js | 20+ (v24 works) | `node --version` |
+| Node.js | **20 LTS** (recommended); v24 works but is not required | `node --version` |
 | npm | 10+ | `npm --version` |
 | Docker Desktop | any recent | `docker --version` |
 | Docker Compose | V2 (bundled with Docker Desktop) | `docker compose version` |
@@ -53,10 +53,12 @@ docker exec -it $(docker compose ps -q postgres) psql -U reviewly -d reviewly -c
 
 **Adminer login** at http://localhost:8080:
 - System: `PostgreSQL`
-- Server: `postgres`
+- Server: `postgres` ← use this inside Adminer (container name, not localhost)
 - Username: `reviewly`
 - Password: `reviewly`
 - Database: `reviewly`
+
+> **Host DB tools** (TablePlus, DBeaver, psql on your machine): use `Host=localhost`, `Port=5433` instead.
 
 ---
 
@@ -161,21 +163,41 @@ npm run dev
 # Expected output: "Local: http://localhost:3000"
 ```
 
-**Health check:**
+---
+
+## 7. Quick Sanity Check
+
+Run these after both services are up:
+
 ```bash
+# 1. Backend health
 curl http://localhost:4000/api/health
-# Should return: {"status":"ok"}
+# Expected: {"status":"ok"}
+
+# 2. Frontend
+# Open http://localhost:3000/login — the login page should load without errors
 ```
+
+**If signup or login fails immediately**, check Supabase env vars first:
+- `SUPABASE_URL` and `SUPABASE_JWT_SECRET` in `backend/.env`
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `frontend/.env.local`
+
+Auth runs through Supabase even locally — misconfigured Supabase vars are the #1 cause of broken signup/login.
 
 ---
 
-## 7. First Run Checklist
+## 8. First Run Checklist
 
+**Path A — Fresh start (no seed):**
 1. Go to http://localhost:3000/signup
-2. Create an account — this creates your company in the database
-3. You'll be redirected to the admin dashboard
-4. Run the seed (step 5 above) to populate test employees, managers, and peers
-5. Seed credentials: all test users use password `password123`
+2. Create your admin account — this creates the company row in the database
+3. You'll be redirected to `/admin`
+4. Manually create departments, employees, and review cycles via the UI
+
+**Path B — Seed test data (recommended for testing):**
+1. Complete Path A step 1–3 first (signup must happen before seed)
+2. Run the seed: `cd backend && npx ts-node prisma/seed.ts`
+3. Test user credentials (all seeded accounts): password = `password123`
 
 ---
 
