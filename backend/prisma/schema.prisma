@@ -83,6 +83,7 @@ model User {
   department               String?  @map("department")
   employeeId               String?  @map("employee_id") // HR employee ID, unique per company
   notificationPreferences  Json?    @map("notification_preferences")
+  avatarUrl                String?  @map("avatar_url")
   createdAt                DateTime @default(now()) @map("created_at")
   updatedAt                DateTime @updatedAt @map("updated_at")
 

@@ -9,7 +9,16 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { UsersService, CreateUserDto, UpdateUserDto, UpdateProfileDto, ImportUsersBodyDto } from './users.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -67,6 +76,56 @@ export class UsersController {
     @Body() dto: UpdateProfileDto,
   ) {
     return this.usersService.updateProfile(currentUser.id, currentUser.companyId, dto.name);
+  }
+
+  /**
+   * Upload avatar for own profile — any authenticated user
+   * Stores at uploads/avatars/{companyId}/{userId}.{ext}
+   * Returns the public URL for immediate use.
+   */
+  @Post('me/avatar')
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: (req: any, _file, cb) => {
+          const dir = join(process.cwd(), 'uploads', 'avatars', req.user.companyId);
+          if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
+        filename: (req: any, file, cb) => {
+          const ext = extname(file.originalname).toLowerCase();
+          cb(null, `${req.user.id}${ext}`);
+        },
+      }),
+      limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+        if (allowed.includes(extname(file.originalname).toLowerCase())) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Only JPG, PNG or WebP images are allowed'), false);
+        }
+      },
+    }),
+  )
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() currentUser: { id: string; companyId: string },
+  ) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const avatarUrl = `/uploads/avatars/${currentUser.companyId}/${file.filename}`;
+    return this.usersService.updateAvatarUrl(currentUser.id, currentUser.companyId, avatarUrl);
+  }
+
+  /**
+   * Delete own avatar — any authenticated user
+   */
+  @Delete('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  async deleteAvatar(
+    @CurrentUser() currentUser: { id: string; companyId: string },
+  ) {
+    return this.usersService.removeAvatar(currentUser.id, currentUser.companyId);
   }
 
   /**

@@ -31,6 +31,7 @@ export interface User {
   department?: string
   departments?: { id: string; name: string }[]
   employeeId?: string
+  avatarUrl?: string | null
   manager?: {
     id: string
     name: string
@@ -186,6 +187,27 @@ export const usersApi = {
     const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/departments`)
     setCache(key, data, 60_000) // 1 min TTL
     return data
+  },
+
+  uploadAvatar: async (file: File): Promise<User> => {
+    const session = await getSession()
+    if (!session) throw new Error('Not authenticated')
+    const formData = new FormData()
+    formData.append('avatar', file)
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/avatar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: formData,
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.message || 'Upload failed')
+    }
+    return response.json()
+  },
+
+  deleteAvatar: async (): Promise<User> => {
+    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/me/avatar`, { method: 'DELETE' })
   },
 }
 

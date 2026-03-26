@@ -38,7 +38,7 @@ export default function ConfirmDialog({
       : 'bg-primary hover:bg-primary-dim text-on-primary focus:ring-primary';
 
   return (
-    <div className="fixed z-20 inset-0 overflow-y-auto">
+    <div className="fixed z-50 inset-0 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
         {/* Backdrop */}
         <div

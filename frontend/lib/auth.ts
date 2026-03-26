@@ -7,6 +7,7 @@ export interface User {
   role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
   companyId: string
   companyName: string
+  avatarUrl?: string | null
 }
 
 // Module-level caches — survive re-renders, cleared on sign-out

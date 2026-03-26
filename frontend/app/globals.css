@@ -49,39 +49,60 @@
 
 /* ── Dark Mode ───────────────────────────────────────────────────────────── */
 .dark {
-  /* Primary (vibrant on dark — avoids pastel-on-dark low-contrast) */
-  --primary:            #3d6fe8;
-  --primary-dim:        #2f5dd4;
-  --on-primary:         #ffffff;
-  --primary-fixed-dim:  #6b99f5;
+  /* ── Stitch dark-mode tokens (HSL channels — supports opacity modifiers) */
+  --background:             222 47% 7%;
+  --foreground:             210 40% 98%;
+  --card:                   222 47% 11%;
+  --card-foreground:        210 40% 98%;
+  --popover:                222 47% 14%;
+  --popover-foreground:     210 40% 98%;
+  --border:                 217 33% 18%;
+  --input:                  217 33% 18%;
+  --primary:                221 83% 53%;
+  --primary-foreground:     210 40% 98%;
+  --secondary:              217 33% 17%;
+  --secondary-foreground:   210 40% 98%;
+  --success:                142 71% 45%;
+  --warning:                38 92% 50%;
+  --danger:                 0 84% 60%;
+  --muted:                  215 20% 65%;
+  --muted-foreground:       215 20% 65%;
+  --accent:                 217 33% 17%;
+  --accent-foreground:      210 40% 98%;
+  --ring:                   221 83% 53%;
+  --sidebar-bg:             222 47% 4%;
+  --table-hover:            217 33% 14%;
 
-  /* Surface hierarchy */
-  --surface:                    #1a1e2c;
-  --surface-dim:                #131620;   /* main dark bg — easy on eyes */
-  --surface-container-lowest:   #0f1219;
-  --surface-container-low:      #1d2134;
-  --surface-container:          #21263c;
-  --surface-container-high:     #262b42;
-  --surface-container-highest:  #2d3250;
-  --surface-variant:            #242844;
+  /* ── Design-system tokens remapped to Stitch palette ────────────────────
+     These overwrite the raw-channel values above with full CSS colors so
+     existing components (bg-surface, text-on-surface, etc.) keep working. */
+  --primary:                    hsl(221 83% 53%);
+  --primary-dim:                hsl(221 83% 43%);
+  --on-primary:                 hsl(210 40% 98%);
+  --primary-fixed-dim:          hsl(221 83% 73%);
 
-  /* Text */
-  --on-surface:         #e2e4f8;
-  --on-surface-variant: #9ea3c5;
+  --surface:                    hsl(222 47%  7%);
+  --surface-dim:                hsl(222 47%  5%);
+  --surface-container-lowest:   hsl(222 47% 11%);
+  --surface-container-low:      hsl(222 47% 14%);
+  --surface-container:          hsl(217 33% 17%);
+  --surface-container-high:     hsl(217 33% 20%);
+  --surface-container-highest:  hsl(222 47% 12%);
+  --surface-variant:            hsl(217 33% 17%);
 
-  /* Structural */
-  --outline:            #464d78;
-  --outline-variant:    #2d3260;
+  --on-surface:                 hsl(210 40% 98%);
+  --on-surface-variant:         hsl(215 20% 65%);
 
-  /* Semantic */
-  --error:              #e57373;
-  --on-error:           #5c0000;
+  --outline:                    hsl(217 33% 25%);
+  --outline-variant:            hsl(217 33% 18%);
 
-  /* Container tints */
-  --secondary-container:    #1a2060;
-  --on-secondary-container: #dee0ff;
-  --tertiary-container:     #2c1f50;
-  --on-tertiary-container:  #e8d9ff;
+  --error:                      hsl(  0 84% 60%);
+  --on-error:                   hsl(  0  0% 100%);
+
+  --secondary-container:        hsl(217 33% 17%);
+  --on-secondary-container:     hsl(210 40% 98%);
+  --tertiary-container:         hsl(217 33% 17%);
+  --on-tertiary-container:      hsl(210 40% 98%);
 }
 
 /* ── Base: page background via tokens ───────────────────────────────────── */

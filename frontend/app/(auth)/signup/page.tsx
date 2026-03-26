@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signUp } from '@/lib/auth'
+import Logo from '@/components/Logo'
 import {
   validateEmail,
   validatePasswordStrength,
@@ -13,16 +14,6 @@ import {
   getPasswordStrengthLabel,
 } from '@/lib/validation'
 
-// ── Stitch rate_review icon: filled speech bubble with star cutout ─────────
-const RateReviewIcon = ({ className }: { className?: string }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM12 6L12.88 8.29L15.33 8.42L13.43 9.96L14.05 12.33L12 11L9.95 12.33L10.57 9.96L8.67 8.42L11.12 8.29Z"
-    />
-  </svg>
-)
 
 const inputCls = (hasError: boolean) =>
   `w-full bg-surface-container-lowest border-none ring-1 ${
@@ -111,9 +102,7 @@ export default function SignUpPage() {
       <aside className="hidden md:flex md:w-1/2 lg:w-3/5 bg-surface-container-high relative overflow-hidden flex-col justify-between p-12">
         {/* Logo */}
         <div className="z-10 flex items-center gap-3">
-          <div className="bg-primary p-2 rounded-xl shadow-lg">
-            <RateReviewIcon className="h-7 w-7 text-on-primary" />
-          </div>
+          <Logo size={40} />
           <span className="text-xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
         </div>
 
@@ -160,11 +149,7 @@ export default function SignUpPage() {
       <main className="flex-1 bg-surface flex flex-col items-center justify-center p-6 md:p-12 lg:p-24 overflow-y-auto">
         {/* Mobile logo */}
         <div className="md:hidden flex items-center gap-2 mb-10">
-          <div className="bg-primary p-1.5 rounded-xl">
-            <svg className="h-6 w-6 text-on-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
-          </div>
+          <Logo size={32} />
           <span className="text-xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
         </div>
 

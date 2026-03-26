@@ -756,4 +756,60 @@ export class UsersService {
       },
     };
   }
+
+  /**
+   * Set avatarUrl for a user — called after successful file upload.
+   * Deletes the previous avatar file from disk if it exists.
+   */
+  async updateAvatarUrl(userId: string, companyId: string, avatarUrl: string) {
+    const existing = await this.prisma.user.findFirst({
+      where: { id: userId, companyId },
+      select: { avatarUrl: true },
+    });
+
+    // Remove old file if it differs
+    if (existing?.avatarUrl && existing.avatarUrl !== avatarUrl) {
+      this.deleteAvatarFile(existing.avatarUrl);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+    return this.mapUser({ ...updated, userDepartments: [] });
+  }
+
+  /**
+   * Clear avatarUrl and delete the file from disk.
+   */
+  async removeAvatar(userId: string, companyId: string) {
+    const existing = await this.prisma.user.findFirst({
+      where: { id: userId, companyId },
+      select: { avatarUrl: true },
+    });
+
+    if (existing?.avatarUrl) {
+      this.deleteAvatarFile(existing.avatarUrl);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: null },
+    });
+    return this.mapUser({ ...updated, userDepartments: [] });
+  }
+
+  /** Delete a file given its public path (e.g. /uploads/avatars/...) */
+  private deleteAvatarFile(publicPath: string) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { unlinkSync } = require('fs');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { join } = require('path');
+      const filePath = join(process.cwd(), publicPath);
+      unlinkSync(filePath);
+    } catch {
+      // File may not exist — ignore
+    }
+  }
 }

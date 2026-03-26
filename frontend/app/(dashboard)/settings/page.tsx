@@ -12,6 +12,7 @@ import {
 import { usersApi } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import BackButton from '@/components/BackButton';
+import Avatar from '@/components/Avatar';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
   const [saving, setSaving] = useState(false);
   const [ratingScaleInput, setRatingScaleInput] = useState<RatingScale>(DEFAULT_SCALE);
@@ -81,6 +83,37 @@ export default function SettingsPage() {
       toast.error(err.message || 'Failed to save profile');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const updated = await usersApi.uploadAvatar(file);
+      invalidateUserCache();
+      setUser((prev) => prev ? { ...prev, avatarUrl: updated.avatarUrl } : prev);
+      toast.success('Avatar updated');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload avatar');
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setUploadingAvatar(true);
+    try {
+      await usersApi.deleteAvatar();
+      invalidateUserCache();
+      setUser((prev) => prev ? { ...prev, avatarUrl: null } : prev);
+      toast.success('Avatar removed');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove avatar');
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -207,6 +240,30 @@ export default function SettingsPage() {
         <h2 className="text-lg font-medium text-on-surface mb-4">Account Information</h2>
 
         <div className="space-y-4">
+          {/* Avatar */}
+          <div className="flex items-center gap-4 pb-4 border-b border-outline-variant">
+            <Avatar name={user.name} avatarUrl={user.avatarUrl} size="lg" />
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-medium text-on-surface">Profile photo</p>
+              <p className="text-xs text-on-surface-variant">JPG, PNG or WebP — max 2 MB</p>
+              <div className="flex items-center gap-2 mt-1">
+                <label className={`cursor-pointer px-3 py-1.5 text-sm font-medium rounded-lg border border-outline text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low transition-colors ${uploadingAvatar ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {uploadingAvatar ? 'Uploading…' : 'Upload photo'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarChange} disabled={uploadingAvatar} />
+                </label>
+                {user.avatarUrl && (
+                  <button
+                    onClick={handleRemoveAvatar}
+                    disabled={uploadingAvatar}
+                    className="px-3 py-1.5 text-sm font-medium rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Name — editable */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-on-surface-variant mb-1">

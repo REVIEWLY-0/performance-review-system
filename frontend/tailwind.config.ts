@@ -50,6 +50,35 @@ const config: Config = {
         'on-secondary-container': 'var(--on-secondary-container)',
         'tertiary-container':     'var(--tertiary-container)',
         'on-tertiary-container':  'var(--on-tertiary-container)',
+
+        // ── Stitch token names (dark-mode HSL vars, also usable in light) ──
+        background: 'hsl(var(--background, var(--surface)))',
+        foreground: 'hsl(var(--foreground, var(--on-surface)))',
+        card: {
+          DEFAULT:    'hsl(var(--card, var(--surface-container-lowest)))',
+          foreground: 'hsl(var(--card-foreground, var(--on-surface)))',
+        },
+        popover: {
+          DEFAULT:    'hsl(var(--popover, var(--surface-container-low)))',
+          foreground: 'hsl(var(--popover-foreground, var(--on-surface)))',
+        },
+        border:     'hsl(var(--border, var(--outline-variant)))',
+        input:      'hsl(var(--input,  var(--outline-variant)))',
+        secondary: {
+          DEFAULT:    'hsl(var(--secondary, var(--surface-container)))',
+          foreground: 'hsl(var(--secondary-foreground, var(--on-surface)))',
+        },
+        muted: {
+          DEFAULT:    'hsl(var(--muted, var(--surface-container-low)))',
+          foreground: 'hsl(var(--muted-foreground, var(--on-surface-variant)))',
+        },
+        accent: {
+          DEFAULT:    'hsl(var(--accent,  var(--surface-container)))',
+          foreground: 'hsl(var(--accent-foreground, var(--on-surface)))',
+        },
+        ring:       'hsl(var(--ring, var(--primary)))',
+        sidebar:    'hsl(var(--sidebar-bg,    var(--surface-container-highest)))',
+        tableHover: 'hsl(var(--table-hover,   var(--surface-container-low)))',
       },
 
       // ── Typography tokens ────────────────────────────────────────────────

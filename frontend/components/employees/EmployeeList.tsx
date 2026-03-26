@@ -5,189 +5,196 @@ import type { User } from '@/lib/api'
 import EditEmployeeModal from './EditEmployeeModal'
 import DeleteEmployeeModal from './DeleteEmployeeModal'
 import { useToast } from '@/components/ToastProvider'
+import Avatar from '@/components/Avatar'
 
 interface EmployeeListProps {
   employees: User[]
 }
 
+const ROLE_BADGE: Record<string, string> = {
+  ADMIN:    'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+  MANAGER:  'bg-blue-100   text-blue-700   dark:bg-blue-900/40   dark:text-blue-300',
+  EMPLOYEE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN: 'Admin', MANAGER: 'Manager', EMPLOYEE: 'Employee',
+}
+
+
 export default function EmployeeList({ employees: initialEmployees }: EmployeeListProps) {
   const [employees, setEmployees] = useState(initialEmployees)
-  const [editingEmployee, setEditingEmployee] = useState<User | null>(null)
-
-  // Sync when parent passes updated or filtered list
-  useEffect(() => {
-    setEmployees(initialEmployees)
-  }, [initialEmployees])
+  const [editingEmployee, setEditingEmployee]   = useState<User | null>(null)
   const [deletingEmployee, setDeletingEmployee] = useState<User | null>(null)
   const toast = useToast()
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-purple-100 text-purple-800'
-      case 'MANAGER':
-        return 'bg-blue-100 text-blue-800'
-      case 'EMPLOYEE':
-        return 'bg-green-100 text-green-800'
-      default:
-        return 'bg-surface-container text-on-surface'
-    }
-  }
+  useEffect(() => { setEmployees(initialEmployees) }, [initialEmployees])
 
-  const handleEmployeeUpdated = (updatedEmployee: User) => {
-    setEmployees(employees.map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp))
+  const handleEmployeeUpdated = (updated: User) => {
+    setEmployees(employees.map(e => e.id === updated.id ? updated : e))
     setEditingEmployee(null)
     toast.success('Employee updated successfully')
   }
 
-  const handleEmployeeDeleted = (deletedId: string) => {
-    setEmployees(employees.filter(emp => emp.id !== deletedId))
+  const handleEmployeeDeleted = (id: string) => {
+    setEmployees(employees.filter(e => e.id !== id))
     setDeletingEmployee(null)
     toast.success('Employee deleted')
   }
 
   if (employees.length === 0) {
     return (
-      <div className="bg-surface-container-lowest shadow overflow-hidden sm:rounded-md">
-        <div className="px-6 py-12 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-on-surface-variant"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            />
+      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-16 flex flex-col items-center justify-center text-center">
+        <div className="w-14 h-14 mb-4 bg-surface-container rounded-full flex items-center justify-center">
+          <svg className="h-7 w-7 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-on-surface">No employees</h3>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Get started by creating a new employee.
-          </p>
         </div>
+        <p className="font-bold text-on-surface">No employees found</p>
+        <p className="text-sm text-on-surface-variant mt-1">Add employees to get started.</p>
       </div>
     )
   }
 
   return (
     <>
-      <div className="bg-surface-container-lowest shadow overflow-hidden sm:rounded-md">
+      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+
+        {/* ── Header row (lg+) ──────────────────────────────────────────────── */}
+        <div className="hidden lg:grid lg:grid-cols-12 px-5 py-3 border-b border-outline-variant bg-surface-container">
+          <span className="col-span-4 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Employee</span>
+          <span className="col-span-2 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Role</span>
+          <span className="col-span-2 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Employee ID</span>
+          <span className="col-span-2 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Department</span>
+          <span className="col-span-2 text-xs font-semibold uppercase tracking-wide text-on-surface-variant text-right">Actions</span>
+        </div>
+
+        {/* ── Rows ─────────────────────────────────────────────────────────── */}
         <ul className="divide-y divide-outline-variant">
-          {employees.map((employee) => (
-            <li key={employee.id}>
-              <div className="px-4 py-4 flex items-center sm:px-6 hover:bg-surface-container-low">
-                <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center flex-wrap gap-1.5">
-                      <p className="font-medium text-indigo-600 truncate">{employee.name}</p>
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(
-                          employee.role
-                        )}`}
-                      >
-                        {employee.role}
+          {employees.map((emp) => {
+            const depts = emp.departments ?? []
+            const visibleDepts = depts.slice(0, 2)
+            const extraDepts   = depts.length - 2
+
+            return (
+              <li key={emp.id}>
+                {/* Mobile: stacked card-style */}
+                <div className="lg:hidden px-5 py-4 flex items-start gap-3 hover:bg-surface-container-low transition-colors">
+                  <Avatar name={emp.name} avatarUrl={emp.avatarUrl} size="md" className="shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <p className="font-semibold text-on-surface leading-tight">{emp.name}</p>
+                    <p className="text-sm text-on-surface-variant truncate">{emp.email}</p>
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${ROLE_BADGE[emp.role] ?? ROLE_BADGE.EMPLOYEE}`}>
+                        {ROLE_LABEL[emp.role] ?? emp.role}
                       </span>
-                      {employee.employeeId && (
-                        <span className="px-2 py-0.5 text-xs font-mono font-medium rounded bg-surface-container text-on-surface-variant border border-outline-variant">
-                          {employee.employeeId}
+                      {emp.employeeId && (
+                        <span className="px-2 py-0.5 text-xs font-mono rounded bg-surface-container text-on-surface-variant border border-outline-variant">
+                          {emp.employeeId}
+                        </span>
+                      )}
+                      {visibleDepts.map(d => (
+                        <span key={d.id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-secondary-container text-on-secondary-container">
+                          {d.name}
+                        </span>
+                      ))}
+                      {extraDepts > 0 && (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-surface-container text-on-surface-variant">
+                          +{extraDepts}
                         </span>
                       )}
                     </div>
-                    <div className="mt-2 flex">
-                      <div className="flex items-center text-sm text-on-surface-variant">
-                        <svg
-                          className="flex-shrink-0 mr-1.5 h-5 w-5 text-on-surface-variant"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <p className="truncate">{employee.email}</p>
-                      </div>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-1">
+                    <button
+                      onClick={() => setEditingEmployee(emp)}
+                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+                      aria-label="Edit employee"
+                    >
+                      <PencilIcon />
+                    </button>
+                    <button
+                      onClick={() => setDeletingEmployee(emp)}
+                      className="p-2 rounded-lg text-on-surface-variant hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                      aria-label="Delete employee"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Desktop: 12-col grid */}
+                <div className="hidden lg:grid lg:grid-cols-12 items-center px-5 py-4 hover:bg-surface-container-low transition-colors">
+
+                  {/* col 1–4: Avatar + name + email */}
+                  <div className="col-span-4 flex items-center gap-3 min-w-0">
+                    <Avatar name={emp.name} avatarUrl={emp.avatarUrl} size="md" className="shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-on-surface truncate leading-snug">{emp.name}</p>
+                      <p className="text-sm text-on-surface-variant truncate">{emp.email}</p>
                     </div>
-                    {(employee.departments ?? []).length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {(employee.departments ?? []).map((d) => (
-                          <span
-                            key={d.id}
-                            className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
-                          >
+                  </div>
+
+                  {/* col 5–6: Role badge */}
+                  <div className="col-span-2">
+                    <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${ROLE_BADGE[emp.role] ?? ROLE_BADGE.EMPLOYEE}`}>
+                      {ROLE_LABEL[emp.role] ?? emp.role}
+                    </span>
+                  </div>
+
+                  {/* col 7–8: Employee ID */}
+                  <div className="col-span-2">
+                    {emp.employeeId ? (
+                      <span className="inline-flex px-2.5 py-1 text-xs font-mono rounded-lg bg-surface-container text-on-surface-variant border border-outline-variant">
+                        {emp.employeeId}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-on-surface-variant opacity-40">—</span>
+                    )}
+                  </div>
+
+                  {/* col 9–10: Departments */}
+                  <div className="col-span-2 flex flex-wrap gap-1">
+                    {depts.length === 0 ? (
+                      <span className="text-xs text-on-surface-variant opacity-40">—</span>
+                    ) : (
+                      <>
+                        {visibleDepts.map(d => (
+                          <span key={d.id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-secondary-container text-on-secondary-container">
                             {d.name}
                           </span>
                         ))}
-                      </div>
-                    )}
-                    {employee.manager && (
-                      <div className="mt-1 flex">
-                        <div className="flex items-center text-sm text-on-surface-variant">
-                          <svg
-                            className="flex-shrink-0 mr-1.5 h-5 w-5 text-on-surface-variant"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                          </svg>
-                          <p className="truncate">Manager: {employee.manager.name}</p>
-                        </div>
-                      </div>
-                    )}
-                    {employee.directReports && employee.directReports.length > 0 && (
-                      <div className="mt-1 flex">
-                        <div className="flex items-center text-sm text-on-surface-variant">
-                          <svg
-                            className="flex-shrink-0 mr-1.5 h-5 w-5 text-on-surface-variant"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                            />
-                          </svg>
-                          <p className="truncate">
-                            {employee.directReports.length} direct report
-                            {employee.directReports.length !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      </div>
+                        {extraDepts > 0 && (
+                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-surface-container text-on-surface-variant border border-outline-variant">
+                            +{extraDepts}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
+
+                  {/* col 11–12: Actions */}
+                  <div className="col-span-2 flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => setEditingEmployee(emp)}
+                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+                      title="Edit employee"
+                    >
+                      <PencilIcon />
+                    </button>
+                    <button
+                      onClick={() => setDeletingEmployee(emp)}
+                      className="p-2 rounded-lg text-on-surface-variant hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                      title="Delete employee"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
                 </div>
-                <div className="ml-5 flex-shrink-0 flex space-x-2">
-                  <button
-                    onClick={() => setEditingEmployee(employee)}
-                    className="inline-flex items-center px-3 py-2 border border-outline shadow-sm text-sm leading-4 font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setDeletingEmployee(employee)}
-                    className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-surface-container-lowest hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       </div>
 
@@ -209,3 +216,17 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
     </>
   )
 }
+
+// ── Shared icon components ────────────────────────────────────────────────────
+const PencilIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.768-6.768a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H8v-2.414a2 2 0 01.586-1.414z" />
+  </svg>
+)
+
+const TrashIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+)
+
