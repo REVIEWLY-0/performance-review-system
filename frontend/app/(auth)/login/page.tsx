@@ -7,6 +7,17 @@ import { signIn } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { validateEmail, validatePassword } from '@/lib/validation'
 
+// ── Stitch rate_review icon: filled speech bubble with star cutout ─────────
+const RateReviewIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM12 6L12.88 8.29L15.33 8.42L13.43 9.96L14.05 12.33L12 11L9.95 12.33L10.57 9.96L8.67 8.42L11.12 8.29Z"
+    />
+  </svg>
+)
+
 const inputCls = (hasError: boolean) =>
   `w-full bg-surface-container-lowest border-none ring-1 ${
     hasError ? 'ring-red-400 focus:ring-red-500' : 'ring-outline-variant focus:ring-primary'
@@ -17,9 +28,7 @@ function TopLogo() {
   return (
     <div className="flex flex-col items-center gap-3 mb-8">
       <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20">
-        <svg className="h-8 w-8 text-on-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
+        <RateReviewIcon className="h-8 w-8 text-on-primary" />
       </div>
       <span className="text-2xl font-extrabold tracking-tight text-on-surface font-display">Reviewly</span>
     </div>
