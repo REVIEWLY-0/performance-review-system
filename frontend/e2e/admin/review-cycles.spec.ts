@@ -10,33 +10,29 @@ test.describe('Admin — Review Cycles', () => {
 
   test('shows review cycles page', async ({ page }) => {
     await expect(page).toHaveURL(/\/admin\/review-cycles/);
-    // Page title
     await expect(
-      page.locator('h1, h2').filter({ hasText: /review cycle/i }).first(),
+      page.locator('h1').filter({ hasText: /review cycles/i }),
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test('New Cycle button is present', async ({ page }) => {
+  test('New Review Cycle link is present', async ({ page }) => {
+    // It's a <Link> (renders as <a>), not a <button>
+    // Page has two matching links (header + sidebar card) — check first one
     await expect(
-      page.getByRole('button', { name: /new cycle|create cycle/i }),
+      page.getByRole('link', { name: /new review cycle/i }).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test('clicking New Cycle opens the creation form', async ({ page }) => {
-    await page.getByRole('button', { name: /new cycle|create cycle/i }).click();
-    await page.waitForURL('**/admin/review-cycles/new**', { timeout: 5_000 }).catch(() => {
-      // Some impls open inline — check for a form
-    });
-    // Either navigated to /new or a form appeared
-    const hasForm = await page.locator('form').isVisible();
-    const isNewUrl = page.url().includes('/new');
-    expect(hasForm || isNewUrl).toBe(true);
+  test('clicking New Review Cycle navigates to creation page', async ({ page }) => {
+    await page.getByRole('link', { name: /new review cycle/i }).first().click();
+    await page.waitForURL('**/admin/review-cycles/new**');
+    await expect(page).toHaveURL(/\/admin\/review-cycles\/new/);
   });
 
   test('existing cycles show status badges', async ({ page }) => {
-    // If there are cycles, they should show a status badge (ACTIVE, DRAFT, COMPLETED)
-    const hasCycles = await page.locator('table tbody tr, [data-testid="cycle-item"]').count();
-    if (hasCycles > 0) {
+    const cycleRows = page.locator('table tbody tr, li[class*="bg-surface"]');
+    const count = await cycleRows.count();
+    if (count > 0) {
       await expect(
         page.locator('text=/active|draft|completed/i').first(),
       ).toBeVisible();
