@@ -56,7 +56,9 @@ export default function PeerReviewsPage() {
       const employeeList = await getEmployeesToReviewAsPeer(cycleId);
       setEmployees(employeeList);
     } catch (err: any) {
-      setError(err.message || 'Failed to load employees');
+      // Surface the real error — don't silently show "No peers assigned"
+      const msg = err.message || 'Failed to load peer assignments';
+      setError(msg);
       setEmployees([]);
     } finally {
       setLoadingEmployees(false);
@@ -230,7 +232,7 @@ export default function PeerReviewsPage() {
       {/* Employees List */}
       {!loadingEmployees && selectedCycleId && (
         <div className="bg-surface-container-lowest shadow overflow-hidden sm:rounded-md">
-          {employees.length === 0 ? (
+          {employees.length === 0 && !error ? (
             <div className="text-center py-12 px-4">
               <svg
                 className="mx-auto h-12 w-12 text-on-surface-variant"

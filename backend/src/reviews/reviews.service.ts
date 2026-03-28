@@ -54,6 +54,7 @@ export interface QuestionWithAnswer {
   text: string;
   maxChars: number | null;
   order: number;
+  tasks?: any[] | null;
   answer?: {
     id: string;
     rating: number | null;
@@ -205,6 +206,7 @@ export class ReviewsService {
         text: q.text,
         maxChars: q.maxChars,
         order: q.order,
+        tasks: q.tasks as any[] | null,
         answer: answer
           ? {
               id: answer.id,
@@ -601,6 +603,7 @@ export class ReviewsService {
         text: q.text,
         maxChars: q.maxChars,
         order: q.order,
+        tasks: q.tasks as any[] | null,
         answer: answer
           ? {
               id: answer.id,
@@ -647,6 +650,7 @@ export class ReviewsService {
               text: q.text,
               maxChars: q.maxChars,
               order: q.order,
+              tasks: q.tasks as any[] | null,
               answer: answer
                 ? {
                     id: answer.id,
@@ -977,6 +981,7 @@ export class ReviewsService {
         text: q.text,
         maxChars: q.maxChars,
         order: q.order,
+        tasks: q.tasks as any[] | null,
         answer: answer
           ? {
               id: answer.id,
