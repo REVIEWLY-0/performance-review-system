@@ -575,3 +575,79 @@ Output:
 5) “Reports” tab breaks navigation
 - Expected: Reports should link to “View Reports” route (existing route or create placeholder page that doesn’t crash)
 - Actual: clicking Reports breaks/throws/does nothing
+
+
+---
+
+## 2026-03-28 — Full E2E Testing Session (Local Setup)
+
+### Test Environment
+- Local setup: Docker (PostgreSQL), NestJS backend (port 4000), Next.js frontend (port 3000)
+- Mailtrap configured for email testing
+- Test company: "Test Company" | Admin: Eniola Akinlade
+
+### P0 Test Results
+
+| # | Test | Status | Notes |
+|---|---|---|---|
+| 1 | Admin Signup & Login | ✅ Pass | Redirected to /admin dashboard correctly |
+| 2 | Create Departments | ✅ Pass | Engineering and Sales created successfully |
+| 3 | Create Employees (CSV Import) | ✅ Pass | CSV import working, employees visible with correct roles |
+| 4 | Create Review Cycle + Workflow Steps | ✅ Pass | Cycle created with DRAFT status, 3 workflow steps added |
+| 5 | Add Questions | ✅ Pass | Questions saved and listed correctly |
+| 6 | Activation Blocked Without Questions | ✅ Pass | Error shown when activating cycle with no questions |
+| 7 | Activate Cycle | ✅ Pass | Status changed from DRAFT → ACTIVE |
+| 8 | Assign Reviewers | ⚠️ Partial | Assignments saved but reviewer assignment emails not received — Mailtrap was not configured at time of assignment |
+| 9 | Employee Completes Self Review | ✅ Pass | Questions rendered correctly, submission recorded |
+| 10 | Manager Completes Manager Review | ✅ Pass | Manager review submitted successfully |
+| 11 | Peer Completes Peer Review | ✅ Pass | Peer review submitted successfully |
+| 12 | Score Visibility Rules | ✅ Pass | Score hidden while reviews incomplete |
+| 13 | Reports & Score Overview | ✅ Pass | Employee score visible with breakdown |
+| 14 | Notifications & Preferences | ⚠️ Partial | Emails captured in Mailtrap once credentials configured — missed earlier notifications due to late SMTP setup |
+
+---
+
+### Bugs Found
+
+#### Bug 1 — Score Exceeds Maximum Rating Scale
+**Severity:** P0
+- Performance Comparison bar shows **10.00 / 5.00** — score exceeds the configured maximum rating of 5.
+- Progress bar overflows its container boundary, breaking the UI layout.
+- Suspected cause: score calculation not clamped to `maxRating` value from `RatingScale`.
+
+---
+
+#### Bug 2 — Manager Scores Page Crashes (RangeError: Invalid array length)
+**Severity:** P0
+- Navigating to the scores page as a manager triggers a full page crash with:
+  > `RangeError: Invalid array length at renderStars (employee/scores/page.tsx:109)`
+- `renderStars()` receives an invalid value (likely `null`, `undefined`, or a negative number) as the rating scale max.
+- Reproduced consistently on the manager dashboard scores view.
+
+---
+
+#### Bug 3 — Score Email Triggered on Every "View Detailed Scores" Click
+**Severity:** P1
+- A performance score notification email is sent to the employee every time they click "View Detailed Scores" on their dashboard.
+- Expected behaviour: score email should only be sent once when the score first becomes available.
+
+---
+
+#### Bug 4 — No Explicit Draft State for Partially Completed Reviews
+**Severity:** P1
+- When a reviewer partially fills a review and exits without submitting, there is no visible draft indicator or confirmation prompt.
+- Expected behaviour: show a "Draft saved" indicator or prompt the user before leaving an incomplete review.
+
+---
+
+#### Bug 5 — Score Bar Overflows Container When Review Cycle Date is Shortened
+**Severity:** P1
+- When a review cycle's end date is edited to be shorter than the original, the performance score bar on the employee dashboard overflows its container boundary.
+- The progress bar width calculation breaks when cycle duration is reduced after creation.
+
+---
+
+#### Bug 6 — Cannot Delete Manager with Pending Reviews
+**Severity:** P1
+- Attempting to delete a manager who has pending/unsubmitted reviews assigned fails silently with no clear error message shown to the admin.
+- Expected behaviour: show a descriptive error explaining why the deletion failed.
