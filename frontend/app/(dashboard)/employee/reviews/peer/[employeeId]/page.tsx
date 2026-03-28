@@ -298,14 +298,19 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
                 Progress: {progress.answered}/{progress.total} (
                 {progress.percentage}%)
               </span>
-              {saving && (
-                <span className="text-xs text-on-surface-variant">Saving draft...</span>
-              )}
-              {lastSaved && !saving && (
-                <span className="text-xs text-on-surface-variant">
-                  Last saved: {lastSaved.toLocaleTimeString()}
+              {saving ? (
+                <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                  Saving...
                 </span>
-              )}
+              ) : lastSaved ? (
+                <span className="text-xs text-green-700 flex items-center gap-1">
+                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Saved {lastSaved.toLocaleTimeString()}
+                </span>
+              ) : null}
             </div>
           </div>
           <div className="w-full bg-surface-container-high rounded-full h-2">

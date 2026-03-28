@@ -121,16 +121,35 @@ export class ScoringService {
       ratingQuestions,
     );
 
-    // Send score available notification (fire-and-forget)
+    // Send score available notification once per employee per cycle
     if (result.overall_score) {
-      await this.notificationsService
-        .sendScoreAvailableNotification(employeeId, cycleId, result.overall_score)
-        .catch((err) =>
-          console.error('Failed to send score notification:', err),
-        );
+      this.sendScoreNotificationOnce(employeeId, cycleId, result.overall_score);
     }
 
     return result;
+  }
+
+  /**
+   * Send score notification only if it hasn't been sent before.
+   * Uses score_notifications table as a dedup guard.
+   */
+  private sendScoreNotificationOnce(
+    employeeId: string,
+    cycleId: string,
+    score: number,
+  ): void {
+    this.prisma.scoreNotification
+      .create({ data: { employeeId, cycleId } })
+      .then(() =>
+        this.notificationsService
+          .sendScoreAvailableNotification(employeeId, cycleId, score)
+          .catch((err) =>
+            console.error('Failed to send score notification:', err),
+          ),
+      )
+      .catch(() => {
+        // Unique constraint violation = already sent — silently ignore
+      });
   }
 
   /**
@@ -201,18 +220,10 @@ export class ScoringService {
       }
     }
 
-    // Fire-and-forget score notifications
+    // Send score notifications (deduplicated — one per employee per cycle)
     for (const score of scores) {
       if (score.overall_score) {
-        this.notificationsService
-          .sendScoreAvailableNotification(
-            score.employeeId,
-            cycleId,
-            score.overall_score,
-          )
-          .catch((err) =>
-            console.error('Failed to send score notification:', err),
-          );
+        this.sendScoreNotificationOnce(score.employeeId, cycleId, score.overall_score);
       }
     }
 

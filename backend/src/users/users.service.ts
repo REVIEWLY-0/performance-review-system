@@ -467,6 +467,26 @@ export class UsersService {
       );
     }
 
+    // Check for submitted reviews authored by this user (as reviewer)
+    const reviewCount = await this.prisma.review.count({
+      where: { reviewerId: userId },
+    });
+    if (reviewCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete user who has submitted ${reviewCount} review${reviewCount !== 1 ? 's' : ''}. Remove their reviewer assignments first.`,
+      );
+    }
+
+    // Check for reviewer assignments targeting this user (as employee being reviewed)
+    const assignmentCount = await this.prisma.reviewerAssignment.count({
+      where: { employeeId: userId },
+    });
+    if (assignmentCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete user with ${assignmentCount} active reviewer assignment${assignmentCount !== 1 ? 's' : ''}. Remove assignments first.`,
+      );
+    }
+
     return this.prisma.user.delete({
       where: { id: userId },
     });

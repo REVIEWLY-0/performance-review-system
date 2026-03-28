@@ -407,11 +407,20 @@ export default function SelfReviewPage() {
       {!isSubmitted && (
         <div className="mt-8 flex justify-between items-center bg-surface-container-lowest rounded-lg shadow p-6">
           <div className="text-sm text-on-surface-variant">
-            {saving && (
+            {saving ? (
               <span className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                 Saving draft...
               </span>
+            ) : lastSaved ? (
+              <span className="flex items-center gap-1.5 text-green-700">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Draft saved at {lastSaved.toLocaleTimeString()}
+              </span>
+            ) : (
+              <span className="text-on-surface-variant/60">Changes save automatically</span>
             )}
           </div>
           <button

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { calculateScore, FinalScore } from '@/lib/scoring';
+import { ratingScaleApi, DEFAULT_SCALE } from '@/lib/rating-scale';
 
 export default function EmployeeScoresPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function EmployeeScoresPage() {
     cycleParam || '',
   );
   const [scoreData, setScoreData] = useState<FinalScore | null>(null);
+  const [maxRating, setMaxRating] = useState(DEFAULT_SCALE.maxRating);
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState('');
@@ -34,14 +36,18 @@ export default function EmployeeScoresPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const currentUser = await getCurrentUser();
+      const [currentUser, scale, { data: allCycles }] = await Promise.all([
+        getCurrentUser(),
+        ratingScaleApi.get(),
+        reviewCyclesApi.getAll(),
+      ]);
+
       if (!currentUser) {
         setLoading(false);
         return;
       }
       setUser(currentUser);
-
-      const { data: allCycles } = await reviewCyclesApi.getAll();
+      setMaxRating(scale.maxRating);
       setCycles(allCycles);
 
       if (cycleParam && allCycles.find((c) => c.id === cycleParam)) {
@@ -78,9 +84,10 @@ export default function EmployeeScoresPage() {
   };
 
   const renderStars = (score: number) => {
-    const fullStars = Math.floor(score);
-    const hasHalfStar = score % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    const clamped = Math.min(score, maxRating);
+    const fullStars = Math.floor(clamped);
+    const hasHalfStar = clamped % 1 >= 0.5;
+    const emptyStars = Math.max(0, maxRating - fullStars - (hasHalfStar ? 1 : 0));
 
     return (
       <div className="flex gap-1">
@@ -223,7 +230,7 @@ export default function EmployeeScoresPage() {
               <div>
                 <div className="text-6xl font-bold">
                   {scoreData.overall_score?.toFixed(2) || 'N/A'}
-                  <span className="text-3xl text-indigo-200"> / 5.0</span>
+                  <span className="text-3xl text-indigo-200"> / {maxRating}.0</span>
                 </div>
                 {scoreData.overall_score && renderStars(scoreData.overall_score)}
               </div>
@@ -259,7 +266,7 @@ export default function EmployeeScoresPage() {
               <p className="text-3xl font-bold text-on-surface">
                 {scoreData.breakdown.self?.toFixed(2) || 'N/A'}
               </p>
-              <p className="text-sm text-on-surface-variant mt-1">out of 5.0</p>
+              <p className="text-sm text-on-surface-variant mt-1">out of {maxRating}.0</p>
             </div>
 
             {/* Manager Score */}

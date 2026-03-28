@@ -335,6 +335,16 @@ model ReviewerAssignment {
   @@map("reviewer_assignments")
 }
 
+model ScoreNotification {
+  id         String   @id @default(cuid())
+  employeeId String   @map("employee_id")
+  cycleId    String   @map("cycle_id")
+  sentAt     DateTime @default(now()) @map("sent_at")
+
+  @@unique([employeeId, cycleId])
+  @@map("score_notifications")
+}
+
 model OrgChartNode {
   id        String   @id @default(cuid())
   companyId String   @map("company_id")

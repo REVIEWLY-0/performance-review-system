@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { getEmployeeAnalytics, EmployeeAnalytics } from '@/lib/analytics';
+import { ratingScaleApi, DEFAULT_SCALE } from '@/lib/rating-scale';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend } from 'recharts';
 import SkeletonCard from '@/components/skeletons/SkeletonCard';
 
@@ -17,6 +18,7 @@ export default function EmployeeDashboard() {
   const [cycles, setCycles] = useState<ReviewCycle[]>([]);
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
   const [analytics, setAnalytics] = useState<EmployeeAnalytics | null>(null);
+  const [maxRating, setMaxRating] = useState(DEFAULT_SCALE.maxRating);
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
@@ -34,8 +36,12 @@ export default function EmployeeDashboard() {
 
       setUser(currentUser);
 
-      const { data: allCycles } = await reviewCyclesApi.getAll();
+      const [{ data: allCycles }, scale] = await Promise.all([
+        reviewCyclesApi.getAll(),
+        ratingScaleApi.get(),
+      ]);
       setCycles(allCycles);
+      setMaxRating(scale.maxRating);
 
       // Select first active cycle, else first available
       const activeCycle = allCycles.find((c) => c.status === 'ACTIVE');
@@ -337,7 +343,7 @@ export default function EmployeeDashboard() {
                 <RadarChart data={radarData}>
                   <PolarGrid />
                   <PolarAngleAxis dataKey="category" />
-                  <PolarRadiusAxis domain={[0, 5]} />
+                  <PolarRadiusAxis domain={[0, maxRating]} />
                   <Radar
                     name="Your Scores"
                     dataKey="score"
@@ -447,13 +453,13 @@ export default function EmployeeDashboard() {
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-on-surface-variant">Your Score</span>
                 <span className="text-sm font-semibold text-primary">
-                  {analytics.personalScore.toFixed(2)} / 5.00
+                  {analytics.personalScore.toFixed(2)} / {maxRating}.00
                 </span>
               </div>
               <div className="w-full bg-surface-container-high rounded-full h-3">
                 <div
                   className="bg-primary h-3 rounded-full"
-                  style={{ width: `${(analytics.personalScore / 5) * 100}%` }}
+                  style={{ width: `${Math.min(100, (analytics.personalScore / maxRating) * 100)}%` }}
                 ></div>
               </div>
             </div>
@@ -463,13 +469,13 @@ export default function EmployeeDashboard() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-on-surface-variant">Company Average</span>
                   <span className="text-sm font-semibold text-on-surface">
-                    {analytics.companyAverage.toFixed(2)} / 5.00
+                    {analytics.companyAverage.toFixed(2)} / {maxRating}.00
                   </span>
                 </div>
                 <div className="w-full bg-surface-container-high rounded-full h-3">
                   <div
                     className="bg-outline h-3 rounded-full"
-                    style={{ width: `${(analytics.companyAverage / 5) * 100}%` }}
+                    style={{ width: `${Math.min(100, (analytics.companyAverage / maxRating) * 100)}%` }}
                   ></div>
                 </div>
               </div>
