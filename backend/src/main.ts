@@ -1,18 +1,30 @@
-import 'dotenv/config';
+// instrument.ts MUST be the first import — initialises Sentry before any app code
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
-import { join } from 'path';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const compression = require('compression');
 
+// ── Startup environment guard ─────────────────────────────────────────────────
+const REQUIRED_ENV = [
+  'DATABASE_URL',
+  'SUPABASE_URL',
+  'SUPABASE_JWT_SECRET',
+  'SUPABASE_SERVICE_ROLE_KEY',
+];
+
+const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (missing.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+  console.error('   Set them in .env (development) or your deployment secrets (production).');
+  process.exit(1);
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-
-  // Serve uploaded avatars as static files at /uploads/*
-  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
   // Gzip compression — reduces JSON response payload by 60-80%
   app.use(compression());
@@ -21,7 +33,7 @@ async function bootstrap() {
   app.use(
     helmet({
       contentSecurityPolicy: process.env.NODE_ENV === 'production',
-      crossOriginEmbedderPolicy: false, // Allow embedding if needed
+      crossOriginEmbedderPolicy: false,
     }),
   );
 
@@ -55,7 +67,7 @@ async function bootstrap() {
     }),
   );
 
-  // Global prefix for all routes (except health check)
+  // Global prefix for all routes
   app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 4000;
@@ -66,6 +78,9 @@ async function bootstrap() {
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   CORS: ${corsOrigins.join(', ')}`);
   console.log(`   Health: http://localhost:${port}/api/health`);
+  if (process.env.SENTRY_DSN) {
+    console.log(`   Sentry: enabled`);
+  }
 }
 
 bootstrap();

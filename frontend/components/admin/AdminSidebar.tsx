@@ -57,19 +57,20 @@ const SignOutIcon = () => (
 )
 
 // ── Nav items ──────────────────────────────────────────────────────────────
+const QuestionsIcon = () => (
+  <svg className="h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z" />
+  </svg>
+)
+
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/admin',               exact: true,  Icon: DashboardIcon },
   { label: 'Employees', href: '/admin/employees',      exact: false, Icon: UsersIcon },
   { label: 'Reviews',   href: '/admin/review-cycles',  exact: false, Icon: ReviewIcon },
+  { label: 'Questions', href: '/admin/questions',      exact: false, Icon: QuestionsIcon },
   { label: 'Reports',   href: '/admin/reports',        exact: false, Icon: ReportsIcon },
 ]
 
-function getMonogram(companyName: string) {
-  const words = companyName.split(' ').filter(Boolean)
-  return words.length >= 2
-    ? words.slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-    : companyName.slice(0, 2).toUpperCase()
-}
 
 export default function AdminSidebar({ user, open, onClose }: Props) {
   const pathname = usePathname()
@@ -83,8 +84,6 @@ export default function AdminSidebar({ user, open, onClose }: Props) {
     router.push('/login')
   }
 
-  const monogram = getMonogram(user.companyName)
-
   return (
     <aside
       className={[
@@ -97,10 +96,10 @@ export default function AdminSidebar({ user, open, onClose }: Props) {
       <div className="px-8 mb-6">
         <div className="flex items-center gap-3">
           <Logo size={40} />
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex flex-col min-w-0">
             <h2 className="text-lg font-extrabold font-display text-on-surface leading-tight">Reviewly</h2>
-            <span className="text-base font-extrabold text-primary border-l border-outline-variant pl-2 shrink-0">
-              {monogram}
+            <span className="text-sm font-semibold text-primary leading-tight">
+              {user.companyName}
             </span>
           </div>
         </div>

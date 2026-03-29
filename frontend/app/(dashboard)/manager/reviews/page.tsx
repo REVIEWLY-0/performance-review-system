@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
-import { getEmployeesToReview, EmployeeToReview } from '@/lib/reviews';
+import { getEmployeesToReviewDownward, EmployeeToReview } from '@/lib/reviews';
 import SkeletonTable from '@/components/skeletons/SkeletonTable';
+import Pagination from '@/components/Pagination';
+
+const PAGE_SIZE = 15;
 
 export default function ManagerReviewsPage() {
   const router = useRouter();
@@ -19,6 +22,7 @@ export default function ManagerReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     loadCycles();
@@ -53,8 +57,9 @@ export default function ManagerReviewsPage() {
     try {
       setLoadingEmployees(true);
       setError('');
-      const employeeList = await getEmployeesToReview(cycleId);
+      const employeeList = await getEmployeesToReviewDownward(cycleId);
       setEmployees(employeeList);
+      setPage(1);
     } catch (err: any) {
       setError(err.message || 'Failed to load employees');
       setEmployees([]);
@@ -116,6 +121,8 @@ export default function ManagerReviewsPage() {
   }
 
   const stats = getCompletionStats();
+  const totalPages = Math.ceil(employees.length / PAGE_SIZE);
+  const pagedEmployees = employees.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="px-4 py-6 sm:px-0">
@@ -256,7 +263,7 @@ export default function ManagerReviewsPage() {
             </div>
           ) : (
             <ul className="divide-y divide-outline-variant">
-              {employees.map((employee) => (
+              {pagedEmployees.map((employee) => (
                 <li key={employee.id}>
                   <div className="px-4 py-4 flex items-center sm:px-6 hover:bg-surface-container-low">
                     <div className="min-w-0 flex-1 flex items-center">
@@ -305,6 +312,11 @@ export default function ManagerReviewsPage() {
                 </li>
               ))}
             </ul>
+          )}
+          {employees.length > PAGE_SIZE && (
+            <div className="px-4 py-3 border-t border-outline-variant">
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           )}
         </div>
       )}

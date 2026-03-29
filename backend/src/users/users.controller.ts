@@ -16,9 +16,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { memoryStorage } from 'multer';
+import { extname } from 'path';
 import { UsersService, CreateUserDto, UpdateUserDto, UpdateProfileDto, ImportUsersBodyDto } from './users.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -38,9 +37,11 @@ export class UsersController {
   async findAll(
     @CompanyId() companyId: string,
     @Query('page') page = 1,
-    @Query('limit') limit = 50,
+    @Query('limit') limit = 20,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
   ) {
-    return this.usersService.findAll(companyId, +page, +limit);
+    return this.usersService.findAll(companyId, +page, +limit, search, role);
   }
 
   /**
@@ -86,17 +87,7 @@ export class UsersController {
   @Post('me/avatar')
   @UseInterceptors(
     FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: (req: any, _file, cb) => {
-          const dir = join(process.cwd(), 'uploads', 'avatars', req.user.companyId);
-          if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-          cb(null, dir);
-        },
-        filename: (req: any, file, cb) => {
-          const ext = extname(file.originalname).toLowerCase();
-          cb(null, `${req.user.id}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
       fileFilter: (_req, file, cb) => {
         const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
@@ -113,8 +104,7 @@ export class UsersController {
     @CurrentUser() currentUser: { id: string; companyId: string },
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
-    const avatarUrl = `/uploads/avatars/${currentUser.companyId}/${file.filename}`;
-    return this.usersService.updateAvatarUrl(currentUser.id, currentUser.companyId, avatarUrl);
+    return this.usersService.uploadAvatar(currentUser.id, currentUser.companyId, file);
   }
 
   /**

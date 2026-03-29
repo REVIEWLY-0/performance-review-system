@@ -275,6 +275,7 @@ export class QuestionsService {
       SELF: questions.filter((q) => q.reviewType === 'SELF'),
       MANAGER: questions.filter((q) => q.reviewType === 'MANAGER'),
       PEER: questions.filter((q) => q.reviewType === 'PEER'),
+      DOWNWARD: questions.filter((q) => q.reviewType === 'DOWNWARD'),
     };
 
     return grouped;

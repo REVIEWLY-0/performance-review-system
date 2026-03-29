@@ -3,8 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  getManagerReview,
-  saveManagerReview,
+  getDownwardReview,
+  saveDownwardReview,
   ManagerReviewData,
   Answer,
   QuestionWithAnswer,
@@ -70,7 +70,7 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
       setLoading(true);
       setError('');
       const [data, scale] = await Promise.all([
-        getManagerReview(cycleId, params.employeeId),
+        getDownwardReview(cycleId, params.employeeId),
         ratingScaleApi.get(),
       ]);
       setReviewData(data);
@@ -109,7 +109,7 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
         .map((qId) => answers.get(qId))
         .filter((a): a is Answer => a !== undefined);
 
-      const result = await saveManagerReview(
+      const result = await saveDownwardReview(
         cycleId,
         params.employeeId,
         answersToSave,
@@ -200,7 +200,7 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
       setError('');
 
       const allAnswers = Array.from(answers.values());
-      await saveManagerReview(cycleId, params.employeeId, allAnswers, true);
+      await saveDownwardReview(cycleId, params.employeeId, allAnswers, true);
 
       router.push(`/manager/reviews?cycleId=${cycleId}`);
     } catch (err: any) {

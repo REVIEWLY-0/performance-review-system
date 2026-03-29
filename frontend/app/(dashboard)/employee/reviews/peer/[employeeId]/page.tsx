@@ -42,28 +42,36 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
     loadReviewData();
   }, [cycleId, params.employeeId]);
 
-  // Auto-save effect
   useEffect(() => {
     if (dirtyAnswers.size > 0 && reviewData?.review.status !== 'SUBMITTED') {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-
-      autoSaveTimer.current = setTimeout(() => {
-        handleAutoSave();
-      }, 30000);
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = setTimeout(() => handleAutoSave(), 30000);
     }
-
     return () => {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
   }, [dirtyAnswers]);
 
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirtyAnswers.size > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirtyAnswers]);
+
+  const handleBack = () => {
+    if (dirtyAnswers.size > 0) {
+      if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
+    }
+    router.push(`/employee/reviews/peer?cycleId=${cycleId}`);
+  };
+
   const loadReviewData = async () => {
     if (!cycleId) return;
-
     try {
       setLoading(true);
       setError('');
@@ -74,7 +82,6 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
       setReviewData(data);
       setRatingScale(scale);
 
-      // Initialize answers map
       const initialAnswers = new Map<string, Answer>();
       data.questions.forEach((q) => {
         if (q.answer) {
@@ -88,9 +95,7 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
       setAnswers(initialAnswers);
       setDirtyAnswers(new Set());
 
-      if (data.review.updatedAt) {
-        setLastSaved(new Date(data.review.updatedAt));
-      }
+      if (data.review.updatedAt) setLastSaved(new Date(data.review.updatedAt));
     } catch (err: any) {
       setError(err.message || 'Failed to load review');
     } finally {
@@ -100,23 +105,13 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
 
   const handleAutoSave = async () => {
     if (!cycleId || dirtyAnswers.size === 0) return;
-
     try {
       setSaving(true);
       const answersToSave = Array.from(dirtyAnswers)
         .map((qId) => answers.get(qId))
         .filter((a): a is Answer => a !== undefined);
-
-      const result = await savePeerReview(
-        cycleId,
-        params.employeeId,
-        answersToSave,
-        false,
-      );
-
-      if (result.updatedAt) {
-        setLastSaved(new Date(result.updatedAt));
-      }
+      const result = await savePeerReview(cycleId, params.employeeId, answersToSave, false);
+      if (result.updatedAt) setLastSaved(new Date(result.updatedAt));
       setDirtyAnswers(new Set());
     } catch (err: any) {
       console.error('Auto-save failed:', err);
@@ -125,21 +120,11 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
     }
   };
 
-  const updateAnswer = (
-    questionId: string,
-    updates: Partial<Omit<Answer, 'questionId'>>,
-  ) => {
-    const currentAnswer = answers.get(questionId) || {
-      questionId,
-      rating: null,
-      textAnswer: null,
-    };
-
-    const updatedAnswer = { ...currentAnswer, ...updates };
+  const updateAnswer = (questionId: string, updates: Partial<Omit<Answer, 'questionId'>>) => {
+    const currentAnswer = answers.get(questionId) || { questionId, rating: null, textAnswer: null };
     const newAnswers = new Map(answers);
-    newAnswers.set(questionId, updatedAnswer);
+    newAnswers.set(questionId, { ...currentAnswer, ...updates });
     setAnswers(newAnswers);
-
     const newDirty = new Set(dirtyAnswers);
     newDirty.add(questionId);
     setDirtyAnswers(newDirty);
@@ -147,68 +132,39 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
 
   const calculateProgress = () => {
     if (!reviewData) return { answered: 0, total: 0, percentage: 0 };
-
     const total = reviewData.questions.length;
     let answered = 0;
-
     reviewData.questions.forEach((q) => {
       const answer = answers.get(q.id);
       if (!answer) return;
-
-      if (q.type === 'RATING' && answer.rating && answer.rating > 0) {
-        answered++;
-      } else if (q.type === 'TEXT' && answer.textAnswer?.trim()) {
-        answered++;
-      } else if (q.type === 'TASK_LIST' && answer.textAnswer) {
+      if (q.type === 'RATING' && answer.rating && answer.rating > 0) answered++;
+      else if (q.type === 'TEXT' && answer.textAnswer?.trim()) answered++;
+      else if (q.type === 'TASK_LIST' && answer.textAnswer) {
         try {
           const parsed = JSON.parse(answer.textAnswer);
           const taskList = parsed.tasks || [];
-          // Predefined tasks: at least one checked; free-form: at least one item
           const hasPredefined = q.tasks && q.tasks.length > 0;
-          if (hasPredefined) {
-            if (taskList.some((t: any) => t.completed)) answered++;
-          } else if (taskList.length > 0) {
-            answered++;
-          }
-        } catch (e) {
-          // Invalid JSON
-        }
+          if (hasPredefined) { if (taskList.some((t: any) => t.completed)) answered++; }
+          else if (taskList.length > 0) answered++;
+        } catch {}
       }
     });
-
-    return {
-      answered,
-      total,
-      percentage: total > 0 ? Math.round((answered / total) * 100) : 0,
-    };
+    return { answered, total, percentage: total > 0 ? Math.round((answered / total) * 100) : 0 };
   };
 
   const handleSubmit = async () => {
     if (!cycleId) return;
-
     const progress = calculateProgress();
     if (progress.percentage < 100) {
-      setError(
-        `Please answer all questions before submitting (${progress.answered}/${progress.total} completed)`,
-      );
+      setError(`Please answer all questions before submitting (${progress.answered}/${progress.total} completed)`);
       return;
     }
-
-    if (
-      !confirm(
-        'Are you sure you want to submit this peer review? This cannot be undone.',
-      )
-    ) {
-      return;
-    }
-
+    if (!confirm('Are you sure you want to submit this peer review? This cannot be undone.')) return;
     try {
       setSaving(true);
       setError('');
-
       const allAnswers = Array.from(answers.values());
       await savePeerReview(cycleId, params.employeeId, allAnswers, true);
-
       router.push(`/employee/reviews/peer?cycleId=${cycleId}`);
     } catch (err: any) {
       setError(err.message || 'Failed to submit review');
@@ -219,12 +175,10 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
 
   if (loading) {
     return (
-      <div className="px-4 py-6 sm:px-0">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-on-surface-variant">Loading review...</p>
-          </div>
+      <div className="max-w-3xl mx-auto px-4 py-10 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" />
+          <p className="mt-4 text-sm text-on-surface-variant">Loading review...</p>
         </div>
       </div>
     );
@@ -232,11 +186,9 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
 
   if (!reviewData || !cycleId) {
     return (
-      <div className="px-4 py-6 sm:px-0">
-        <div className="rounded-md bg-red-50 p-4">
-          <p className="text-sm text-red-700">
-            {error || 'Review data not found'}
-          </p>
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 p-5">
+          <p className="text-sm text-red-700 dark:text-red-400">{error || 'Review data not found'}</p>
         </div>
       </div>
     );
@@ -246,132 +198,111 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
   const isSubmitted = reviewData.review.status === 'SUBMITTED';
 
   return (
-    <div className="px-4 py-6 sm:px-0">
+    <div className="max-w-3xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-8">
         <button
-          onClick={() => router.push(`/employee/reviews/peer?cycleId=${cycleId}`)}
-          className="text-sm text-purple-600 hover:text-purple-800 mb-2"
+          onClick={handleBack}
+          className="flex items-center gap-1 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors mb-4"
         >
-          ← Back to Peer Reviews
+          <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+          Back to Peer Reviews
         </button>
-        <h1 className="text-2xl font-bold text-on-surface">
-          Peer Review: {reviewData.employee.name}
-        </h1>
-        <p className="mt-1 text-sm text-on-surface-variant">
-          {reviewData.employee.email}
-        </p>
+        <h1 className="text-2xl font-bold text-on-surface">{reviewData.employee.name}</h1>
+        <p className="mt-0.5 text-sm text-on-surface-variant">{reviewData.employee.email}</p>
       </div>
 
-      {/* Error Message */}
+      {/* Error */}
       {error && (
-        <div className="mb-4 rounded-md bg-red-50 p-4">
-          <div className="flex">
-            <svg
-              className="h-5 w-5 text-red-400"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <p className="ml-3 text-sm text-red-700">{error}</p>
-            <button
-              onClick={() => setError('')}
-              className="ml-auto text-red-500 hover:text-red-700"
-            >
-              ×
-            </button>
-          </div>
+        <div className="mb-5 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 px-5 py-4 flex items-start gap-3">
+          <span className="material-symbols-outlined text-red-500 text-[18px] mt-0.5 shrink-0">error</span>
+          <p className="text-sm text-red-700 dark:text-red-400 flex-1">{error}</p>
+          <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 text-lg leading-none">×</button>
         </div>
       )}
 
-      {/* Progress Bar */}
+      {/* Submitted banner */}
+      {isSubmitted && (
+        <div className="mb-5 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 px-5 py-4 flex items-center gap-3">
+          <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          <p className="text-sm font-medium text-green-800 dark:text-green-300">This review has been submitted and is locked.</p>
+        </div>
+      )}
+
+      {/* Progress */}
       {!isSubmitted && (
-        <div className="mb-6 bg-surface-container-lowest shadow rounded-lg p-4">
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-on-surface-variant">
-                Progress: {progress.answered}/{progress.total} (
-                {progress.percentage}%)
+        <div className="mb-6 bg-surface-container-lowest dark:bg-[#131b2e] rounded-2xl p-5">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm font-medium text-on-surface-variant">
+              {progress.answered} of {progress.total} questions answered
+            </span>
+            {saving ? (
+              <span className="text-xs text-on-surface-variant flex items-center gap-1.5">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary" />
+                Saving...
               </span>
-              {saving ? (
-                <span className="text-xs text-on-surface-variant flex items-center gap-1">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
-                  Saving...
-                </span>
-              ) : lastSaved ? (
-                <span className="text-xs text-green-700 flex items-center gap-1">
-                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Saved {lastSaved.toLocaleTimeString()}
-                </span>
-              ) : null}
-            </div>
+            ) : lastSaved ? (
+              <span className="text-xs text-green-700 dark:text-green-400 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                Saved {lastSaved.toLocaleTimeString()}
+              </span>
+            ) : null}
           </div>
-          <div className="w-full bg-surface-container-high rounded-full h-2">
+          <div className="w-full bg-surface-container-high dark:bg-[#222a3d] rounded-full h-2">
             <div
-              className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+              className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress.percentage}%` }}
             />
           </div>
         </div>
       )}
 
-      {/* Review Form */}
-      <div className="max-w-3xl mx-auto">
-        <div className="space-y-4">
-          <div className="bg-purple-50 border-l-4 border-purple-600 p-4">
-            <h2 className="text-lg font-semibold text-purple-900 mb-1">
-              Your Peer Review
-            </h2>
-            <p className="text-sm text-purple-700">
-              Status: {reviewData.review.status}
+      {/* Info card */}
+      <div className="mb-6 bg-surface-container-low dark:bg-[#1a2440] rounded-2xl p-4 border border-outline-variant/20 dark:border-white/[0.04]">
+        <h2 className="text-sm font-semibold text-on-surface mb-0.5">Peer Review</h2>
+        <p className="text-sm text-on-surface-variant">
+          {isSubmitted
+            ? 'Your responses are final and have been recorded.'
+            : 'Your responses are confidential. Answer each question honestly.'}
+        </p>
+      </div>
+
+      {/* Questions */}
+      <div className="space-y-4">
+        {reviewData.questions.map((question, idx) => (
+          <QuestionCard
+            key={question.id}
+            question={question}
+            number={idx + 1}
+            answer={answers.get(question.id)}
+            onUpdate={updateAnswer}
+            disabled={isSubmitted}
+            ratingScale={ratingScale}
+          />
+        ))}
+      </div>
+
+      {/* Submit */}
+      {!isSubmitted && (
+        <div className="sticky bottom-6 mt-6 bg-surface-container-lowest dark:bg-[#131b2e] shadow-xl rounded-2xl p-5 border border-outline-variant/20 dark:border-white/[0.04]">
+          <button
+            onClick={handleSubmit}
+            disabled={progress.percentage < 100 || saving}
+            className="w-full py-3.5 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary-dim disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.99] text-sm"
+          >
+            {saving ? 'Submitting...' : 'Submit Peer Review'}
+          </button>
+          {progress.percentage < 100 && (
+            <p className="mt-2 text-xs text-center text-on-surface-variant">
+              Answer all {progress.total} questions to submit ({progress.answered} done)
             </p>
-          </div>
-
-          <div className="space-y-4">
-            {reviewData.questions.map((question, idx) => (
-              <QuestionCard
-                key={question.id}
-                question={question}
-                number={idx + 1}
-                answer={answers.get(question.id)}
-                onUpdate={updateAnswer}
-                disabled={isSubmitted}
-                ratingScale={ratingScale}
-              />
-            ))}
-          </div>
-
-          {/* Submit Button */}
-          {!isSubmitted && (
-            <div className="sticky bottom-6 bg-surface-container-lowest shadow-lg rounded-lg p-4 border-2 border-purple-200">
-              <button
-                onClick={handleSubmit}
-                disabled={progress.percentage < 100 || saving}
-                className="w-full px-6 py-3 bg-purple-600 text-white font-medium rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {saving ? 'Submitting...' : 'Submit Peer Review'}
-              </button>
-              {progress.percentage < 100 && (
-                <p className="mt-2 text-xs text-center text-on-surface-variant">
-                  Complete all questions to submit
-                </p>
-              )}
-            </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-// Question Card Component
 function QuestionCard({
   question,
   number,
@@ -383,18 +314,15 @@ function QuestionCard({
   question: QuestionWithAnswer;
   number: number;
   answer?: Answer;
-  onUpdate: (
-    questionId: string,
-    updates: Partial<Omit<Answer, 'questionId'>>,
-  ) => void;
+  onUpdate: (questionId: string, updates: Partial<Omit<Answer, 'questionId'>>) => void;
   disabled: boolean;
   ratingScale: RatingScale;
 }) {
   return (
-    <div className="bg-surface-container-lowest shadow rounded-lg p-6">
+    <div className="bg-surface-container-lowest dark:bg-[#131b2e] rounded-2xl p-6">
       <div className="mb-4">
-        <h3 className="text-sm font-medium text-on-surface">
-          Q{number}. {question.text}
+        <h3 className="text-sm font-semibold text-on-surface">
+          {number}. {question.text}
         </h3>
       </div>
 
@@ -407,13 +335,13 @@ function QuestionCard({
                 type="button"
                 onClick={() => !disabled && onUpdate(question.id, { rating: num })}
                 disabled={disabled}
-                className={`min-w-[48px] flex-1 px-3 py-4 border-2 rounded-lg font-medium transition-colors ${
+                className={`min-w-[48px] flex-1 px-3 py-4 border-2 rounded-xl text-center transition-colors ${
                   answer?.rating === num
-                    ? 'border-purple-500 bg-purple-50 text-purple-700'
-                    : 'border-outline text-on-surface-variant hover:border-purple-300 hover:bg-purple-50'
+                    ? 'border-primary bg-primary/10 dark:bg-primary/15 text-primary'
+                    : 'border-outline-variant dark:border-white/10 text-on-surface-variant hover:border-primary/40 hover:bg-primary/5'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {num}
+                <span className="block text-lg font-semibold">{num}</span>
               </button>
             ))}
           </div>
@@ -422,17 +350,13 @@ function QuestionCard({
             <span>{ratingScale.labels[ratingScale.maxRating - 1]?.title ?? 'Excellent'}</span>
           </div>
           <details className="text-xs text-on-surface-variant">
-            <summary className="cursor-pointer hover:text-on-surface select-none">
-              View scale definitions
-            </summary>
-            <div className="mt-2 space-y-1 bg-surface-container-low rounded-md p-3">
+            <summary className="cursor-pointer hover:text-on-surface select-none">View scale definitions</summary>
+            <div className="mt-2 space-y-1 bg-surface-container-low dark:bg-[#1a2440] rounded-xl p-3">
               {ratingScale.labels.map((label) => (
                 <div key={label.value} className="flex gap-2">
                   <span className="font-semibold w-4 shrink-0 text-on-surface-variant">{label.value}</span>
                   <span className="font-medium text-on-surface">{label.title}</span>
-                  {label.description && (
-                    <span className="text-on-surface-variant">— {label.description}</span>
-                  )}
+                  {label.description && <span className="text-on-surface-variant">— {label.description}</span>}
                 </div>
               ))}
             </div>
@@ -444,17 +368,15 @@ function QuestionCard({
         <div>
           <textarea
             value={answer?.textAnswer || ''}
-            onChange={(e) =>
-              onUpdate(question.id, { textAnswer: e.target.value })
-            }
+            onChange={(e) => onUpdate(question.id, { textAnswer: e.target.value })}
             disabled={disabled}
             maxLength={question.maxChars || undefined}
             rows={5}
-            className="w-full px-4 py-3 border border-outline rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-surface-container-high disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 border border-outline-variant dark:border-white/10 bg-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-sm text-on-surface placeholder:text-on-surface-variant/50 disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="Enter your response..."
           />
           {question.maxChars && (
-            <div className="text-right text-sm text-on-surface-variant mt-1">
+            <div className="text-right text-xs text-on-surface-variant mt-1">
               {answer?.textAnswer?.length || 0} / {question.maxChars}
             </div>
           )}
@@ -473,7 +395,6 @@ function QuestionCard({
   );
 }
 
-// Task List Input Component
 function TaskListInput({
   value,
   onChange,
@@ -485,69 +406,51 @@ function TaskListInput({
   predefinedTasks: Array<{ id: string; label: string; description?: string; required: boolean }> | null;
   disabled: boolean;
 }) {
-  // ── Predefined tasks mode ──────────────────────────────────────────────────
   if (predefinedTasks && predefinedTasks.length > 0) {
     const saved: Array<{ id: string; label: string; completed: boolean }> = value
-      ? (() => {
-          try { return JSON.parse(value).tasks || []; } catch { return []; }
-        })()
+      ? (() => { try { return JSON.parse(value).tasks || []; } catch { return []; } })()
       : [];
     const savedMap = new Map(saved.map((t) => [t.id, t.completed]));
-
     const taskState = predefinedTasks.map((t) => ({
-      id: t.id,
-      label: t.label,
-      description: t.description,
+      id: t.id, label: t.label, description: t.description,
       completed: savedMap.get(t.id) ?? false,
     }));
-
     const toggle = (id: string, completed: boolean) => {
       const updated = taskState.map((t) => (t.id === id ? { ...t, completed } : t));
       onChange(JSON.stringify({ tasks: updated }));
     };
-
     const completedCount = taskState.filter((t) => t.completed).length;
-
     return (
       <div className="space-y-2">
         {taskState.map((task) => (
           <label
             key={task.id}
-            className={`flex items-start gap-3 p-2 rounded-md transition-colors ${!disabled ? 'cursor-pointer hover:bg-purple-50' : ''}`}
+            className={`flex items-start gap-3 p-2.5 rounded-xl transition-colors ${!disabled ? 'cursor-pointer hover:bg-surface-container-low dark:hover:bg-[#1a2440]' : ''}`}
           >
             <input
               type="checkbox"
               checked={task.completed}
               onChange={(e) => toggle(task.id, e.target.checked)}
               disabled={disabled}
-              className="mt-0.5 h-4 w-4 text-purple-600 border-outline rounded disabled:opacity-50"
+              className="mt-0.5 h-4 w-4 border-outline rounded disabled:opacity-50"
             />
             <div>
               <span className={`text-sm font-medium ${task.completed ? 'line-through text-on-surface-variant' : 'text-on-surface'}`}>
                 {task.label}
               </span>
-              {task.description && (
-                <p className="text-xs text-on-surface-variant mt-0.5">{task.description}</p>
-              )}
+              {task.description && <p className="text-xs text-on-surface-variant mt-0.5">{task.description}</p>}
             </div>
           </label>
         ))}
-        <p className="text-xs text-on-surface-variant pt-1">
-          {completedCount} / {taskState.length} completed
-        </p>
+        <p className="text-xs text-on-surface-variant pt-1">{completedCount} / {taskState.length} completed</p>
       </div>
     );
   }
 
-  // ── Free-form mode ─────────────────────────────────────────────────────────
   const tasks = value
     ? (() => { try { return JSON.parse(value).tasks; } catch { return [{ text: '', completed: false }]; } })()
     : [{ text: '', completed: false }];
-
-  const updateTasks = (newTasks: any[]) => {
-    onChange(JSON.stringify({ tasks: newTasks }));
-  };
-
+  const updateTasks = (newTasks: any[]) => onChange(JSON.stringify({ tasks: newTasks }));
   const addTask = () => updateTasks([...tasks, { text: '', completed: false }]);
   const removeTask = (idx: number) => updateTasks(tasks.filter((_: any, i: number) => i !== idx));
   const updateTask = (idx: number, updates: any) => {
@@ -565,7 +468,7 @@ function TaskListInput({
             checked={task.completed}
             onChange={(e) => updateTask(idx, { completed: e.target.checked })}
             disabled={disabled}
-            className="h-5 w-5 text-purple-600 border-outline rounded mt-2"
+            className="h-5 w-5 border-outline rounded mt-2"
           />
           <input
             type="text"
@@ -573,17 +476,17 @@ function TaskListInput({
             onChange={(e) => updateTask(idx, { text: e.target.value })}
             disabled={disabled}
             placeholder="Enter task..."
-            className="flex-1 px-3 py-2 border border-outline rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-surface-container-high disabled:cursor-not-allowed"
+            className="flex-1 px-3 py-2 border border-outline-variant dark:border-white/10 bg-transparent rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
           />
           {!disabled && tasks.length > 1 && (
             <button type="button" onClick={() => removeTask(idx)}
-              className="text-red-600 hover:text-red-800 text-xl px-2">×</button>
+              className="text-on-surface-variant hover:text-error text-xl px-2">×</button>
           )}
         </div>
       ))}
       {!disabled && (
         <button type="button" onClick={addTask}
-          className="text-sm text-purple-600 hover:text-purple-800 font-medium">
+          className="text-sm text-primary hover:text-primary-dim font-medium">
           + Add task
         </button>
       )}

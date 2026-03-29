@@ -241,11 +241,22 @@ export class UsersService {
   /**
    * CRITICAL: Find all users - MUST filter by companyId
    */
-  async findAll(companyId: string, page = 1, limit = 50) {
+  async findAll(companyId: string, page = 1, limit = 20, search?: string, role?: string) {
     const safeLimit = Math.min(limit, 200);
     const skip = (page - 1) * safeLimit;
 
-    const where = { companyId };
+    const where: any = { companyId };
+    if (role && ['ADMIN', 'MANAGER', 'EMPLOYEE'].includes(role.toUpperCase())) {
+      where.role = role.toUpperCase();
+    }
+    if (search?.trim()) {
+      where.OR = [
+        { name:       { contains: search.trim(), mode: 'insensitive' } },
+        { email:      { contains: search.trim(), mode: 'insensitive' } },
+        { employeeId: { contains: search.trim(), mode: 'insensitive' } },
+      ];
+    }
+
     const [rawData, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
@@ -474,6 +485,16 @@ export class UsersService {
     if (reviewCount > 0) {
       throw new BadRequestException(
         `Cannot delete user who has submitted ${reviewCount} review${reviewCount !== 1 ? 's' : ''}. Remove their reviewer assignments first.`,
+      );
+    }
+
+    // Check for reviewer assignments where this user IS the reviewer
+    const reviewerCount = await this.prisma.reviewerAssignment.count({
+      where: { reviewerId: userId },
+    });
+    if (reviewerCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete user with ${reviewerCount} pending reviewer assignment${reviewerCount !== 1 ? 's' : ''}. Remove their reviewer assignments first.`,
       );
     }
 
@@ -778,29 +799,35 @@ export class UsersService {
   }
 
   /**
-   * Set avatarUrl for a user — called after successful file upload.
-   * Deletes the previous avatar file from disk if it exists.
+   * Upload an avatar to Supabase Storage and update the user's avatarUrl.
+   * Replaces any existing avatar for the same user.
    */
-  async updateAvatarUrl(userId: string, companyId: string, avatarUrl: string) {
-    const existing = await this.prisma.user.findFirst({
-      where: { id: userId, companyId },
-      select: { avatarUrl: true },
-    });
+  async uploadAvatar(userId: string, companyId: string, file: Express.Multer.File) {
+    const ext = file.originalname.split('.').pop()?.toLowerCase() ?? 'jpg';
+    const storagePath = `${companyId}/${userId}.${ext}`;
 
-    // Remove old file if it differs
-    if (existing?.avatarUrl && existing.avatarUrl !== avatarUrl) {
-      this.deleteAvatarFile(existing.avatarUrl);
-    }
+    const { error } = await this.supabase.storage
+      .from('avatars')
+      .upload(storagePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true, // replaces existing file for this user
+      });
+
+    if (error) throw new BadRequestException(`Avatar upload failed: ${error.message}`);
+
+    const { data: { publicUrl } } = this.supabase.storage
+      .from('avatars')
+      .getPublicUrl(storagePath);
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: { avatarUrl },
+      data: { avatarUrl: publicUrl },
     });
     return this.mapUser({ ...updated, userDepartments: [] });
   }
 
   /**
-   * Clear avatarUrl and delete the file from disk.
+   * Delete the user's avatar from Supabase Storage and clear avatarUrl.
    */
   async removeAvatar(userId: string, companyId: string) {
     const existing = await this.prisma.user.findFirst({
@@ -809,7 +836,11 @@ export class UsersService {
     });
 
     if (existing?.avatarUrl) {
-      this.deleteAvatarFile(existing.avatarUrl);
+      // Extract storage path from the public URL: .../object/public/avatars/{path}
+      const match = existing.avatarUrl.match(/\/object\/public\/avatars\/(.+)$/);
+      if (match) {
+        await this.supabase.storage.from('avatars').remove([match[1]]);
+      }
     }
 
     const updated = await this.prisma.user.update({
@@ -817,19 +848,5 @@ export class UsersService {
       data: { avatarUrl: null },
     });
     return this.mapUser({ ...updated, userDepartments: [] });
-  }
-
-  /** Delete a file given its public path (e.g. /uploads/avatars/...) */
-  private deleteAvatarFile(publicPath: string) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { unlinkSync } = require('fs');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { join } = require('path');
-      const filePath = join(process.cwd(), publicPath);
-      unlinkSync(filePath);
-    } catch {
-      // File may not exist — ignore
-    }
   }
 }

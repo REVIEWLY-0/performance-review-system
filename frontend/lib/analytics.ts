@@ -58,6 +58,15 @@ export interface EmployeeAnalytics {
   pendingTasks: {
     selfReview: boolean;
     peerReviews: number;
+    managerReviews: number;
+  };
+  taskCounts: {
+    selfTotal: number;
+    peerTotal: number;
+    managerTotal: number;
+    selfCompleted: number;
+    peerCompleted: number;
+    managerCompleted: number;
   };
   reviewCounts: {
     self: number;

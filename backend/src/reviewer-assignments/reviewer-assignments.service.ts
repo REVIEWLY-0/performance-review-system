@@ -141,11 +141,20 @@ export class ReviewerAssignmentsService {
     this.validateAssignments(dto.employeeId, dto.assignments);
 
     return this.prisma.$transaction(async (prisma) => {
-      // Delete existing assignments for this employee
+      // Delete existing assignments for this employee (others reviewing them)
       await prisma.reviewerAssignment.deleteMany({
         where: {
           reviewCycleId: dto.reviewCycleId,
           employeeId: dto.employeeId,
+        },
+      });
+
+      // Also delete upward MANAGER assignments the employee had (employee reviewing their old managers)
+      await prisma.reviewerAssignment.deleteMany({
+        where: {
+          reviewCycleId: dto.reviewCycleId,
+          reviewerId: dto.employeeId,
+          reviewerType: 'MANAGER',
         },
       });
 
@@ -159,6 +168,22 @@ export class ReviewerAssignmentsService {
             reviewerType: a.reviewerType,
           })),
         });
+
+        // Auto-create upward MANAGER assignments: employee reviews each assigned manager
+        const managerAssignments = dto.assignments.filter(
+          (a) => a.reviewerType === 'MANAGER',
+        );
+        if (managerAssignments.length > 0) {
+          await prisma.reviewerAssignment.createMany({
+            data: managerAssignments.map((a) => ({
+              reviewCycleId: dto.reviewCycleId,
+              employeeId: a.reviewerId,   // the manager is now the one being reviewed
+              reviewerId: dto.employeeId, // the employee is now the reviewer
+              reviewerType: 'MANAGER',
+            })),
+            skipDuplicates: true,
+          });
+        }
       }
 
       // Return updated assignments

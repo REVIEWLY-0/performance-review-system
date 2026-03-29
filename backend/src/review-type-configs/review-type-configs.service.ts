@@ -162,6 +162,16 @@ export class ReviewTypeConfigsService {
           isBuiltIn: true,
           sortOrder: 2,
         },
+        {
+          companyId,
+          key: 'DOWNWARD',
+          label: 'Team Evaluation',
+          baseType: ReviewType.DOWNWARD,
+          isBuiltIn: true,
+          isRequired: false,
+          isActive: true,
+          sortOrder: 3,
+        },
       ],
       skipDuplicates: true,
     });

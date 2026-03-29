@@ -28,8 +28,9 @@ enum ReviewCycleStatus {
 
 enum ReviewType {
   SELF
-  MANAGER
-  PEER
+  MANAGER    // Upward: employee evaluating their manager
+  PEER       // Horizontal: peer evaluation
+  DOWNWARD   // Downward: manager evaluating team member
 }
 
 enum ReviewStatus {

@@ -78,6 +78,7 @@ export interface EmployeeToReview {
   id: string;
   name: string;
   email: string;
+  department?: string | null;
   reviewStatus: string; // Status of manager's review (NOT_STARTED, DRAFT, SUBMITTED)
 }
 
@@ -445,12 +446,13 @@ export class ReviewsService {
       );
     }
 
-    // Get reviewer assignments where this user is assigned as MANAGER
+    // Get upward assignments: this user reviewing someone with MANAGER role
     const assignments = await this.prisma.reviewerAssignment.findMany({
       where: {
         reviewCycleId: cycleId,
         reviewerId: managerId,
         reviewerType: 'MANAGER',
+        employee: { role: 'MANAGER' }, // upward only — the person being reviewed is a manager
         reviewCycle: {
           companyId, // CRITICAL: Multi-tenancy filter
         },
@@ -461,6 +463,7 @@ export class ReviewsService {
             id: true,
             name: true,
             email: true,
+            department: true,
           },
         },
       },
@@ -485,6 +488,7 @@ export class ReviewsService {
       id: assignment.employee.id,
       name: assignment.employee.name,
       email: assignment.employee.email,
+      department: assignment.employee.department,
       reviewStatus: reviewStatusMap.get(assignment.employeeId) ?? 'NOT_STARTED',
     }));
   }
@@ -839,6 +843,7 @@ export class ReviewsService {
             id: true,
             name: true,
             email: true,
+            department: true,
           },
         },
       },
@@ -863,6 +868,7 @@ export class ReviewsService {
       id: assignment.employee.id,
       name: assignment.employee.name,
       email: assignment.employee.email,
+      department: assignment.employee.department,
       reviewStatus: reviewStatusMap.get(assignment.employeeId) ?? 'NOT_STARTED',
     }));
   }
@@ -1010,6 +1016,391 @@ export class ReviewsService {
       },
     };
   }
+
+  // ============================================================================
+  // Downward Review Methods (Manager evaluating team member)
+  // ============================================================================
+
+  /**
+   * Get list of employees assigned to this manager for downward review
+   * Returns employees with their downward review status (NOT_STARTED, DRAFT, SUBMITTED)
+   * CRITICAL: Filter by companyId through reviewCycle relation
+   */
+  async getEmployeesToReviewDownward(
+    managerId: string,
+    companyId: string,
+    cycleId: string,
+  ): Promise<EmployeeToReview[]> {
+    console.log(
+      `📋 Getting employees for downward review by manager ${managerId} in cycle ${cycleId}`,
+    );
+
+    // Verify cycle exists and belongs to company
+    const cycle = await this.prisma.reviewCycle.findFirst({
+      where: {
+        id: cycleId,
+        companyId,
+        status: 'ACTIVE',
+      },
+    });
+
+    if (!cycle) {
+      throw new NotFoundException(
+        'Review cycle not found, not active, or access denied',
+      );
+    }
+
+    // Get downward assignments: this manager reviewing employees (EMPLOYEE role only)
+    const assignments = await this.prisma.reviewerAssignment.findMany({
+      where: {
+        reviewCycleId: cycleId,
+        reviewerId: managerId,
+        reviewerType: 'MANAGER',
+        employee: { role: 'EMPLOYEE' }, // downward only — the person being reviewed is an employee
+        reviewCycle: {
+          companyId, // CRITICAL: Multi-tenancy filter
+        },
+      },
+      include: {
+        employee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            department: true,
+          },
+        },
+      },
+    });
+
+    // Batch fetch all DOWNWARD reviews for this reviewer in one query
+    const existingReviews = await this.prisma.review.findMany({
+      where: {
+        reviewCycleId: cycleId,
+        reviewerId: managerId,
+        reviewType: 'DOWNWARD',
+      },
+      select: { employeeId: true, status: true },
+    });
+
+    // Build lookup map for O(1) access per assignment
+    const reviewStatusMap = new Map(
+      existingReviews.map((r) => [r.employeeId, r.status]),
+    );
+
+    return assignments.map((assignment) => ({
+      id: assignment.employee.id,
+      name: assignment.employee.name,
+      email: assignment.employee.email,
+      department: assignment.employee.department,
+      reviewStatus: reviewStatusMap.get(assignment.employeeId) ?? 'NOT_STARTED',
+    }));
+  }
+
+  /**
+   * Get or create downward review for a specific employee
+   * Returns downward review form + employee's self-review answers for context
+   * CRITICAL: Filter by companyId and verify manager is assigned
+   */
+  async findOrCreateDownwardReview(
+    managerId: string,
+    companyId: string,
+    cycleId: string,
+    employeeId: string,
+  ): Promise<ManagerReviewResponse> {
+    console.log(
+      `📝 Finding/creating downward review for employee ${employeeId} by manager ${managerId}`,
+    );
+
+    // Verify cycle exists and belongs to company
+    const cycle = await this.prisma.reviewCycle.findFirst({
+      where: {
+        id: cycleId,
+        companyId,
+        status: 'ACTIVE',
+      },
+    });
+
+    if (!cycle) {
+      throw new NotFoundException(
+        'Review cycle not found, not active, or access denied',
+      );
+    }
+
+    // Verify manager is assigned to review this employee
+    const assignment = await this.prisma.reviewerAssignment.findFirst({
+      where: {
+        reviewCycleId: cycleId,
+        employeeId,
+        reviewerId: managerId,
+        reviewerType: 'MANAGER',
+        reviewCycle: {
+          companyId, // CRITICAL: Multi-tenancy
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException(
+        'Not assigned to review this employee or access denied',
+      );
+    }
+
+    // Get employee details
+    const employee = await this.prisma.user.findFirst({
+      where: {
+        id: employeeId,
+        companyId, // CRITICAL: Multi-tenancy
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found or access denied');
+    }
+
+    // Find or create downward review
+    let review = await this.prisma.review.findFirst({
+      where: {
+        reviewCycleId: cycleId,
+        employeeId,
+        reviewerId: managerId,
+        reviewType: 'DOWNWARD',
+      },
+      include: {
+        answers: true,
+      },
+    });
+
+    if (!review) {
+      console.log(`➕ Creating new downward review record`);
+      review = await this.prisma.review.create({
+        data: {
+          reviewCycleId: cycleId,
+          employeeId,
+          reviewerId: managerId,
+          reviewType: 'DOWNWARD',
+          status: 'NOT_STARTED',
+        },
+        include: {
+          answers: true,
+        },
+      });
+    }
+
+    // Get all DOWNWARD questions for this company
+    const questions = await this.prisma.question.findMany({
+      where: {
+        companyId,
+        reviewType: 'DOWNWARD',
+      },
+      orderBy: { order: 'asc' },
+    });
+
+    // Map questions with manager's answers
+    const questionsWithAnswers: QuestionWithAnswer[] = questions.map((q) => {
+      const answer = review.answers.find((a) => a.questionId === q.id);
+      return {
+        id: q.id,
+        reviewType: q.reviewType,
+        type: q.type,
+        text: q.text,
+        maxChars: q.maxChars,
+        order: q.order,
+        tasks: q.tasks as any[] | null,
+        answer: answer
+          ? {
+              id: answer.id,
+              rating: answer.rating,
+              textAnswer: answer.textAnswer,
+            }
+          : null,
+      };
+    });
+
+    // Get employee's self-review with answers (for context)
+    const selfReview = await this.prisma.review.findFirst({
+      where: {
+        reviewCycleId: cycleId,
+        employeeId,
+        reviewerId: employeeId, // Self-review
+        reviewType: 'SELF',
+      },
+      include: {
+        answers: true,
+      },
+    });
+
+    // Get SELF questions to map with employee's answers
+    const selfQuestions = await this.prisma.question.findMany({
+      where: {
+        companyId,
+        reviewType: 'SELF',
+      },
+      orderBy: { order: 'asc' },
+    });
+
+    const employeeSelfReview = selfReview
+      ? {
+          status: selfReview.status,
+          questions: selfQuestions.map((q) => {
+            const answer = selfReview.answers.find(
+              (a) => a.questionId === q.id,
+            );
+            return {
+              id: q.id,
+              reviewType: q.reviewType,
+              type: q.type,
+              text: q.text,
+              maxChars: q.maxChars,
+              order: q.order,
+              tasks: q.tasks as any[] | null,
+              answer: answer
+                ? {
+                    id: answer.id,
+                    rating: answer.rating,
+                    textAnswer: answer.textAnswer,
+                  }
+                : null,
+            };
+          }),
+        }
+      : null;
+
+    return {
+      review: {
+        id: review.id,
+        reviewCycleId: review.reviewCycleId,
+        employeeId: review.employeeId,
+        reviewerId: review.reviewerId,
+        reviewType: review.reviewType,
+        status: review.status,
+        updatedAt: review.updatedAt,
+      },
+      questions: questionsWithAnswers,
+      employeeSelfReview,
+      employee: {
+        id: employee.id,
+        name: employee.name,
+        email: employee.email,
+      },
+    };
+  }
+
+  /**
+   * Save or submit downward review
+   * Similar to manager review but validates/saves using DOWNWARD type
+   */
+  async saveDownwardReview(
+    reviewId: string,
+    managerId: string,
+    companyId: string,
+    dto: SaveDraftDto | SubmitReviewDto,
+    submit: boolean = false,
+  ) {
+    console.log(
+      `${submit ? '✅ Submitting' : '💾 Saving'} downward review ${reviewId}`,
+    );
+
+    // Verify review exists and manager has access
+    const review = await this.prisma.review.findFirst({
+      where: {
+        id: reviewId,
+        reviewerId: managerId, // Manager is the reviewer
+        reviewType: 'DOWNWARD',
+        reviewCycle: {
+          companyId, // CRITICAL: Multi-tenancy
+        },
+      },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found or access denied');
+    }
+
+    // Validate review is not already submitted
+    if (review.status === 'SUBMITTED') {
+      throw new BadRequestException('Cannot modify submitted review');
+    }
+
+    // If submitting, validate all questions are answered
+    if (submit) {
+      const questions = await this.prisma.question.findMany({
+        where: {
+          companyId,
+          reviewType: 'DOWNWARD',
+        },
+      });
+
+      const answeredQuestionIds = new Set(dto.answers.map((a) => a.questionId));
+      const missingAnswers = questions.filter(
+        (q) => !answeredQuestionIds.has(q.id),
+      );
+
+      if (missingAnswers.length > 0) {
+        throw new BadRequestException(
+          `Missing answers for ${missingAnswers.length} required question(s)`,
+        );
+      }
+    }
+
+    // Use transaction to save answers and update status
+    return this.prisma.$transaction(async (prisma) => {
+      // Upsert all answers
+      for (const answerDto of dto.answers) {
+        await prisma.answer.upsert({
+          where: {
+            reviewId_questionId: {
+              reviewId: reviewId,
+              questionId: answerDto.questionId,
+            },
+          },
+          create: {
+            reviewId: reviewId,
+            questionId: answerDto.questionId,
+            rating: answerDto.rating,
+            textAnswer: answerDto.textAnswer,
+          },
+          update: {
+            rating: answerDto.rating,
+            textAnswer: answerDto.textAnswer,
+          },
+        });
+      }
+
+      // Determine new status
+      let newStatus: ReviewStatus = review.status;
+      if (submit) {
+        newStatus = 'SUBMITTED';
+      } else if (review.status === 'NOT_STARTED') {
+        newStatus = 'DRAFT';
+      }
+
+      // Update review status
+      const updatedReview = await prisma.review.update({
+        where: { id: reviewId },
+        data: {
+          status: newStatus,
+          updatedAt: new Date(),
+        },
+      });
+
+      return {
+        message: submit
+          ? 'Review submitted successfully'
+          : 'Draft saved successfully',
+        updatedAt: updatedReview.updatedAt,
+      };
+    });
+  }
+
+  // ============================================================================
+  // Peer Review Methods
+  // ============================================================================
 
   /**
    * Save or submit peer review

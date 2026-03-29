@@ -634,20 +634,23 @@ Output:
 ---
 
 #### Bug 4 — No Explicit Draft State for Partially Completed Reviews
-**Severity:** P1
+**Severity:** P1 — **FIXED (2026-03-28)**
 - When a reviewer partially fills a review and exits without submitting, there is no visible draft indicator or confirmation prompt.
-- Expected behaviour: show a "Draft saved" indicator or prompt the user before leaving an incomplete review.
+- Fix: Added `beforeunload` browser warning + `handleBack()` confirm dialog on all three review pages (self, peer, manager). If the user has any unsaved answers and tries to navigate away or close the tab, a browser confirmation prompt appears: "You have unsaved changes. Leave anyway?" Back button uses `handleBack` which shows `window.confirm` before navigating.
+- Files changed: `employee/reviews/self/page.tsx`, `employee/reviews/peer/[employeeId]/page.tsx`, `employee/reviews/manager/[managerId]/page.tsx`.
 
 ---
 
 #### Bug 5 — Score Bar Overflows Container When Review Cycle Date is Shortened
-**Severity:** P1
+**Severity:** P1 — **FIXED (2026-03-28)**
 - When a review cycle's end date is edited to be shorter than the original, the performance score bar on the employee dashboard overflows its container boundary.
-- The progress bar width calculation breaks when cycle duration is reduced after creation.
+- Fix: Progress bar width clamped to `Math.min(100, percentage)%` — prevents overflow regardless of cycle date changes.
 
 ---
 
 #### Bug 6 — Cannot Delete Manager with Pending Reviews
-**Severity:** P1
-- Attempting to delete a manager who has pending/unsubmitted reviews assigned fails silently with no clear error message shown to the admin.
-- Expected behaviour: show a descriptive error explaining why the deletion failed.
+**Severity:** P1 — **FIXED (2026-03-28)**
+- Attempting to delete a manager who has pending/unsubmitted reviews assigned as reviewer failed silently with no clear error message shown to the admin.
+- Fix: `users.service.ts` `remove()` now checks `reviewerAssignment.count({ where: { reviewerId: userId } })` before deletion. If the user has pending reviewer assignments, returns a descriptive 400 error: "Cannot delete user with N pending reviewer assignment(s). Remove their reviewer assignments first."
+- Note: there were already checks for `review.count({ where: { reviewerId } })` (submitted reviews) and `reviewerAssignment.count({ where: { employeeId } })` (being reviewed). The missing check was when the user IS the assigned reviewer but hasn't submitted yet.
+

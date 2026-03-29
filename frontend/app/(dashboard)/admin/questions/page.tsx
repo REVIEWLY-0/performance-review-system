@@ -27,10 +27,12 @@ export default function QuestionsPage() {
     SELF: Question[];
     MANAGER: Question[];
     PEER: Question[];
+    DOWNWARD: Question[];
   }>({
     SELF: [],
     MANAGER: [],
     PEER: [],
+    DOWNWARD: [],
   });
 
   const [selectedTab, setSelectedTab] = useState<ReviewType>('SELF');
@@ -158,14 +160,19 @@ export default function QuestionsPage() {
       description: 'Questions employees answer about themselves',
     },
     {
-      value: 'MANAGER',
-      label: 'Manager Review',
-      description: 'Questions managers answer about their reports',
+      value: 'DOWNWARD',
+      label: 'Team Evaluation',
+      description: 'Questions managers answer when evaluating their direct reports (downward review)',
     },
     {
       value: 'PEER',
       label: 'Peer Review',
-      description: 'Questions peers answer about each other',
+      description: 'Questions peers answer when reviewing a colleague at the same level',
+    },
+    {
+      value: 'MANAGER',
+      label: 'Upward Feedback',
+      description: 'Questions employees answer when giving feedback to their manager (upward review)',
     },
   ];
 

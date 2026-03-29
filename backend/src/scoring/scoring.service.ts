@@ -250,8 +250,8 @@ export class ScoringService {
     ratingQuestions: any[],
   ): FinalScoreResponse {
     const selfReview = reviews.find((r) => r.reviewType === 'SELF');
-    const managerReviews = reviews.filter((r) => r.reviewType === 'MANAGER');
-    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER');
+    const managerReviews = reviews.filter((r) => r.reviewType === 'DOWNWARD');
+    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER' || r.reviewType === 'MANAGER');
 
     const warnings: string[] = [];
 

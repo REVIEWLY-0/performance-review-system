@@ -92,7 +92,7 @@ export default function CsvImportModal({ onClose, onSuccess }: CsvImportModalPro
       const payload = validRows.map(({ name, email, role, department, managerEmail, employeeId }) => ({
         name,
         email,
-        role,
+        role: role as 'ADMIN' | 'MANAGER' | 'EMPLOYEE',
         department,
         ...(managerEmail ? { managerEmail } : {}),
         ...(employeeId ? { employeeId } : {}),

@@ -92,6 +92,7 @@ export interface EmployeeToReview {
   id: string;
   name: string;
   email: string;
+  department?: string | null;
   reviewStatus: 'NOT_STARTED' | 'DRAFT' | 'SUBMITTED';
 }
 
@@ -146,6 +147,44 @@ export async function saveManagerReview(
   submit: boolean = false,
 ): Promise<{ message: string; updatedAt?: string }> {
   return fetchWithAuth(`${API_URL}/reviews/manager/${cycleId}/${employeeId}`, {
+    method: 'POST',
+    body: JSON.stringify({ answers, submit }),
+  });
+}
+
+// ============================================================================
+// Downward Review API Functions (Manager evaluating team member)
+// ============================================================================
+
+/**
+ * Get list of employees assigned to current manager for downward review
+ */
+export async function getEmployeesToReviewDownward(
+  cycleId: string,
+): Promise<EmployeeToReview[]> {
+  return fetchWithAuth(`${API_URL}/reviews/downward/${cycleId}`);
+}
+
+/**
+ * Get downward review form for specific employee (manager evaluating team member)
+ */
+export async function getDownwardReview(
+  cycleId: string,
+  employeeId: string,
+): Promise<ManagerReviewData> {
+  return fetchWithAuth(`${API_URL}/reviews/downward/${cycleId}/${employeeId}`);
+}
+
+/**
+ * Save or submit downward review
+ */
+export async function saveDownwardReview(
+  cycleId: string,
+  employeeId: string,
+  answers: Answer[],
+  submit: boolean = false,
+): Promise<{ message: string; updatedAt?: string }> {
+  return fetchWithAuth(`${API_URL}/reviews/downward/${cycleId}/${employeeId}`, {
     method: 'POST',
     body: JSON.stringify({ answers, submit }),
   });

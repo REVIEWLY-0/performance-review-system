@@ -57,6 +57,15 @@ export interface EmployeeAnalytics {
   pendingTasks: {
     selfReview: boolean;
     peerReviews: number;
+    managerReviews: number;
+  };
+  taskCounts: {
+    selfTotal: number;
+    peerTotal: number;
+    managerTotal: number;
+    selfCompleted: number;
+    peerCompleted: number;
+    managerCompleted: number;
   };
   reviewCounts: {
     self: number;
@@ -169,12 +178,13 @@ export class AnalyticsService {
       throw new NotFoundException('Review cycle not found or access denied');
     }
 
-    // Get team members (employees this manager is assigned to review)
+    // Get team members (employees this manager is assigned to review — downward only)
     const assignments = await this.prisma.reviewerAssignment.findMany({
       where: {
         reviewCycleId: cycleId,
         reviewerId: managerId,
         reviewerType: 'MANAGER',
+        employee: { role: 'EMPLOYEE' }, // downward only — direct reports
         // cycleId already verified to belong to companyId above
       },
       include: { employee: true },
@@ -207,7 +217,7 @@ export class AnalyticsService {
           where: {
             reviewCycleId: cycleId,
             reviewerId: managerId,
-            reviewType: 'MANAGER',
+            reviewType: 'DOWNWARD',
             status: { not: 'SUBMITTED' },
           },
         }),
@@ -304,7 +314,7 @@ export class AnalyticsService {
     }
 
     // Load personal reviews, peer assignment counts, company employees, and required types in parallel
-    const [reviews, peerAssignments, completedPeerReviews, allEmployees, assignedManagerReviewers, assignedPeerReviewers, requiredTypeConfigs] =
+    const [reviews, peerAssignments, completedPeerReviews, managerUpwardAssignments, completedManagerUpwardReviews, allEmployees, assignedManagerReviewers, assignedPeerReviewers, requiredTypeConfigs] =
       await Promise.all([
         this.prisma.review.findMany({
           where: { reviewCycleId: cycleId, employeeId },
@@ -325,10 +335,28 @@ export class AnalyticsService {
             status: 'SUBMITTED',
           },
         }),
-        this.prisma.user.findMany({ where: { companyId, role: 'EMPLOYEE' } }),
-        // Incoming: how many manager reviewers are assigned to review this employee
+        // Outgoing: upward MANAGER reviews this user needs to write — only where the reviewed person is a MANAGER
         this.prisma.reviewerAssignment.count({
-          where: { reviewCycleId: cycleId, employeeId, reviewerType: 'MANAGER' },
+          where: {
+            reviewCycleId: cycleId,
+            reviewerId: employeeId,
+            reviewerType: 'MANAGER',
+            employee: { role: 'MANAGER' },
+          },
+        }),
+        // Completed upward manager reviews
+        this.prisma.review.count({
+          where: {
+            reviewCycleId: cycleId,
+            reviewerId: employeeId,
+            reviewType: 'MANAGER',
+            status: 'SUBMITTED',
+          },
+        }),
+        this.prisma.user.findMany({ where: { companyId, role: 'EMPLOYEE' } }),
+        // Incoming: how many downward (MANAGER-role) reviewers are assigned to review this employee
+        this.prisma.reviewerAssignment.count({
+          where: { reviewCycleId: cycleId, employeeId, reviewerType: 'MANAGER', reviewer: { role: 'MANAGER' } },
         }),
         // Incoming: how many peer reviewers are assigned to review this employee
         this.prisma.reviewerAssignment.count({
@@ -347,7 +375,7 @@ export class AnalyticsService {
 
     const selfReview = submittedReviews.find((r) => r.reviewType === 'SELF');
     const managerReviews = submittedReviews.filter(
-      (r) => r.reviewType === 'MANAGER',
+      (r) => r.reviewType === 'DOWNWARD',
     );
     const peerReviews = submittedReviews.filter((r) => r.reviewType === 'PEER');
 
@@ -404,6 +432,15 @@ export class AnalyticsService {
       pendingTasks: {
         selfReview: !hasSelfReview,
         peerReviews: Math.max(0, peerAssignments - completedPeerReviews),
+        managerReviews: Math.max(0, managerUpwardAssignments - completedManagerUpwardReviews),
+      },
+      taskCounts: {
+        selfTotal: 1,
+        peerTotal: peerAssignments,
+        managerTotal: managerUpwardAssignments,
+        selfCompleted: hasSelfReview ? 1 : 0,
+        peerCompleted: completedPeerReviews,
+        managerCompleted: completedManagerUpwardReviews,
       },
       reviewCounts: {
         self: selfReview ? 1 : 0,
@@ -494,8 +531,8 @@ export class AnalyticsService {
     if (reviews.length === 0) return null;
 
     const selfReview = reviews.find((r) => r.reviewType === 'SELF');
-    const managerReviews = reviews.filter((r) => r.reviewType === 'MANAGER');
-    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER');
+    const managerReviews = reviews.filter((r) => r.reviewType === 'DOWNWARD');
+    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER' || r.reviewType === 'MANAGER');
 
     const scores: number[] = [];
     if (selfReview) {

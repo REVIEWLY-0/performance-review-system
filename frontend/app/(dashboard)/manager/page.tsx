@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { getManagerAnalytics, getEmployeeAnalytics, ManagerAnalytics, EmployeeAnalytics } from '@/lib/analytics';
+import { orgChartApi } from '@/lib/org-chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SkeletonCard from '@/components/skeletons/SkeletonCard';
 import SkeletonTable from '@/components/skeletons/SkeletonTable';
@@ -18,44 +19,42 @@ export default function ManagerDashboard() {
   const [myAnalytics, setMyAnalytics] = useState<EmployeeAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [hasOrgChart, setHasOrgChart] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
+    setLoadError('');
     try {
+      // Layout already verified auth — just fetch the user object from cache
       const currentUser = await getCurrentUser();
-      if (!currentUser) {
-        router.push('/login');
-        return;
-      }
+      if (currentUser) setUser(currentUser);
 
-      setUser(currentUser);
-
-      const { data: allCycles } = await reviewCyclesApi.getAll();
+      const [{ data: allCycles }, orgNodes] = await Promise.all([
+        reviewCyclesApi.getAll(),
+        orgChartApi.getAll().catch(() => []),
+      ]);
       setCycles(allCycles);
+      setHasOrgChart(orgNodes.length > 0);
 
       const activeCycle = allCycles.find((c) => c.status === 'ACTIVE');
       const initialCycle = activeCycle ?? (allCycles.length > 0 ? allCycles[0] : null);
 
       if (initialCycle) {
         setSelectedCycleId(initialCycle.id);
-        // Fetch both manager and personal analytics inline so they're ready
-        // before loading goes false — avoids blank dashboard on initial render.
-        try {
-          const [managerData, employeeData] = await Promise.all([
-            getManagerAnalytics(initialCycle.id),
-            getEmployeeAnalytics(initialCycle.id),
-          ]);
-          setAnalytics(managerData);
-          setMyAnalytics(employeeData);
-        } catch (err: any) {
-          console.error('Error loading analytics:', err);
-        }
+        const [managerData, employeeData] = await Promise.all([
+          getManagerAnalytics(initialCycle.id),
+          getEmployeeAnalytics(initialCycle.id),
+        ]);
+        setAnalytics(managerData);
+        setMyAnalytics(employeeData);
       }
     } catch (err: any) {
       console.error('Error loading dashboard:', err);
+      setLoadError(err.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -97,7 +96,19 @@ export default function ManagerDashboard() {
     );
   }
 
-  if (!user) return null;
+  if (loadError && !user) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <p className="text-sm text-on-surface-variant">{loadError}</p>
+        <button
+          onClick={loadData}
+          className="px-5 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-xl hover:bg-primary-dim"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   const chartData = analytics
     ? [
@@ -118,7 +129,7 @@ export default function ManagerDashboard() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-on-surface">Manager Dashboard</h1>
         <p className="mt-1 text-sm text-on-surface-variant">
-          Welcome back, {user.name}! Track your team's performance.
+          Welcome back, {user?.name}! Track your team's performance.
         </p>
       </div>
 
@@ -359,11 +370,11 @@ export default function ManagerDashboard() {
       {/* Quick Actions */}
       <div className="bg-surface-container-lowest shadow rounded-lg p-6">
         <h3 className="text-lg font-medium text-on-surface mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-wrap gap-3">
           {/* Primary: review team members */}
           <button
             onClick={() => router.push('/manager/reviews')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim"
+            className="flex-1 inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-xl text-on-primary bg-primary hover:bg-primary-dim whitespace-nowrap"
           >
             Review Team Members
           </button>
@@ -375,7 +386,7 @@ export default function ManagerDashboard() {
                 selectedCycleId &&
                 router.push(`/employee/reviews/self?cycleId=${selectedCycleId}`)
               }
-              className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim"
+              className="flex-1 inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-xl text-on-primary bg-primary hover:bg-primary-dim whitespace-nowrap"
             >
               Complete Self Review
             </button>
@@ -389,27 +400,26 @@ export default function ManagerDashboard() {
                 selectedCycleId &&
                 router.push(`/employee/reviews/peer?cycleId=${selectedCycleId}`)
               }
-              className="inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim"
+              className="flex-1 inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-xl text-on-primary bg-primary hover:bg-primary-dim whitespace-nowrap"
             >
               Complete Peer Reviews ({myAnalytics.pendingTasks.peerReviews})
             </button>
           )}
 
           <button
-            onClick={() =>
-              selectedCycleId &&
-              router.push(`/admin/cycles/${selectedCycleId}/scores`)
-            }
-            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
+            onClick={() => router.push('/manager/reviews')}
+            className="flex-1 inline-flex items-center justify-center px-5 py-2.5 border border-outline-variant/50 dark:border-white/[0.08] text-sm font-semibold rounded-xl text-on-surface-variant bg-surface-container dark:bg-[#1a2440] hover:bg-surface-container-high dark:hover:bg-[#222a3d] whitespace-nowrap"
           >
             View Team Scores
           </button>
-          <button
-            onClick={() => router.push('/organogram')}
-            className="inline-flex items-center justify-center px-4 py-3 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low"
-          >
-            🏗️ Organogram
-          </button>
+          {hasOrgChart && (
+            <button
+              onClick={() => router.push('/organogram')}
+              className="flex-1 inline-flex items-center justify-center px-5 py-2.5 border border-outline-variant/50 dark:border-white/[0.08] text-sm font-semibold rounded-xl text-on-surface-variant bg-surface-container dark:bg-[#1a2440] hover:bg-surface-container-high dark:hover:bg-[#222a3d] whitespace-nowrap"
+            >
+              Organogram
+            </button>
+          )}
         </div>
       </div>
     </div>

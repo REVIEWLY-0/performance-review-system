@@ -167,6 +167,78 @@ export class ReviewsController {
   }
 
   // ============================================================================
+  // Downward Review Endpoints (Manager evaluating team member)
+  // ============================================================================
+
+  /**
+   * GET /reviews/downward/:cycleId
+   * Get list of employees assigned to this manager for downward review
+   * Returns employees with their downward review status
+   */
+  @Get('downward/:cycleId')
+  async getEmployeesToReviewDownward(
+    @Param('cycleId') cycleId: string,
+    @CurrentUser() user: any,
+    @CompanyId() companyId: string,
+  ) {
+    return this.reviewsService.getEmployeesToReviewDownward(
+      user.id,
+      companyId,
+      cycleId,
+    );
+  }
+
+  /**
+   * GET /reviews/downward/:cycleId/:employeeId
+   * Get downward review form for specific employee
+   * Includes employee's self-review answers for context
+   */
+  @Get('downward/:cycleId/:employeeId')
+  async getDownwardReview(
+    @Param('cycleId') cycleId: string,
+    @Param('employeeId') employeeId: string,
+    @CurrentUser() user: any,
+    @CompanyId() companyId: string,
+  ) {
+    return this.reviewsService.findOrCreateDownwardReview(
+      user.id,
+      companyId,
+      cycleId,
+      employeeId,
+    );
+  }
+
+  /**
+   * POST /reviews/downward/:cycleId/:employeeId
+   * Save or submit downward review
+   * Body should include { answers: [...], submit: boolean }
+   */
+  @Post('downward/:cycleId/:employeeId')
+  async saveDownwardReview(
+    @Param('cycleId') cycleId: string,
+    @Param('employeeId') employeeId: string,
+    @Body() body: SaveDraftDto & { submit?: boolean },
+    @CurrentUser() user: any,
+    @CompanyId() companyId: string,
+  ) {
+    // First get the review to obtain reviewId
+    const { review } = await this.reviewsService.findOrCreateDownwardReview(
+      user.id,
+      companyId,
+      cycleId,
+      employeeId,
+    );
+
+    return this.reviewsService.saveDownwardReview(
+      review.id,
+      user.id,
+      companyId,
+      { answers: body.answers },
+      body.submit || false,
+    );
+  }
+
+  // ============================================================================
   // Peer Review Endpoints
   // ============================================================================
 

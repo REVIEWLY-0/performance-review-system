@@ -5,48 +5,43 @@ test.describe('Admin — Employee Management', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, TEST_USERS.admin);
     await page.goto('/admin/employees');
-    // Wait for the list to load
     await page.waitForLoadState('networkidle');
   });
 
   test('shows employee list', async ({ page }) => {
-    // The page should have at least a table or a list of employees
+    // Employee list renders as cards inside a shadow div, not a <table>
     await expect(
-      page.locator('table, [data-testid="employee-list"]').first(),
+      page.locator('.shadow.overflow-hidden').first(),
     ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('Add Employee button is visible', async ({ page }) => {
+    await expect(
+      page.getByRole('button', { name: /add employee/i }),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('Import CSV button is visible', async ({ page }) => {
+    await expect(
+      page.getByRole('button', { name: /import csv/i }),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('opening CSV import shows the modal', async ({ page }) => {
+    await page.getByRole('button', { name: /import csv/i }).click();
+    await expect(
+      page.locator('text=/import employees from csv/i').first(),
+    ).toBeVisible({ timeout: 5_000 });
   });
 
   test('search filters employees', async ({ page }) => {
     const searchInput = page.locator('input[placeholder*="search" i], input[type="search"]').first();
     if (await searchInput.isVisible()) {
       await searchInput.fill('admin');
-      // Results should update — wait briefly for debounce
       await page.waitForTimeout(500);
-      // The page should still have a table (not crash)
-      await expect(page.locator('table').first()).toBeVisible();
+      // Page should still render without crashing
+      await expect(page.locator('.shadow.overflow-hidden').first()).toBeVisible();
     }
-  });
-
-  test('Add Employee button is visible', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: /add employee|new employee|invite/i }),
-    ).toBeVisible({ timeout: 10_000 });
-  });
-
-  test('CSV Import button is visible', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: /import|csv/i }),
-    ).toBeVisible({ timeout: 10_000 });
-  });
-
-  test('opening CSV import shows the modal', async ({ page }) => {
-    const importBtn = page.getByRole('button', { name: /import.*csv|csv.*import|import employees/i });
-    await importBtn.click();
-
-    // Modal should appear with the format guide
-    await expect(page.locator('text=/csv format|import employees/i').first()).toBeVisible({
-      timeout: 5_000,
-    });
   });
 
   test('role filter works', async ({ page }) => {
@@ -54,8 +49,7 @@ test.describe('Admin — Employee Management', () => {
     if (await roleSelect.isVisible()) {
       await roleSelect.selectOption('EMPLOYEE');
       await page.waitForTimeout(400);
-      // Should still render without crashing
-      await expect(page.locator('table').first()).toBeVisible();
+      await expect(page.locator('.shadow.overflow-hidden').first()).toBeVisible();
     }
   });
 });

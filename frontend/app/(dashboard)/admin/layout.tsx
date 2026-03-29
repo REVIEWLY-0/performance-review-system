@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getCurrentUser, User } from '@/lib/auth'
+import Link from 'next/link'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import Avatar from '@/components/Avatar'
 import { useTheme } from '@/components/ThemeProvider'
@@ -46,13 +47,6 @@ function getPageTitle(pathname: string) {
   return 'Admin Dashboard'
 }
 
-function getMonogram(companyName: string) {
-  const words = companyName.split(' ').filter(Boolean)
-  return words.length >= 2
-    ? words.slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-    : companyName.slice(0, 2).toUpperCase()
-}
-
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -92,7 +86,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!user) return null
 
-  const monogram = getMonogram(user.companyName ?? '')
   const pageTitle = getPageTitle(pathname ?? '')
   const sidebarUser = {
     id: user.id,
@@ -146,7 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="hidden sm:flex flex-col items-end mr-1">
                 <span className="text-sm font-bold text-on-surface leading-none">{user.name}</span>
                 <span className="text-[11px] font-bold text-on-surface-variant uppercase opacity-70 mt-0.5">
-                  ADMIN • {monogram}
+                  ADMIN • {user.companyName}
                 </span>
               </div>
 
@@ -162,8 +155,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {/* Divider */}
               <div className="h-8 w-px bg-outline-variant mx-1" />
 
-              {/* Avatar */}
-              <Avatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
+              {/* Avatar — click to go to settings/avatar */}
+              <Link href="/settings" title="Update your profile" className="rounded-full ring-2 ring-transparent hover:ring-primary transition-all">
+                <Avatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
+              </Link>
             </div>
           </div>
         </header>

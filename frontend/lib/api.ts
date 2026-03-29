@@ -46,6 +46,15 @@ export interface User {
   updatedAt: string
 }
 
+export interface ImportUserPayload {
+  email: string
+  name: string
+  role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+  department?: string
+  employeeId?: string
+  managerEmail?: string
+}
+
 export interface CreateUserDto {
   email: string
   name: string
@@ -110,10 +119,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
 // User API
 export const usersApi = {
-  getAll: async (page = 1, limit = 50): Promise<PaginatedResponse<User>> => {
-    return fetchWithAuth(
-      `${process.env.NEXT_PUBLIC_API_URL}/users?page=${page}&limit=${limit}`,
-    )
+  getAll: async (page = 1, limit = 20, search = '', role = ''): Promise<PaginatedResponse<User>> => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    if (role) params.set('role', role);
+    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users?${params}`);
   },
 
   getOne: async (id: string): Promise<User> => {
@@ -164,7 +174,7 @@ export const usersApi = {
     return data
   },
 
-  importUsers: async (users: any[]): Promise<{ successful: number; failed: number; errors: string[] }> => {
+  importUsers: async (users: ImportUserPayload[]): Promise<{ successful: number; failed: number; errors: string[] }> => {
     const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/import`, {
       method: 'POST',
       body: JSON.stringify({ users }),

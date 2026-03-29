@@ -1,7 +1,7 @@
 import { fetchWithAuth } from './api';
 
 export type QuestionType = 'RATING' | 'TEXT' | 'TASK_LIST';
-export type ReviewType = 'SELF' | 'MANAGER' | 'PEER';
+export type ReviewType = 'SELF' | 'MANAGER' | 'PEER' | 'DOWNWARD';
 
 export interface TaskDefinition {
   id: string;
@@ -45,6 +45,7 @@ export interface GroupedQuestions {
   SELF: Question[];
   MANAGER: Question[];
   PEER: Question[];
+  DOWNWARD: Question[];
 }
 
 /**

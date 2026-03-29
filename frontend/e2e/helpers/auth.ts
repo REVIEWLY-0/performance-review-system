@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 export const TEST_USERS = {
   admin: {
@@ -8,13 +8,13 @@ export const TEST_USERS = {
     dashboardPath: '/admin',
   },
   manager: {
-    email: process.env.TEST_MANAGER_EMAIL || 'test-manager@company.com',
+    email: process.env.TEST_MANAGER_EMAIL || 'sarah.johnson@company.com',
     password: process.env.TEST_MANAGER_PASSWORD || 'password123',
     role: 'MANAGER' as const,
     dashboardPath: '/manager',
   },
   employee: {
-    email: process.env.TEST_EMPLOYEE_EMAIL || 'test-employee@company.com',
+    email: process.env.TEST_EMPLOYEE_EMAIL || 'john.smith@company.com',
     password: process.env.TEST_EMPLOYEE_PASSWORD || 'password123',
     role: 'EMPLOYEE' as const,
     dashboardPath: '/employee',
@@ -41,7 +41,6 @@ export async function loginAs(page: Page, user: TestUser) {
  * Log out from any dashboard page.
  */
 export async function logout(page: Page) {
-  // Sign out button is in the nav — find it regardless of label
   const signOutBtn = page.getByRole('button', { name: /sign out/i });
   await signOutBtn.click();
   await page.waitForURL('**/login', { timeout: 10_000 });

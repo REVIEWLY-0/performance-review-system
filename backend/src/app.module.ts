@@ -1,6 +1,8 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { SentryModule } from '@sentry/nestjs/setup';
+import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { QuestionsModule } from './questions/questions.module';
@@ -22,11 +24,20 @@ import { PrismaService } from './common/services/prisma.service';
 
 @Module({
   imports: [
-    // Rate limiting - 10 requests per second per IP
+    SentryModule.forRoot(),
+    // Rate limiting
+    // - default: 10 req/s per IP (general API protection)
+    // - auth: 10 attempts per 15 min per IP (brute-force protection on login/signup)
     ThrottlerModule.forRoot([
       {
-        ttl: 1000, // 1 second
-        limit: 10, // 10 requests
+        name: 'default',
+        ttl: 1000,
+        limit: 10,
+      },
+      {
+        name: 'auth',
+        ttl: 15 * 60 * 1000, // 15 minutes
+        limit: 10,
       },
     ]),
     AuthModule,
@@ -46,6 +57,11 @@ import { PrismaService } from './common/services/prisma.service';
   ],
   providers: [
     PrismaService,
+    // Catch all unhandled exceptions and report to Sentry
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
     // Apply rate limiting globally
     {
       provide: APP_GUARD,

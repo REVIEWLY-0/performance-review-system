@@ -18,16 +18,14 @@ test.describe('Employee Dashboard', () => {
   });
 
   test('nav is visible with sign out button', async ({ page }) => {
-    await expect(page.locator('nav')).toBeVisible();
+    await expect(page.locator('nav').first()).toBeVisible();
     await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
   });
 
   test('employee cannot access admin routes', async ({ page }) => {
     await page.goto('/admin');
-    // Should be redirected away from /admin
     await page.waitForTimeout(3_000);
-    const url = page.url();
-    // Either redirected to /employee, /login, or shows 403/not-found
-    expect(url).not.toMatch(/\/admin$/);
+    // Should be redirected away from /admin
+    expect(page.url()).not.toMatch(/\/admin$/);
   });
 });

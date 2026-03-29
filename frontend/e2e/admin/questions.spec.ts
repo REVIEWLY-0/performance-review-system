@@ -10,7 +10,7 @@ test.describe('Admin — Question Builder', () => {
 
   test('shows question builder with tabs', async ({ page }) => {
     await expect(page.getByRole('button', { name: /self review/i })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole('button', { name: /manager review/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /upward feedback/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /peer review/i })).toBeVisible();
   });
 
@@ -33,8 +33,8 @@ test.describe('Admin — Question Builder', () => {
     const previewBtn = page.getByRole('button', { name: /show preview/i });
     if (await previewBtn.isVisible()) {
       await previewBtn.click();
-      // Switch to Manager tab — preview should hide
-      await page.getByRole('button', { name: /manager review/i }).click();
+      // Switch to Upward Feedback tab — preview should hide
+      await page.getByRole('button', { name: /upward feedback/i }).click();
       // Preview button should be back to "Show Preview"
       await expect(page.getByRole('button', { name: /show preview/i })).toBeVisible({
         timeout: 3_000,
@@ -43,9 +43,9 @@ test.describe('Admin — Question Builder', () => {
   });
 
   test('can switch between review type tabs', async ({ page }) => {
-    await page.getByRole('button', { name: /manager review/i }).click();
+    await page.getByRole('button', { name: /upward feedback/i }).click();
     // Active tab styling — just ensure the tab is clickable and no crash
-    await expect(page.getByRole('button', { name: /manager review/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /upward feedback/i })).toBeVisible();
 
     await page.getByRole('button', { name: /peer review/i }).click();
     await expect(page.getByRole('button', { name: /peer review/i })).toBeVisible();

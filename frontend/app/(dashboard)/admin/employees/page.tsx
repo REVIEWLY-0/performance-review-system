@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
 import { usersApi, UserStats } from '@/lib/api';
@@ -45,67 +45,63 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'>('ALL');
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        console.log('📋 Employees page: Loading data...');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-        // Check auth
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
-          console.log('⚠️  No user, redirecting to login');
-          const { signOut } = await import('@/lib/auth');
-          await signOut();
-          router.push('/login');
-          return;
-        }
-
-        if (currentUser.role !== 'ADMIN') {
-          console.log('⚠️  Not admin, redirecting');
-          router.push('/employee');
-          return;
-        }
-
-        console.log('✅ User authenticated:', currentUser.email);
-        setUser(currentUser);
-
-        // Fetch data
-        console.log('📡 Fetching employees and stats...');
-        const [employeesResponse, statsData] = await Promise.all([
-          usersApi.getAll(1, 50),
-          usersApi.getStats(),
-        ]);
-
-        console.log('✅ Data loaded:', {
-          employees: employeesResponse.data.length,
-          stats: statsData.total,
-        });
-
-        setEmployees(employeesResponse.data);
-        setTotalPages(employeesResponse.pagination.totalPages);
-        setStats(statsData);
-      } catch (err: any) {
-        console.error('❌ Error loading employees page:', err);
-        setError(err.message || 'Failed to load data');
-        // On error, don't redirect - just show error
-        // The fetchWithAuth will handle 401 automatically
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
-  }, [router]);
-
-  const handlePageChange = async (newPage: number) => {
-    setPage(newPage);
+  const fetchEmployees = useCallback(async (p: number, s: string, r: string) => {
     try {
-      const response = await usersApi.getAll(newPage, 50);
+      const response = await usersApi.getAll(p, 20, s, r);
       setEmployees(response.data);
       setTotalPages(response.pagination.totalPages);
     } catch (err: any) {
       setError(err.message);
     }
+  }, []);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+          const { signOut } = await import('@/lib/auth');
+          await signOut();
+          router.push('/login');
+          return;
+        }
+        if (currentUser.role !== 'ADMIN') {
+          router.push('/employee');
+          return;
+        }
+        setUser(currentUser);
+        const [employeesResponse, statsData] = await Promise.all([
+          usersApi.getAll(1),
+          usersApi.getStats(),
+        ]);
+        setEmployees(employeesResponse.data);
+        setTotalPages(employeesResponse.pagination.totalPages);
+        setStats(statsData);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [router]);
+
+  // Debounced search/filter — fires 300 ms after the last keystroke
+  useEffect(() => {
+    if (loading) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPage(1);
+      fetchEmployees(1, search, roleFilter === 'ALL' ? '' : roleFilter);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [search, roleFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePageChange = async (newPage: number) => {
+    setPage(newPage);
+    await fetchEmployees(newPage, search, roleFilter === 'ALL' ? '' : roleFilter);
   };
 
   if (loading) {
@@ -383,71 +379,44 @@ export default function EmployeesPage() {
       </div>
 
       {/* Search & Filter */}
-      {(() => {
-        const isFiltered = search !== '' || roleFilter !== 'ALL';
-        const filteredEmployees = employees.filter(emp => {
-          const matchesSearch =
-            !search ||
-            emp.name.toLowerCase().includes(search.toLowerCase()) ||
-            emp.email.toLowerCase().includes(search.toLowerCase()) ||
-            (emp.employeeId && emp.employeeId.toLowerCase().includes(search.toLowerCase()));
-          const matchesRole = roleFilter === 'ALL' || emp.role === roleFilter;
-          return matchesSearch && matchesRole;
-        });
+      <div className="mb-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="flex-1 relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name, email, or employee ID…"
+            className="block w-full pl-10 pr-3 py-2 border border-outline rounded-md text-sm placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+          />
+        </div>
+        <select
+          value={roleFilter}
+          onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}
+          className="block w-full sm:w-40 px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+        >
+          <option value="ALL">All roles</option>
+          <option value="ADMIN">Admin</option>
+          <option value="MANAGER">Manager</option>
+          <option value="EMPLOYEE">Employee</option>
+        </select>
+        {(search !== '' || roleFilter !== 'ALL') && (
+          <button
+            onClick={() => { setSearch(''); setRoleFilter('ALL'); }}
+            className="text-sm text-primary hover:text-primary whitespace-nowrap"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
 
-        return (
-          <>
-            <div className="mb-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <div className="flex-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search by name, email, or employee ID…"
-                  className="block w-full pl-10 pr-3 py-2 border border-outline rounded-md text-sm placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                />
-              </div>
-              <select
-                value={roleFilter}
-                onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}
-                className="block w-full sm:w-40 px-3 py-2 border border-outline rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              >
-                <option value="ALL">All roles</option>
-                <option value="ADMIN">Admin</option>
-                <option value="MANAGER">Manager</option>
-                <option value="EMPLOYEE">Employee</option>
-              </select>
-              {isFiltered && (
-                <button
-                  onClick={() => { setSearch(''); setRoleFilter('ALL'); }}
-                  className="text-sm text-primary hover:text-primary whitespace-nowrap"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-
-            {isFiltered && (
-              <p className="text-xs text-on-surface-variant mb-2">
-                {filteredEmployees.length === 0
-                  ? 'No employees match your filters on this page'
-                  : `Showing ${filteredEmployees.length} of ${employees.length} on this page`}
-              </p>
-            )}
-
-            <EmployeeList employees={filteredEmployees} />
-            {!isFiltered && (
-              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
-            )}
-          </>
-        );
-      })()}
+      <EmployeeList employees={employees} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
     </div>
   );
 }

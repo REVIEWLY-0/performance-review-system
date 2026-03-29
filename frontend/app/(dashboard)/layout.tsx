@@ -65,8 +65,8 @@ export default function DashboardLayout({
     return null
   }
 
-  // Admin routes use their own layout shell (AdminSidebar)
-  if (pathname?.startsWith('/admin')) {
+  // Admin, employee, and manager routes use their own layout shells
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/employee') || pathname?.startsWith('/manager')) {
     return <>{children}</>
   }
 

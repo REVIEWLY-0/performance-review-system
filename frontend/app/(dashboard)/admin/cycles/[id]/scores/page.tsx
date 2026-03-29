@@ -6,6 +6,9 @@ import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { calculateAllScores, AllScoresResponse } from '@/lib/scoring';
 import SkeletonCard from '@/components/skeletons/SkeletonCard';
 import SkeletonTable from '@/components/skeletons/SkeletonTable';
+import Pagination from '@/components/Pagination';
+
+const PAGE_SIZE = 20;
 
 interface ScoresPageProps {
   params: {
@@ -20,6 +23,7 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState('');
+  const [scoresPage, setScoresPage] = useState(1);
 
   useEffect(() => {
     loadData();
@@ -43,6 +47,7 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
       setError('');
       const scores = await calculateAllScores(params.id);
       setScoresData(scores);
+      setScoresPage(1);
     } catch (err: any) {
       setError(err.message || 'Failed to calculate scores');
     } finally {
@@ -125,6 +130,11 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
           .reduce((sum, s) => sum + (s.overall_score || 0), 0) /
         scoresData.scores.filter((s) => s.overall_score !== null).length
       : null;
+
+  const totalScorePages = scoresData ? Math.ceil(scoresData.scores.length / PAGE_SIZE) : 1;
+  const pagedScores = scoresData
+    ? scoresData.scores.slice((scoresPage - 1) * PAGE_SIZE, scoresPage * PAGE_SIZE)
+    : [];
 
   return (
     <div className="px-4 py-6 sm:px-0">
@@ -247,7 +257,7 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                 </tr>
               </thead>
               <tbody className="bg-surface-container-lowest divide-y divide-outline-variant">
-                {scoresData.scores.map((score) => (
+                {pagedScores.map((score) => (
                   <tr key={score.employeeId} className="hover:bg-surface-container-low">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-on-surface">
@@ -299,6 +309,9 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="px-6 py-3 border-t border-outline-variant">
+            <Pagination page={scoresPage} totalPages={totalScorePages} onPageChange={setScoresPage} />
           </div>
         </div>
       )}

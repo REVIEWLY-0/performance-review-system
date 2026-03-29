@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-family: 'Material Symbols Outlined';
+  font-size: 24px;
+  line-height: 1;
+  display: inline-block;
+  user-select: none;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    DESIGN SYSTEM — "Transparent Authority"
    Single source of truth: frontend/DESIGN.md

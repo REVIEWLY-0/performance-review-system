@@ -118,10 +118,10 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* ── Hero Header ─────────────────────────────────────────────────── */}
       <div className="space-y-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-on-surface font-display">
+        <h1 className="text-3xl font-bold tracking-tight text-on-surface font-display">
           Admin Dashboard
         </h1>
-        <p className="text-on-surface-variant font-medium text-lg">
+        <p className="text-on-surface-variant text-base">
           Welcome back, {user.name}! Manage your organization&apos;s performance reviews.
         </p>
       </div>
@@ -130,7 +130,7 @@ export default function AdminDashboard() {
       <div className={`grid grid-cols-12 gap-6 ${analyticsLoading ? 'opacity-60 pointer-events-none' : ''} transition-opacity`}>
 
         {/* Cycle selector card */}
-        <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl flex items-center justify-between shadow-sm border border-outline-variant/10">
+        <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl flex items-center justify-between shadow-sm border border-outline-variant/10 dark:border-transparent dark:border-transparent">
           <div className="flex items-center gap-4">
             <div className="bg-surface-container p-3 rounded-lg text-on-surface-variant">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">
                 Current Active Cycle
               </p>
-              <h2 className="text-xl font-extrabold font-display">
+              <h2 className="text-xl font-semibold font-display">
                 {selectedCycle ? `${selectedCycle.name} ${selectedCycle.status}` : cycles.length > 0 ? 'Select a cycle' : 'No cycles yet'}
               </h2>
             </div>
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                 </svg>
               </button>
               {cyclePickerOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-surface rounded-xl shadow-lg border border-outline-variant/20 z-10 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-64 bg-surface rounded-xl shadow-lg border border-outline-variant/20 dark:border-white/[0.06] z-10 overflow-hidden">
                   {cycles.map((cycle) => (
                     <button
                       key={cycle.id}
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
         {/* ── Stat Cards ────────────────────────────────────────────────── */}
         <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Total Employees */}
-          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent">
             <div className="flex justify-between items-start mb-4">
               <span className="p-2 bg-blue-50 dark:bg-blue-950 text-primary rounded-lg">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -203,12 +203,12 @@ export default function AdminDashboard() {
                 </svg>
               </span>
             </div>
-            <p className="text-on-surface-variant text-sm font-bold">Total Employees</p>
-            <h4 className="text-3xl font-extrabold font-display mt-1">{analytics?.totalEmployees ?? 0}</h4>
+            <p className="text-on-surface-variant text-sm font-medium">Total Employees</p>
+            <h4 className="text-3xl font-semibold font-display mt-1">{analytics?.totalEmployees ?? 0}</h4>
           </div>
 
           {/* Average Score */}
-          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent">
             <div className="flex justify-between items-start mb-4">
               <span className="p-2 bg-surface-container text-on-surface-variant rounded-lg">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -216,27 +216,27 @@ export default function AdminDashboard() {
                 </svg>
               </span>
             </div>
-            <p className="text-on-surface-variant text-sm font-bold">Average Score</p>
-            <h4 className={`text-3xl font-extrabold font-display mt-1 ${!analytics?.averageScore ? 'text-on-surface-variant/40' : ''}`}>
+            <p className="text-on-surface-variant text-sm font-medium">Average Score</p>
+            <h4 className={`text-3xl font-semibold font-display mt-1 ${!analytics?.averageScore ? 'text-on-surface-variant/40' : ''}`}>
               {analytics?.averageScore?.toFixed(2) ?? 'N/A'}
             </h4>
           </div>
 
           {/* Completion Rate */}
-          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent">
             <div className="flex justify-between items-start mb-4">
-              <span className="p-2 bg-surface-container text-secondary rounded-lg">
+              <span className="p-2 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </span>
             </div>
-            <p className="text-on-surface-variant text-sm font-bold">Completion Rate</p>
-            <h4 className="text-3xl font-extrabold font-display mt-1">{analytics?.completionRate ?? 0}%</h4>
+            <p className="text-on-surface-variant text-sm font-medium">Completion Rate</p>
+            <h4 className="text-3xl font-semibold font-display mt-1">{analytics?.completionRate ?? 0}%</h4>
           </div>
 
           {/* Pending Reviews */}
-          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent">
             <div className="flex justify-between items-start mb-4">
               <span className="p-2 bg-red-50 dark:bg-red-950 text-error rounded-lg">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -244,15 +244,15 @@ export default function AdminDashboard() {
                 </svg>
               </span>
             </div>
-            <p className="text-on-surface-variant text-sm font-bold">Pending Reviews</p>
-            <h4 className="text-3xl font-extrabold font-display mt-1">{totalPending}</h4>
+            <p className="text-on-surface-variant text-sm font-medium">Pending Reviews</p>
+            <h4 className="text-3xl font-semibold font-display mt-1">{totalPending}</h4>
           </div>
         </div>
 
         {/* ── Charts ────────────────────────────────────────────────────── */}
         <div className="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Review Progress */}
-          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col items-center justify-between min-h-[300px]">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent flex flex-col items-center justify-between min-h-[300px]">
             <div className="w-full flex justify-between items-start mb-4">
               <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Review Progress</h3>
               {!chartEmpty && chartData.length > 0 && (
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Top Performers */}
-          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col min-h-[300px]">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent flex flex-col min-h-[300px]">
             <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-4">Top Performers</h3>
             {analytics && analytics.topPerformers.length > 0 ? (
               <div className="space-y-3">
@@ -307,11 +307,11 @@ export default function AdminDashboard() {
                         {idx + 1}
                       </span>
                       <div>
-                        <p className="text-sm font-bold text-on-surface">{emp.name}</p>
+                        <p className="text-sm font-semibold text-on-surface">{emp.name}</p>
                         <p className="text-xs text-on-surface-variant">{emp.email}</p>
                       </div>
                     </div>
-                    <span className="text-lg font-bold text-primary">{emp.score?.toFixed(2)}</span>
+                    <span className="text-lg font-semibold text-primary">{emp.score?.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -322,15 +322,15 @@ export default function AdminDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <p className="text-on-surface font-bold text-base">No scores available yet</p>
-                <p className="text-on-surface-variant text-sm mt-1 font-medium">Scores will appear once reviews are finalized.</p>
+                <p className="text-on-surface font-semibold text-base">No scores available yet</p>
+                <p className="text-on-surface-variant text-sm mt-1">Scores will appear once reviews are finalized.</p>
               </div>
             )}
           </div>
         </div>
 
         {/* ── Quick Management ──────────────────────────────────────────── */}
-        <div className="col-span-12 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
+        <div className="col-span-12 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent">
           <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-6">Quick Management</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
@@ -348,7 +348,7 @@ export default function AdminDashboard() {
               <button
                 key={label}
                 onClick={() => router.push(href)}
-                className="flex items-center justify-center gap-2 p-4 rounded-xl border border-outline-variant/10 bg-surface-container-lowest hover:bg-surface-container-low transition-all font-bold text-sm text-on-surface"
+                className="flex items-center justify-center gap-2 p-4 rounded-xl border border-outline-variant/20 dark:border-white/[0.06] bg-surface-container dark:bg-[#1a2440] hover:bg-surface-container-high dark:hover:bg-[#222a3d] transition-all font-semibold text-sm text-on-surface"
               >
                 <span className="text-lg">{emoji}</span> {label}
               </button>

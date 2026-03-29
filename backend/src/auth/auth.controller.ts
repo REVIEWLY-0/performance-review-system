@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, Headers, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { SignUpDto, SignInDto } from './auth.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
@@ -8,11 +9,13 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ auth: { limit: 5, ttl: 15 * 60 * 1000 } })
   @Post('signup')
   async signUp(@Body() dto: SignUpDto) {
     return this.authService.signUp(dto.email, dto.password, dto.name, dto.companyName);
   }
 
+  @Throttle({ auth: { limit: 10, ttl: 15 * 60 * 1000 } })
   @Post('signin')
   async signIn(@Body() dto: SignInDto) {
     return this.authService.signIn(dto.email, dto.password);

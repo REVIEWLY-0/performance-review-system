@@ -88,6 +88,25 @@ export default function SelfReviewPage() {
     }
   };
 
+  // Warn browser if user tries to close/refresh tab with unsaved answers
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirtyAnswers.size > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirtyAnswers]);
+
+  const handleBack = () => {
+    if (dirtyAnswers.size > 0) {
+      if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
+    }
+    router.push('/employee/reviews');
+  };
+
   // Setup auto-save on interval
   useEffect(() => {
     if (!reviewData || reviewData.review.status === 'SUBMITTED') return;
@@ -224,7 +243,7 @@ export default function SelfReviewPage() {
       await submitReview(cycleId, allAnswers);
 
       // Redirect to dashboard with success message
-      router.push('/employee?message=Review submitted successfully');
+      router.push('/employee/reviews?message=Review submitted successfully');
     } catch (err: any) {
       console.error('Submit error:', err);
       setError(err.message || 'Failed to submit review');
@@ -282,10 +301,10 @@ export default function SelfReviewPage() {
       {/* Header */}
       <div className="mb-6">
         <button
-          onClick={() => router.push('/employee')}
+          onClick={handleBack}
           className="text-sm text-primary hover:text-primary-dim mb-2"
         >
-          ← Back to Dashboard
+          ← Back to My Reviews
         </button>
         <h1 className="text-2xl font-bold text-on-surface">Self Review</h1>
         <p className="mt-1 text-sm text-on-surface-variant">
