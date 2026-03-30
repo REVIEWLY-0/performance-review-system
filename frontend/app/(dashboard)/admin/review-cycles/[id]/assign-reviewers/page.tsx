@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { usersApi, User } from '@/lib/api';
@@ -27,11 +27,15 @@ export default function AssignReviewersPage({
   const [assignments, setAssignments] = useState<EmployeeAssignments[]>([]);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [error, setError] = useState('');
+  const initialized = useRef(false);
   const toast = useToast();
 
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
     loadData();
-  }, [params.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadData = async () => {
     try {
@@ -39,7 +43,7 @@ export default function AssignReviewersPage({
       setError('');
       const [cycleData, usersData, assignmentsData] = await Promise.all([
         reviewCyclesApi.getOne(params.id),
-        usersApi.getAll(),
+        usersApi.getAll(1, 500),
         reviewerAssignmentsApi.getByCycle(params.id),
       ]);
 

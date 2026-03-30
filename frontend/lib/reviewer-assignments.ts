@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './api';
+import { cachedFetch, invalidateCache } from './cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -64,13 +65,12 @@ export const reviewerAssignmentsApi = {
   /**
    * Get all assignments for a review cycle, grouped by employee
    */
-  getByCycle: async (
-    reviewCycleId: string,
-  ): Promise<EmployeeAssignments[]> => {
-    return fetchWithAuth(
-      `${API_URL}/reviewer-assignments?reviewCycleId=${reviewCycleId}`,
-    );
-  },
+  getByCycle: (reviewCycleId: string): Promise<EmployeeAssignments[]> =>
+    cachedFetch(
+      `assignments:cycle:${reviewCycleId}`,
+      () => fetchWithAuth(`${API_URL}/reviewer-assignments?reviewCycleId=${reviewCycleId}`),
+      30_000,
+    ),
 
   /**
    * Create/update assignments for a single employee
@@ -78,10 +78,12 @@ export const reviewerAssignmentsApi = {
   upsertForEmployee: async (
     dto: BulkCreateAssignmentsDto,
   ): Promise<ReviewerAssignment[]> => {
-    return fetchWithAuth(`${API_URL}/reviewer-assignments`, {
+    const result = await fetchWithAuth(`${API_URL}/reviewer-assignments`, {
       method: 'POST',
       body: JSON.stringify(dto),
     });
+    invalidateCache(`assignments:cycle:${dto.reviewCycleId}`);
+    return result;
   },
 
   /**
@@ -90,10 +92,13 @@ export const reviewerAssignmentsApi = {
   bulkUpsert: async (
     assignments: BulkCreateAssignmentsDto[],
   ): Promise<ImportResult> => {
-    return fetchWithAuth(`${API_URL}/reviewer-assignments/bulk`, {
+    const result = await fetchWithAuth(`${API_URL}/reviewer-assignments/bulk`, {
       method: 'POST',
       body: JSON.stringify({ assignments }),
     });
+    // Invalidate all cycle caches since bulk can affect multiple cycles
+    invalidateCache('assignments:cycle:');
+    return result;
   },
 
   /**
@@ -103,19 +108,23 @@ export const reviewerAssignmentsApi = {
     reviewCycleId: string,
     assignments: ImportAssignmentDto[],
   ): Promise<ImportResult> => {
-    return fetchWithAuth(`${API_URL}/reviewer-assignments/import`, {
+    const result = await fetchWithAuth(`${API_URL}/reviewer-assignments/import`, {
       method: 'POST',
       body: JSON.stringify({ reviewCycleId, assignments }),
     });
+    invalidateCache(`assignments:cycle:${reviewCycleId}`);
+    return result;
   },
 
   /**
    * Delete a specific assignment
    */
   remove: async (id: string): Promise<{ message: string }> => {
-    return fetchWithAuth(`${API_URL}/reviewer-assignments/${id}`, {
+    const result = await fetchWithAuth(`${API_URL}/reviewer-assignments/${id}`, {
       method: 'DELETE',
     });
+    invalidateCache('assignments:cycle:');
+    return result;
   },
 
   /**
@@ -125,11 +134,11 @@ export const reviewerAssignmentsApi = {
     employeeId: string,
     reviewCycleId: string,
   ): Promise<{ message: string; count: number }> => {
-    return fetchWithAuth(
+    const result = await fetchWithAuth(
       `${API_URL}/reviewer-assignments/employee/${employeeId}?reviewCycleId=${reviewCycleId}`,
-      {
-        method: 'DELETE',
-      },
+      { method: 'DELETE' },
     );
+    invalidateCache(`assignments:cycle:${reviewCycleId}`);
+    return result;
   },
 };

@@ -90,9 +90,12 @@ export const reviewCyclesApi = {
   /**
    * Get a single review cycle by ID
    */
-  getOne: async (id: string): Promise<ReviewCycle> => {
-    return fetchWithAuth(`${API_URL}/review-cycles/${id}`);
-  },
+  getOne: (id: string): Promise<ReviewCycle> =>
+    cachedFetch(
+      `cycles:one:${id}`,
+      () => fetchWithAuth(`${API_URL}/review-cycles/${id}`),
+      30_000,
+    ),
 
   /**
    * Create a new review cycle with workflow configs
