@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './api';
+import { cachedFetch } from './cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -79,20 +80,26 @@ export interface EmployeeAnalytics {
 // API Functions
 // ============================================================================
 
-export async function getAdminAnalytics(
-  cycleId: string,
-): Promise<AdminAnalytics> {
-  return fetchWithAuth(`${API_URL}/analytics/admin/${cycleId}`);
+export function getAdminAnalytics(cycleId: string): Promise<AdminAnalytics> {
+  return cachedFetch(
+    `analytics:admin:${cycleId}`,
+    () => fetchWithAuth(`${API_URL}/analytics/admin/${cycleId}`),
+    30_000,
+  );
 }
 
-export async function getManagerAnalytics(
-  cycleId: string,
-): Promise<ManagerAnalytics> {
-  return fetchWithAuth(`${API_URL}/analytics/manager/${cycleId}`);
+export function getManagerAnalytics(cycleId: string): Promise<ManagerAnalytics> {
+  return cachedFetch(
+    `analytics:manager:${cycleId}`,
+    () => fetchWithAuth(`${API_URL}/analytics/manager/${cycleId}`),
+    30_000,
+  );
 }
 
-export async function getEmployeeAnalytics(
-  cycleId: string,
-): Promise<EmployeeAnalytics> {
-  return fetchWithAuth(`${API_URL}/analytics/employee/${cycleId}`);
+export function getEmployeeAnalytics(cycleId: string): Promise<EmployeeAnalytics> {
+  return cachedFetch(
+    `analytics:employee:${cycleId}`,
+    () => fetchWithAuth(`${API_URL}/analytics/employee/${cycleId}`),
+    30_000,
+  );
 }

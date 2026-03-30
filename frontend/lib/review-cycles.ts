@@ -1,5 +1,5 @@
 import { fetchWithAuth, PaginatedResponse } from './api';
-import { getCached, setCache, invalidateCache } from './cache';
+import { cachedFetch, invalidateCache } from './cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -79,16 +79,12 @@ export const reviewCyclesApi = {
   /**
    * Get all review cycles, optionally filtered by status
    */
-  getAll: async (status?: ReviewCycleStatus): Promise<PaginatedResponse<ReviewCycle>> => {
+  getAll: (status?: ReviewCycleStatus): Promise<PaginatedResponse<ReviewCycle>> => {
     const key = `cycles:all:${status ?? 'all'}`;
-    const cached = getCached<PaginatedResponse<ReviewCycle>>(key);
-    if (cached) return cached;
     const url = status
       ? `${API_URL}/review-cycles?status=${status}&limit=200`
       : `${API_URL}/review-cycles?limit=200`;
-    const data = await fetchWithAuth(url);
-    setCache(key, data, 5_000); // 5s TTL — short enough to catch admin activations quickly
-    return data;
+    return cachedFetch(key, () => fetchWithAuth(url), 30_000); // 30s — deduped + cached
   },
 
   /**
@@ -174,14 +170,12 @@ export const reviewCyclesApi = {
   /**
    * Get HR insights for a cycle: completion matrix, stats, per-employee status
    */
-  getInsights: async (id: string): Promise<CycleInsights> => {
-    const key = `cycles:insights:${id}`;
-    const cached = getCached<CycleInsights>(key);
-    if (cached) return cached;
-    const data = await fetchWithAuth(`${API_URL}/review-cycles/${id}/insights`);
-    setCache(key, data, 30_000); // 30s — stale-while-revalidate for the heavy HR panel
-    return data;
-  },
+  getInsights: (id: string): Promise<CycleInsights> =>
+    cachedFetch(
+      `cycles:insights:${id}`,
+      () => fetchWithAuth(`${API_URL}/review-cycles/${id}/insights`),
+      30_000,
+    ),
 };
 
 // Helper functions

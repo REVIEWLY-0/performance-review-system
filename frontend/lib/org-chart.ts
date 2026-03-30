@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './api';
+import { cachedFetch, invalidateCache } from './cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -36,28 +37,36 @@ export function buildTree(nodes: OrgChartNode[]): OrgTreeNode[] {
 
 export const orgChartApi = {
   getAll: (): Promise<OrgChartNode[]> =>
-    fetchWithAuth(`${API_URL}/org-chart`),
+    cachedFetch('orgchart:all', () => fetchWithAuth(`${API_URL}/org-chart`), 60_000),
 
-  create: (dto: { title: string; parentId?: string | null; order?: number }): Promise<OrgChartNode> => {
+  create: async (dto: { title: string; parentId?: string | null; order?: number }): Promise<OrgChartNode> => {
     // Never send parentId: null — class-validator rejects null for @IsString().
     // Omit the key entirely for root nodes.
     const { parentId, ...rest } = dto;
     const payload = parentId ? { ...rest, parentId } : rest;
-    return fetchWithAuth(`${API_URL}/org-chart`, {
+    const result = await fetchWithAuth(`${API_URL}/org-chart`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    invalidateCache('orgchart:');
+    return result;
   },
 
-  update: (
+  update: async (
     id: string,
     dto: { title?: string; parentId?: string | null; order?: number },
-  ): Promise<OrgChartNode> =>
-    fetchWithAuth(`${API_URL}/org-chart/${id}`, {
+  ): Promise<OrgChartNode> => {
+    const result = await fetchWithAuth(`${API_URL}/org-chart/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(dto),
-    }),
+    });
+    invalidateCache('orgchart:');
+    return result;
+  },
 
-  delete: (id: string): Promise<{ success: boolean }> =>
-    fetchWithAuth(`${API_URL}/org-chart/${id}`, { method: 'DELETE' }),
+  delete: async (id: string): Promise<{ success: boolean }> => {
+    const result = await fetchWithAuth(`${API_URL}/org-chart/${id}`, { method: 'DELETE' });
+    invalidateCache('orgchart:');
+    return result;
+  },
 };

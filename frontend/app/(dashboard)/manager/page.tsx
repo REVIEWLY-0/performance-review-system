@@ -110,6 +110,9 @@ export default function ManagerDashboard() {
     );
   }
 
+  const selectedCycle = cycles.find((c) => c.id === selectedCycleId);
+  const scoresLocked = selectedCycle?.status !== 'COMPLETED';
+
   const chartData = analytics
     ? [
         {
@@ -204,7 +207,7 @@ export default function ManagerDashboard() {
                     <dl>
                       <dt className="text-sm font-medium text-on-surface-variant truncate">Team Average Score</dt>
                       <dd className="text-lg font-semibold text-on-surface">
-                        {analytics.teamAverageScore?.toFixed(2) || 'N/A'}
+                        {scoresLocked ? '—' : (analytics.teamAverageScore?.toFixed(2) || 'N/A')}
                       </dd>
                     </dl>
                   </div>
@@ -238,16 +241,25 @@ export default function ManagerDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="bg-surface-container-lowest shadow rounded-lg p-6">
               <h3 className="text-lg font-medium text-on-surface mb-4">Performance Comparison</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis domain={[0, 5]} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="score" fill="#4f46e5" name="Average Score" />
-                </BarChart>
-              </ResponsiveContainer>
+              {scoresLocked ? (
+                <div className="flex flex-col items-center justify-center h-[300px] gap-3 text-on-surface-variant">
+                  <svg className="h-8 w-8 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <p className="text-sm font-medium">Scores are locked until the cycle completes</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis domain={[0, 5]} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="score" fill="#4f46e5" name="Average Score" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
 
             <div className="bg-surface-container-lowest shadow rounded-lg p-6">
@@ -260,25 +272,26 @@ export default function ManagerDashboard() {
                 <div className="flex justify-between items-center py-3 border-b border-outline-variant">
                   <span className="text-sm font-medium text-on-surface-variant">Team Average</span>
                   <span className="text-lg font-semibold text-primary">
-                    {analytics.teamAverageScore?.toFixed(2) || 'N/A'}
+                    {scoresLocked ? '—' : (analytics.teamAverageScore?.toFixed(2) || 'N/A')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-outline-variant">
                   <span className="text-sm font-medium text-on-surface-variant">Company Average</span>
                   <span className="text-lg font-semibold text-on-surface">
-                    {analytics.companyAverageScore?.toFixed(2) || 'N/A'}
+                    {scoresLocked ? '—' : (analytics.companyAverageScore?.toFixed(2) || 'N/A')}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-3">
                   <span className="text-sm font-medium text-on-surface-variant">Difference</span>
                   <span
                     className={`text-lg font-semibold ${
+                      scoresLocked ? 'text-on-surface-variant' :
                       (analytics.teamAverageScore || 0) >= (analytics.companyAverageScore || 0)
                         ? 'text-green-600'
                         : 'text-red-600'
                     }`}
                   >
-                    {analytics.teamAverageScore && analytics.companyAverageScore
+                    {scoresLocked ? '—' : analytics.teamAverageScore && analytics.companyAverageScore
                       ? (analytics.teamAverageScore - analytics.companyAverageScore > 0 ? '+' : '') +
                         (analytics.teamAverageScore - analytics.companyAverageScore).toFixed(2)
                       : 'N/A'}
@@ -316,7 +329,14 @@ export default function ManagerDashboard() {
                         <div className="text-sm text-on-surface-variant">{member.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {member.score !== null ? (
+                        {scoresLocked ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-surface-container text-on-surface-variant">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Locked
+                          </span>
+                        ) : member.score !== null ? (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800">
                             {member.score.toFixed(2)}
                           </span>

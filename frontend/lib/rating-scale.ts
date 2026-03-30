@@ -1,5 +1,5 @@
 import { fetchWithAuth } from './api';
-import { getCached, setCache, invalidateCache } from './cache';
+import { cachedFetch, invalidateCache } from './cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -39,18 +39,12 @@ export const ALL_DEFAULT_LABELS: RatingScaleLabel[] = [
 ];
 
 export const ratingScaleApi = {
-  get: async (): Promise<RatingScale> => {
-    const key = 'rating-scale:company';
-    const cached = getCached<RatingScale>(key);
-    if (cached) return cached;
-    try {
-      const data = await fetchWithAuth(`${API_URL}/rating-scale`);
-      setCache(key, data, 60_000); // 1 min cache — scale changes infrequently
-      return data;
-    } catch {
-      return DEFAULT_SCALE;
-    }
-  },
+  get: (): Promise<RatingScale> =>
+    cachedFetch(
+      'rating-scale:company',
+      () => fetchWithAuth(`${API_URL}/rating-scale`),
+      60_000,
+    ).catch(() => DEFAULT_SCALE),
 
   update: async (dto: { maxRating: number; labels: RatingScaleLabel[] }): Promise<RatingScale> => {
     const data = await fetchWithAuth(`${API_URL}/rating-scale`, {

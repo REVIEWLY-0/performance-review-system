@@ -293,8 +293,16 @@ export default function MyReviewsPage() {
           Current Tasks
         </h3>
 
+        {/* No cycle guard */}
+        {!selectedCycle && (
+          <div className="bg-surface-container-lowest dark:bg-[#131b2e] rounded-2xl p-10 text-center border border-outline-variant/10 dark:border-transparent">
+            <p className="text-sm font-medium text-on-surface-variant">No active review cycle found.</p>
+            <p className="text-xs text-on-surface-variant mt-1">Contact your admin to activate a review cycle.</p>
+          </div>
+        )}
+
         {/* Self Assessment */}
-        <div className="group bg-surface-container-lowest dark:bg-[#131b2e] p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:bg-surface-container dark:hover:bg-[#1a2440] border border-outline-variant/10 dark:border-transparent">
+        {selectedCycle && <div className="group bg-surface-container-lowest dark:bg-[#131b2e] p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:bg-surface-container dark:hover:bg-[#1a2440] border border-outline-variant/10 dark:border-transparent">
           <div className="flex items-center gap-5">
             <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-primary/15 flex items-center justify-center text-primary shrink-0">
               <Icon name="person_edit" className="text-[22px]" />
@@ -331,7 +339,7 @@ export default function MyReviewsPage() {
           >
             {selfSubmitted ? 'View Submission' : 'Continue'}
           </button>
-        </div>
+        </div>}
 
         {/* Peer Reviews — only shown when assigned */}
         {peerTotal > 0 && (

@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './api';
+import { cachedFetch } from './cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -121,10 +122,12 @@ export interface ManagerReviewData {
 /**
  * Get list of employees assigned to current manager for review
  */
-export async function getEmployeesToReview(
-  cycleId: string,
-): Promise<EmployeeToReview[]> {
-  return fetchWithAuth(`${API_URL}/reviews/manager/${cycleId}`);
+export function getEmployeesToReview(cycleId: string): Promise<EmployeeToReview[]> {
+  return cachedFetch(
+    `reviews:manager-list:${cycleId}`,
+    () => fetchWithAuth(`${API_URL}/reviews/manager/${cycleId}`),
+    30_000,
+  );
 }
 
 /**
@@ -159,10 +162,12 @@ export async function saveManagerReview(
 /**
  * Get list of employees assigned to current manager for downward review
  */
-export async function getEmployeesToReviewDownward(
-  cycleId: string,
-): Promise<EmployeeToReview[]> {
-  return fetchWithAuth(`${API_URL}/reviews/downward/${cycleId}`);
+export function getEmployeesToReviewDownward(cycleId: string): Promise<EmployeeToReview[]> {
+  return cachedFetch(
+    `reviews:downward-list:${cycleId}`,
+    () => fetchWithAuth(`${API_URL}/reviews/downward/${cycleId}`),
+    30_000,
+  );
 }
 
 /**
@@ -215,10 +220,12 @@ export interface PeerReviewData {
 /**
  * Get list of employees assigned to current peer for review
  */
-export async function getEmployeesToReviewAsPeer(
-  cycleId: string,
-): Promise<EmployeeToReview[]> {
-  return fetchWithAuth(`${API_URL}/reviews/peer/${cycleId}`);
+export function getEmployeesToReviewAsPeer(cycleId: string): Promise<EmployeeToReview[]> {
+  return cachedFetch(
+    `reviews:peer-list:${cycleId}`,
+    () => fetchWithAuth(`${API_URL}/reviews/peer/${cycleId}`),
+    30_000,
+  );
 }
 
 /**

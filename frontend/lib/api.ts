@@ -1,5 +1,5 @@
 import { getSession, invalidateSession } from './auth'
-import { getCached, setCache, invalidateCache } from './cache'
+import { cachedFetch, invalidateCache } from './cache'
 
 export interface PaginatedResponse<T> {
   data: T[]
@@ -162,23 +162,19 @@ export const usersApi = {
     return result
   },
 
-  getManagers: async (): Promise<User[]> => {
-    const key = 'users:managers'
-    const cached = getCached<User[]>(key)
-    if (cached) return cached
-    const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/managers`)
-    setCache(key, data, 120_000) // 2 min — managers list rarely changes
-    return data
-  },
+  getManagers: (): Promise<User[]> =>
+    cachedFetch(
+      'users:managers',
+      () => fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/managers`),
+      120_000,
+    ),
 
-  getStats: async (): Promise<UserStats> => {
-    const key = 'users:stats'
-    const cached = getCached<UserStats>(key)
-    if (cached) return cached
-    const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/stats`)
-    setCache(key, data, 60_000) // 1 min TTL
-    return data
-  },
+  getStats: (): Promise<UserStats> =>
+    cachedFetch(
+      'users:stats',
+      () => fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/stats`),
+      60_000,
+    ),
 
   importUsers: async (users: ImportUserPayload[]): Promise<{ successful: number; failed: number; errors: string[] }> => {
     const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/import`, {
@@ -196,14 +192,12 @@ export const usersApi = {
     })
   },
 
-  getDepartments: async (): Promise<string[]> => {
-    const key = 'users:departments'
-    const cached = getCached<string[]>(key)
-    if (cached) return cached
-    const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/departments`)
-    setCache(key, data, 60_000) // 1 min TTL
-    return data
-  },
+  getDepartments: (): Promise<string[]> =>
+    cachedFetch(
+      'users:departments',
+      () => fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/departments`),
+      60_000,
+    ),
 
   uploadAvatar: async (file: File): Promise<User> => {
     const session = await getSession()
@@ -229,14 +223,12 @@ export const usersApi = {
 
 // Departments API
 export const departmentsApi = {
-  getAll: async (): Promise<Department[]> => {
-    const key = 'departments:active'
-    const cached = getCached<Department[]>(key)
-    if (cached) return cached
-    const data = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments`)
-    setCache(key, data, 60_000)
-    return data
-  },
+  getAll: (): Promise<Department[]> =>
+    cachedFetch(
+      'departments:active',
+      () => fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments`),
+      60_000,
+    ),
 
   getArchived: async (): Promise<Department[]> => {
     return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/departments/archived`)

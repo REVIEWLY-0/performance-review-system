@@ -25,30 +25,31 @@ export default function ManagerReviewsPage() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    loadCycles();
+    initPage();
   }, []);
 
-  useEffect(() => {
-    if (selectedCycleId) {
-      loadEmployees(selectedCycleId);
-    }
-  }, [selectedCycleId]);
-
-  const loadCycles = async () => {
+  const initPage = async () => {
     try {
       setLoading(true);
       const { data: activeCycles } = await reviewCyclesApi.getAll('ACTIVE');
       setCycles(activeCycles);
 
-      // If cycleId in query param, use it; otherwise use first cycle
+      // Determine which cycle to show
+      let targetCycleId = '';
       if (cycleParam && activeCycles.find((c) => c.id === cycleParam)) {
-        setSelectedCycleId(cycleParam);
-      } else if (activeCycles.length > 0 && !selectedCycleId) {
-        setSelectedCycleId(activeCycles[0].id);
+        targetCycleId = cycleParam;
+      } else if (activeCycles.length > 0) {
+        targetCycleId = activeCycles[0].id;
+      }
+      setSelectedCycleId(targetCycleId);
+      setLoading(false);
+
+      // Load employees immediately in the same tick — no second useEffect needed
+      if (targetCycleId) {
+        await loadEmployees(targetCycleId);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load review cycles');
-    } finally {
       setLoading(false);
     }
   };
@@ -70,8 +71,8 @@ export default function ManagerReviewsPage() {
 
   const handleCycleChange = (cycleId: string) => {
     setSelectedCycleId(cycleId);
-    // Update URL with cycle param
     router.push(`/manager/reviews?cycleId=${cycleId}`);
+    loadEmployees(cycleId);
   };
 
   const getStatusBadge = (status: string) => {
