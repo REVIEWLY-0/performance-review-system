@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './api';
+import { cachedFetch } from './cache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -56,15 +57,14 @@ export interface AllScoresResponse {
 /**
  * Calculate final score for a specific employee
  */
-export async function calculateScore(
+export function calculateScore(
   cycleId: string,
   employeeId: string,
 ): Promise<FinalScore> {
-  return fetchWithAuth(
-    `${API_URL}/scoring/calculate/${cycleId}/${employeeId}`,
-    {
-      method: 'POST',
-    },
+  return cachedFetch(
+    `score:${cycleId}:${employeeId}`,
+    () => fetchWithAuth(`${API_URL}/scoring/calculate/${cycleId}/${employeeId}`, { method: 'POST' }),
+    30_000,
   );
 }
 

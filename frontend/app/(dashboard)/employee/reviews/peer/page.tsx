@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { getEmployeesToReviewAsPeer, EmployeeToReview } from '@/lib/reviews';
@@ -41,12 +41,14 @@ export default function PeerReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => { loadCycles(); }, []);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (selectedCycleId) loadEmployees(selectedCycleId);
-  }, [selectedCycleId]);
+    if (initialized.current) return;
+    initialized.current = true;
+    loadCycles();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadCycles = async () => {
     try {
@@ -54,13 +56,16 @@ export default function PeerReviewsPage() {
       const { data: allCycles } = await reviewCyclesApi.getAll();
       setCycles(allCycles);
       const activeCycle = allCycles.find((c) => c.status === 'ACTIVE');
+      let targetId = '';
       if (cycleParam && allCycles.find((c) => c.id === cycleParam)) {
-        setSelectedCycleId(cycleParam);
-      } else if (activeCycle && !selectedCycleId) {
-        setSelectedCycleId(activeCycle.id);
-      } else if (allCycles.length > 0 && !selectedCycleId) {
-        setSelectedCycleId(allCycles[0].id);
+        targetId = cycleParam;
+      } else if (activeCycle) {
+        targetId = activeCycle.id;
+      } else if (allCycles.length > 0) {
+        targetId = allCycles[0].id;
       }
+      setSelectedCycleId(targetId);
+      if (targetId) await loadEmployees(targetId);
     } catch (err: any) {
       setError(err.message || 'Failed to load review cycles');
     } finally {
@@ -85,6 +90,7 @@ export default function PeerReviewsPage() {
   const handleCycleChange = (cycleId: string) => {
     setSelectedCycleId(cycleId);
     router.push(`/employee/reviews/peer?cycleId=${cycleId}`);
+    loadEmployees(cycleId);
   };
 
   if (loading) {

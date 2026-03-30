@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -18,9 +18,13 @@ export default function ReviewCyclesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const initialized = useRef(false);
   // Load all cycles once on mount
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
     loadCycles();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter cycles locally when tab changes

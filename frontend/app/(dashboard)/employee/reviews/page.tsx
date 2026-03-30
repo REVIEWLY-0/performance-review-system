@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { getEmployeeAnalytics, EmployeeAnalytics } from '@/lib/analytics';
@@ -131,7 +131,13 @@ export default function MyReviewsPage() {
   const searchParams = useSearchParams();
   const successMessage = searchParams.get('message');
 
-  useEffect(() => { loadData(); }, []);
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadData = async () => {
     try {

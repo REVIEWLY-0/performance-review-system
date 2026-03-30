@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
@@ -35,12 +35,14 @@ export default function EmployeeScoresPage() {
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => { loadData(); }, []);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (selectedCycleId && user) loadScore();
-  }, [selectedCycleId, user]);
+    if (initialized.current) return;
+    initialized.current = true;
+    loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadData = async () => {
     try {
@@ -54,12 +56,15 @@ export default function EmployeeScoresPage() {
       setUser(currentUser);
       setMaxRating(scale.maxRating);
       setCycles(allCycles);
+      let targetCycleId = selectedCycleId;
       if (cycleParam && allCycles.find((c) => c.id === cycleParam)) {
-        setSelectedCycleId(cycleParam);
-      } else if (allCycles.length > 0 && !selectedCycleId) {
+        targetCycleId = cycleParam;
+      } else if (allCycles.length > 0 && !targetCycleId) {
         const active = allCycles.find((c) => c.status === 'ACTIVE');
-        setSelectedCycleId(active?.id || allCycles[0].id);
+        targetCycleId = active?.id || allCycles[0].id;
       }
+      setSelectedCycleId(targetCycleId);
+      if (targetCycleId) await loadScore(targetCycleId, currentUser.id);
     } catch (err: any) {
       setError(err.message || 'Failed to load data');
     } finally {
@@ -67,12 +72,11 @@ export default function EmployeeScoresPage() {
     }
   };
 
-  const loadScore = async () => {
-    if (!selectedCycleId || !user) return;
+  const loadScore = async (cycleId: string, userId: string) => {
     try {
       setCalculating(true);
       setError('');
-      const score = await calculateScore(selectedCycleId, user.id);
+      const score = await calculateScore(cycleId, userId);
       setScoreData(score);
     } catch (err: any) {
       setError(err.message || 'Failed to load scores');
@@ -85,6 +89,7 @@ export default function EmployeeScoresPage() {
   const handleCycleChange = (cycleId: string) => {
     setSelectedCycleId(cycleId);
     router.push(`/employee/scores?cycleId=${cycleId}`);
+    if (user) loadScore(cycleId, user.id);
   };
 
   if (loading) {

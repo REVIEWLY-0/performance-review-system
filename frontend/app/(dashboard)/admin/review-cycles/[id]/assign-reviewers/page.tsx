@@ -43,7 +43,7 @@ export default function AssignReviewersPage({
       setError('');
       const [cycleData, usersData, assignmentsData] = await Promise.all([
         reviewCyclesApi.getOne(params.id),
-        usersApi.getAll(1, 500),
+        usersApi.getAll(1, 9999),
         reviewerAssignmentsApi.getByCycle(params.id),
       ]);
 
