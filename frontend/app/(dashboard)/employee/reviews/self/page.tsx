@@ -12,6 +12,7 @@ import {
   TaskDefinition,
 } from '@/lib/reviews';
 import { ratingScaleApi, RatingScale, DEFAULT_SCALE } from '@/lib/rating-scale';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 // Free-form task item (employee-defined, no predefined tasks)
 interface TaskItem {
@@ -42,6 +43,9 @@ export default function SelfReviewPage() {
   const [answers, setAnswers] = useState<Map<string, Answer>>(new Map());
   const [dirtyAnswers, setDirtyAnswers] = useState<Set<string>>(new Set());
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string; message: string; variant?: 'danger' | 'default'; onConfirm: () => void | Promise<void>;
+  } | null>(null);
 
   // Auto-save timer ref
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -102,7 +106,13 @@ export default function SelfReviewPage() {
 
   const handleBack = () => {
     if (dirtyAnswers.size > 0) {
-      if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
+      setConfirmDialog({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. Leave without saving?',
+        variant: 'danger',
+        onConfirm: () => router.push('/employee/reviews'),
+      });
+      return;
     }
     router.push('/employee/reviews');
   };
@@ -450,6 +460,16 @@ export default function SelfReviewPage() {
             {submitting ? 'Submitting...' : 'Submit Review'}
           </button>
         </div>
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import {
   QuestionWithAnswer,
 } from '@/lib/reviews';
 import { ratingScaleApi, RatingScale, DEFAULT_SCALE } from '@/lib/rating-scale';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface ManagerReviewPageProps {
   params: {
@@ -30,6 +31,9 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string; message: string; variant?: 'danger' | 'default'; onConfirm: () => void | Promise<void>;
+  } | null>(null);
 
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -191,23 +195,23 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
       return;
     }
 
-    if (!confirm('Are you sure you want to submit this review? This cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError('');
-
-      const allAnswers = Array.from(answers.values());
-      await saveDownwardReview(cycleId, params.employeeId, allAnswers, true);
-
-      router.push(`/manager/reviews?cycleId=${cycleId}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit review');
-    } finally {
-      setSaving(false);
-    }
+    setConfirmDialog({
+      title: 'Submit Review',
+      message: 'Are you sure you want to submit this review? This cannot be undone.',
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError('');
+          const allAnswers = Array.from(answers.values());
+          await saveDownwardReview(cycleId, params.employeeId, allAnswers, true);
+          router.push(`/manager/reviews?cycleId=${cycleId}`);
+        } catch (err: any) {
+          setError(err.message || 'Failed to submit review');
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -389,6 +393,16 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
           )}
         </div>
       </div>
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

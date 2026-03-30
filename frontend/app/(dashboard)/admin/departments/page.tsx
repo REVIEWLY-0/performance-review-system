@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import BackButton from '@/components/BackButton';
 import { Department, departmentsApi } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function DepartmentsPage() {
   const toast = useToast();
@@ -11,6 +12,9 @@ export default function DepartmentsPage() {
   const [archived, setArchived] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string; message: string; variant?: 'danger' | 'default'; onConfirm: () => void | Promise<void>;
+  } | null>(null);
 
   // Add form
   const [showForm, setShowForm] = useState(false);
@@ -78,21 +82,22 @@ export default function DepartmentsPage() {
     }
   };
 
-  const handleArchive = async (dept: Department) => {
-    if (
-      !confirm(
-        `Archive "${dept.name}"? It won't be available for new assignments, but existing data is preserved.`,
-      )
-    )
-      return;
-    try {
-      const updated = await departmentsApi.archive(dept.id);
-      setDepartments((prev) => prev.filter((d) => d.id !== dept.id));
-      setArchived((prev) => [...prev, updated]);
-      toast.success(`"${dept.name}" archived`);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to archive department');
-    }
+  const handleArchive = (dept: Department) => {
+    setConfirmDialog({
+      title: 'Archive Department',
+      message: `Archive "${dept.name}"? It won't be available for new assignments, but existing data is preserved.`,
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const updated = await departmentsApi.archive(dept.id);
+          setDepartments((prev) => prev.filter((d) => d.id !== dept.id));
+          setArchived((prev) => [...prev, updated]);
+          toast.success(`"${dept.name}" archived`);
+        } catch (err: any) {
+          toast.error(err.message || 'Failed to archive department');
+        }
+      },
+    });
   };
 
   const handleRestore = async (dept: Department) => {
@@ -315,6 +320,16 @@ export default function DepartmentsPage() {
             <p className="mt-3 text-sm text-on-surface-variant">No archived departments.</p>
           )}
         </div>
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );

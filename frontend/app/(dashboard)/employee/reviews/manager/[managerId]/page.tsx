@@ -10,6 +10,7 @@ import {
   QuestionWithAnswer,
 } from '@/lib/reviews';
 import { ratingScaleApi, RatingScale, DEFAULT_SCALE } from '@/lib/rating-scale';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface PageProps {
   params: { managerId: string };
@@ -28,6 +29,9 @@ export default function EmployeeManagerReviewPage({ params }: PageProps) {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string; message: string; variant?: 'danger' | 'default'; onConfirm: () => void | Promise<void>;
+  } | null>(null);
 
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -63,7 +67,13 @@ export default function EmployeeManagerReviewPage({ params }: PageProps) {
 
   const handleBack = () => {
     if (dirtyAnswers.size > 0) {
-      if (!window.confirm('You have unsaved changes. Leave without saving?')) return;
+      setConfirmDialog({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. Leave without saving?',
+        variant: 'danger',
+        onConfirm: () => router.push(`/employee/reviews/manager?cycleId=${cycleId}`),
+      });
+      return;
     }
     router.push(`/employee/reviews/manager?cycleId=${cycleId}`);
   };
@@ -153,18 +163,23 @@ export default function EmployeeManagerReviewPage({ params }: PageProps) {
       setError(`Please answer all questions before submitting (${progress.answered}/${progress.total} completed)`);
       return;
     }
-    if (!confirm('Are you sure you want to submit this review? This cannot be undone.')) return;
-    try {
-      setSaving(true);
-      setError('');
-      const allAnswers = Array.from(answers.values());
-      await saveManagerReview(cycleId, params.managerId, allAnswers, true);
-      router.push(`/employee/reviews/manager?cycleId=${cycleId}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit review');
-    } finally {
-      setSaving(false);
-    }
+    setConfirmDialog({
+      title: 'Submit Review',
+      message: 'Are you sure you want to submit this review? This cannot be undone.',
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError('');
+          const allAnswers = Array.from(answers.values());
+          await saveManagerReview(cycleId, params.managerId, allAnswers, true);
+          router.push(`/employee/reviews/manager?cycleId=${cycleId}`);
+        } catch (err: any) {
+          setError(err.message || 'Failed to submit review');
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -289,6 +304,16 @@ export default function EmployeeManagerReviewPage({ params }: PageProps) {
             </p>
           )}
         </div>
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );

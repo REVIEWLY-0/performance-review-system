@@ -9,6 +9,7 @@ import {
   BaseReviewType,
 } from '@/lib/review-type-configs';
 import { useToast } from '@/components/ToastProvider';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const BASE_TYPE_LABELS: Record<BaseReviewType, string> = {
   SELF: 'Self (employee reviews themselves)',
@@ -70,6 +71,9 @@ export default function ReviewTypesPage() {
   const [formError, setFormError] = useState('');
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string; message: string; variant?: 'danger' | 'default'; onConfirm: () => void | Promise<void>;
+  } | null>(null);
 
   useEffect(() => {
     loadConfigs();
@@ -124,24 +128,24 @@ export default function ReviewTypesPage() {
     }
   };
 
-  const handleDelete = async (config: ReviewTypeConfig) => {
-    if (
-      !confirm(
-        `Delete "${config.label}"? This will not affect existing cycles using this type.`,
-      )
-    ) {
-      return;
-    }
-    setDeletingId(config.id);
-    try {
-      await reviewTypeConfigsApi.delete(config.id);
-      setConfigs((prev) => prev.filter((c) => c.id !== config.id));
-      toast.success(`"${config.label}" deleted`);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to delete review type');
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDelete = (config: ReviewTypeConfig) => {
+    setConfirmDialog({
+      title: 'Delete Review Type',
+      message: `Delete "${config.label}"? This will not affect existing cycles using this type.`,
+      variant: 'danger',
+      onConfirm: async () => {
+        setDeletingId(config.id);
+        try {
+          await reviewTypeConfigsApi.delete(config.id);
+          setConfigs((prev) => prev.filter((c) => c.id !== config.id));
+          toast.success(`"${config.label}" deleted`);
+        } catch (err: any) {
+          toast.error(err.message || 'Failed to delete review type');
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
   };
 
   const builtIns = configs.filter((c) => c.isBuiltIn);
@@ -353,6 +357,16 @@ export default function ReviewTypesPage() {
             )}
           </div>
         </div>
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
       )}
     </div>
   );
