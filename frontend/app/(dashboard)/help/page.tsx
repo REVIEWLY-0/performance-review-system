@@ -6,8 +6,6 @@ import { getCurrentUser, User } from '@/lib/auth';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type Role = 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
-
 interface FaqItem {
   q: string;
   a: string;
@@ -113,7 +111,7 @@ const EMPLOYEE_FAQ: FaqItem[] = [
 function FaqAccordion({ items }: { items: FaqItem[] }) {
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <div className="divide-y divide-outline-variant border border-outline-variant rounded-xl overflow-hidden">
+    <div className="divide-y divide-outline-variant dark:divide-white/[0.08] border border-outline-variant dark:border-white/[0.12] rounded-xl overflow-hidden">
       {items.map((item, idx) => (
         <div key={idx}>
           <button
@@ -150,9 +148,9 @@ function ChecklistCard({ items }: { items: ChecklistItem[] }) {
   const total = items.length;
 
   return (
-    <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+    <div className="bg-surface-container-lowest border border-outline-variant dark:border-white/[0.12] rounded-xl overflow-hidden">
       {/* Progress header */}
-      <div className="px-5 py-4 border-b border-outline-variant flex items-center justify-between gap-4">
+      <div className="px-5 py-4 border-b border-outline-variant dark:border-white/[0.08] flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-bold text-on-surface">Getting Started</p>
           <p className="text-xs text-on-surface-variant mt-0.5">{done} of {total} steps completed</p>
@@ -168,7 +166,7 @@ function ChecklistCard({ items }: { items: ChecklistItem[] }) {
       </div>
 
       {/* Steps */}
-      <div className="divide-y divide-outline-variant">
+      <div className="divide-y divide-outline-variant dark:divide-white/[0.08]">
         {items.map((item, idx) => (
           <div
             key={idx}
@@ -243,16 +241,9 @@ function EmployeeContent() {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-const ROLE_TABS: { role: Role; label: string }[] = [
-  { role: 'ADMIN', label: 'Admin' },
-  { role: 'MANAGER', label: 'Manager' },
-  { role: 'EMPLOYEE', label: 'Employee' },
-];
-
 export default function HelpPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<Role>('EMPLOYEE');
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -261,51 +252,46 @@ export default function HelpPage() {
     getCurrentUser().then((u) => {
       if (!u) { router.push('/login'); return; }
       setUser(u);
-      setActiveTab(u.role as Role);
     });
   }, []);
+
+  if (!user) return null;
+
+  const dashboardHref = user.role === 'ADMIN' ? '/admin' : user.role === 'MANAGER' ? '/manager' : '/employee';
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4 sm:px-0">
       {/* Header */}
       <div className="mb-8">
+        <button
+          onClick={() => router.push(dashboardHref)}
+          className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline mb-3"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Dashboard
+        </button>
         <h1 className="text-3xl font-bold tracking-tight text-on-surface">Help & Guide</h1>
         <p className="mt-2 text-sm text-on-surface-variant">
-          Everything you need to use Reviewly — pick your role below.
+          {user.role === 'ADMIN' && 'Everything you need to set up and manage Reviewly.'}
+          {user.role === 'MANAGER' && 'Everything you need to review your team and track performance.'}
+          {user.role === 'EMPLOYEE' && 'Everything you need to complete your reviews and view your scores.'}
         </p>
       </div>
 
-      {/* Role tabs */}
-      <div className="flex gap-1 p-1 bg-surface-container rounded-xl mb-8 w-fit">
-        {ROLE_TABS.map(({ role, label }) => (
-          <button
-            key={role}
-            onClick={() => setActiveTab(role)}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === role
-                ? 'bg-surface-container-lowest text-on-surface shadow-sm'
-                : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            {label}
-            {user?.role === role && (
-              <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary align-middle mb-0.5" title="Your role" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      {activeTab === 'ADMIN' && <AdminContent />}
-      {activeTab === 'MANAGER' && <ManagerContent />}
-      {activeTab === 'EMPLOYEE' && <EmployeeContent />}
+      {/* Role-specific content — no tabs, only what's relevant */}
+      {user.role === 'ADMIN' && <AdminContent />}
+      {user.role === 'MANAGER' && <ManagerContent />}
+      {user.role === 'EMPLOYEE' && <EmployeeContent />}
 
       {/* Footer */}
-      <div className="mt-16 pt-8 border-t border-outline-variant text-center">
+      <div className="mt-16 pt-8 border-t border-outline-variant dark:border-white/[0.08] text-center">
         <p className="text-xs text-on-surface-variant">
           Still stuck?{' '}
           <a href="/settings" className="text-primary hover:underline font-medium">Go to Settings</a>
-          {' '}or contact your admin.
+          {user.role !== 'ADMIN' && ' or contact your admin.'}
+          {user.role === 'ADMIN' && '.'}
         </p>
       </div>
     </div>
