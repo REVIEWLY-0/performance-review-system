@@ -1,6 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { APP_FILTER } from '@nestjs/core';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { AuthModule } from './auth/auth.module';
@@ -25,25 +24,6 @@ import { PrismaService } from './common/services/prisma.service';
 @Module({
   imports: [
     SentryModule.forRoot(),
-    // Rate limiting
-    // - default: 500 req/s per IP — SPAs fire 8–15 concurrent requests per page;
-    //   React StrictMode in dev doubles that. Multiple concurrent layouts + pages each
-    //   calling getCurrentUser() + data APIs can burst to ~40–60 req/s on navigation.
-    //   Rapid review completion (submit → navigate → dashboard reload) multiplies this.
-    //   500/s gives ample headroom while still blocking genuine abuse.
-    // - auth: 10 attempts per 15 min per IP (brute-force protection on login/signup)
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 1000,
-        limit: 500,
-      },
-      {
-        name: 'auth',
-        ttl: 15 * 60 * 1000, // 15 minutes
-        limit: 10,
-      },
-    ]),
     AuthModule,
     UsersModule,
     QuestionsModule,
@@ -65,11 +45,6 @@ import { PrismaService } from './common/services/prisma.service';
     {
       provide: APP_FILTER,
       useClass: SentryGlobalFilter,
-    },
-    // Apply rate limiting globally
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
     },
   ],
 })

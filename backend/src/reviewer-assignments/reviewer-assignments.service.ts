@@ -133,8 +133,8 @@ export class ReviewerAssignmentsService {
     // Validate employee belongs to company
     await this.validateUserInCompany(dto.employeeId, companyId);
 
-    // Validate all reviewers belong to company
-    const reviewerIds = dto.assignments.map((a) => a.reviewerId);
+    // Validate all reviewers belong to company (deduplicate to handle same person in multiple roles)
+    const reviewerIds = [...new Set(dto.assignments.map((a) => a.reviewerId))];
     await this.validateUsersInCompany(reviewerIds, companyId);
 
     // Validate business rules
