@@ -4,7 +4,7 @@ import { loginAs, TEST_USERS } from '../helpers/auth';
 test.describe('Employee Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, TEST_USERS.employee);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('reaches employee dashboard after login', async ({ page }) => {
@@ -24,8 +24,8 @@ test.describe('Employee Dashboard', () => {
 
   test('employee cannot access admin routes', async ({ page }) => {
     await page.goto('/admin');
-    await page.waitForTimeout(3_000);
-    // Should be redirected away from /admin
-    expect(page.url()).not.toMatch(/\/admin$/);
+    // Should be redirected away from /admin (to /employee or /login)
+    await page.waitForURL((url) => !url.pathname.startsWith('/admin'), { timeout: 10_000 });
+    expect(page.url()).not.toMatch(/\/admin/);
   });
 });
