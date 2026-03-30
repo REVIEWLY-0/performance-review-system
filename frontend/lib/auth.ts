@@ -121,13 +121,22 @@ async function _fetchUser(retries: number): Promise<User | null> {
 
 export async function signIn(email: string, password: string) {
   console.log('🔑 Signing in:', email)
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signin`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password }),
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 8_000)
+  let response: Response
+  try {
+    response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+      signal: controller.signal,
+    })
+  } catch (err: any) {
+    clearTimeout(timeout)
+    if (err.name === 'AbortError') throw new Error('Cannot reach the server — please check the backend is running and try again.')
+    throw err
+  }
+  clearTimeout(timeout)
 
   if (!response.ok) {
     const error = await response.json()
