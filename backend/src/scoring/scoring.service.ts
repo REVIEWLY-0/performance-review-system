@@ -121,8 +121,8 @@ export class ScoringService {
       ratingQuestions,
     );
 
-    // Send score available notification once per employee per cycle
-    if (result.overall_score) {
+    // Only notify when the cycle is officially complete — never during an active cycle
+    if (result.overall_score && cycle.status === 'COMPLETED') {
       this.sendScoreNotificationOnce(employeeId, cycleId, result.overall_score);
     }
 
@@ -220,10 +220,12 @@ export class ScoringService {
       }
     }
 
-    // Send score notifications (deduplicated — one per employee per cycle)
-    for (const score of scores) {
-      if (score.overall_score) {
-        this.sendScoreNotificationOnce(score.employeeId, cycleId, score.overall_score);
+    // Only notify when the cycle is officially complete — never during an active cycle
+    if (cycle.status === 'COMPLETED') {
+      for (const score of scores) {
+        if (score.overall_score) {
+          this.sendScoreNotificationOnce(score.employeeId, cycleId, score.overall_score);
+        }
       }
     }
 
