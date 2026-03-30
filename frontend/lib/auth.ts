@@ -121,74 +121,58 @@ async function _fetchUser(retries: number): Promise<User | null> {
 
 export async function signIn(email: string, password: string) {
   console.log('🔑 Signing in:', email)
+
+  // Sign in directly via Supabase — session is stored in localStorage automatically,
+  // no setSession() call needed (which internally calls _getUser() — an extra network
+  // round-trip — and can stall indefinitely on lock acquisition).
+  const { data: authData, error: authError } = await Promise.race([
+    supabase.auth.signInWithPassword({ email, password }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Cannot reach the server — please check your connection and try again.')), 10_000)
+    ),
+  ])
+
+  if (authError || !authData?.session) {
+    console.error('❌ Sign in failed:', authError?.message)
+    throw new Error(authError?.message || 'Sign in failed')
+  }
+
+  console.log('✅ Supabase sign-in successful')
+  _sessionCache = { session: authData.session, expires: Date.now() + 30_000 }
+
+  // Fetch user profile from our backend (role, companyId, companyName, etc.)
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 8_000)
+  const timer = setTimeout(() => controller.abort(), 8_000)
   let response: Response
   try {
-    response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+    response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+      headers: { 'Authorization': `Bearer ${authData.session.access_token}` },
       signal: controller.signal,
     })
   } catch (err: any) {
-    clearTimeout(timeout)
+    clearTimeout(timer)
     if (err.name === 'AbortError') throw new Error('Cannot reach the server — please check the backend is running and try again.')
     throw err
   }
-  clearTimeout(timeout)
+  clearTimeout(timer)
 
   if (!response.ok) {
-    const error = await response.json()
-    console.error('❌ Sign in failed:', error.message)
-    throw new Error(error.message || 'Sign in failed')
+    const err = await response.json().catch(() => ({ message: 'Sign in failed' }))
+    throw new Error(err.message || 'Sign in failed')
   }
 
-  const data = await response.json()
-  console.log('✅ Sign in response received')
-
-  // Set the session in Supabase client
-  if (data.session) {
-    console.log('💾 Setting session in Supabase client...')
-    const timeout8s = <T>(promise: Promise<T>): Promise<T> =>
-      Promise.race([
-        promise,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Session setup timed out — please try again.')), 8_000)
-        ),
-      ])
-
-    const { error } = await timeout8s(supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    }))
-    if (error) {
-      console.error('❌ Error setting session:', error)
-      throw new Error('Failed to persist session')
-    }
-
-    // Verify session was persisted (also guarded by the same timeout helper)
-    const { data: { session: verifySession } } = await timeout8s(supabase.auth.getSession())
-    if (!verifySession) {
-      console.error('❌ Session not persisted correctly')
-      throw new Error('Session persistence failed')
-    }
-
-    console.log('✅ Session set and verified successfully')
-  } else {
-    console.warn('⚠️  No session in response')
-  }
-
-  return data
+  const user = await response.json()
+  console.log('✅ Sign in complete for:', user.email)
+  return { session: authData.session, user }
 }
 
 export async function signUp(email: string, password: string, name: string, companyName: string) {
   console.log('📝 Signing up:', email)
+
+  // 1. Create the account via our backend (creates company, DB record, etc.)
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signup`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, name, companyName }),
   })
 
@@ -199,39 +183,25 @@ export async function signUp(email: string, password: string, name: string, comp
   }
 
   const data = await response.json()
-  console.log('✅ Sign up response received')
+  console.log('✅ Account created, signing in...')
 
-  // Set the session in Supabase client
-  if (data.session) {
-    console.log('💾 Setting session in Supabase client...')
-    const timeout8s = <T>(promise: Promise<T>): Promise<T> =>
-      Promise.race([
-        promise,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Session setup timed out — please try again.')), 8_000)
-        ),
-      ])
+  // 2. Sign in via Supabase directly to store the session — avoids setSession()
+  //    which makes an extra _getUser network call and can stall on lock acquisition.
+  const { data: authData, error: authError } = await Promise.race([
+    supabase.auth.signInWithPassword({ email, password }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Session setup timed out — please try signing in manually.')), 10_000)
+    ),
+  ])
 
-    const { error } = await timeout8s(supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    }))
-    if (error) {
-      console.error('❌ Error setting session:', error)
-      throw new Error('Failed to persist session')
-    }
-
-    const { data: { session: verifySession } } = await timeout8s(supabase.auth.getSession())
-    if (!verifySession) {
-      console.error('❌ Session not persisted correctly')
-      throw new Error('Session persistence failed')
-    }
-
-    console.log('✅ Session set and verified successfully')
-  } else {
-    console.warn('⚠️  No session in response')
+  if (authError || !authData?.session) {
+    console.warn('⚠️ Post-signup sign-in failed:', authError?.message)
+    // Account was created — return data so caller can redirect to login
+    return data
   }
 
+  _sessionCache = { session: authData.session, expires: Date.now() + 30_000 }
+  console.log('✅ Sign up complete')
   return data
 }
 
