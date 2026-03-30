@@ -103,7 +103,6 @@ export class AnalyticsService {
     // Fetch employees and review status counts in parallel (count queries, no heavy includes)
     const [
       allNonAdminUsers,
-      totalUserCount,
       submitted,
       draft,
       assignmentCount,
@@ -111,10 +110,9 @@ export class AnalyticsService {
       managerPending,
       peerPending,
     ] = await Promise.all([
-      // All non-admin users (EMPLOYEE + MANAGER) — for scoring and completion rate denominator
+      // All non-admin users (EMPLOYEE + MANAGER) — for totalEmployees display,
+      // scoring, and completion rate denominator
       this.prisma.user.findMany({ where: { companyId, role: { not: 'ADMIN' } } }),
-      // Total headcount including admins — shown on the dashboard stat card
-      this.prisma.user.count({ where: { companyId } }),
       // cycleId already verified to belong to companyId above — no JOIN needed
       this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'SUBMITTED' } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'DRAFT' } }),
@@ -155,7 +153,7 @@ export class AnalyticsService {
     const completionRate = totalExpected > 0 ? Math.min(100, (submitted / totalExpected) * 100) : 0;
 
     return {
-      totalEmployees: totalUserCount,
+      totalEmployees: allNonAdminUsers.length,
       activeEmployees: validScores.length,
       completionRate: Math.round(completionRate),
       averageScore: averageScore ? Number(averageScore.toFixed(2)) : null,
