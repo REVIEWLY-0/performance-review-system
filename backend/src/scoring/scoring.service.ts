@@ -121,6 +121,13 @@ export class ScoringService {
       ratingQuestions,
     );
 
+    // Scores are only visible once the cycle is officially completed.
+    // Return null overall_score for active/draft cycles so every employee's
+    // score unlocks at the same moment — not as their individual reviews trickle in.
+    if (cycle.status !== 'COMPLETED') {
+      result.overall_score = null;
+    }
+
     // Only notify when the cycle is officially complete — never during an active cycle
     if (result.overall_score && cycle.status === 'COMPLETED') {
       this.sendScoreNotificationOnce(employeeId, cycleId, result.overall_score);
@@ -204,14 +211,17 @@ export class ScoringService {
     for (const employee of employees) {
       try {
         const empReviews = reviewsByEmployee.get(employee.id) ?? [];
-        scores.push(
-          this.calculateScoreFromData(
-            employee,
-            cycle,
-            empReviews,
-            ratingQuestions,
-          ),
+        const result = this.calculateScoreFromData(
+          employee,
+          cycle,
+          empReviews,
+          ratingQuestions,
         );
+        // Scores only visible once cycle is completed — null them out otherwise
+        if (cycle.status !== 'COMPLETED') {
+          result.overall_score = null;
+        }
+        scores.push(result);
       } catch (err: any) {
         console.error(
           `Error calculating score for ${employee.name}:`,
