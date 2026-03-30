@@ -151,9 +151,9 @@ export default function MyReviewsPage() {
 
   const loadCycleData = async (cycleId: string) => {
     const [data, peers, managers] = await Promise.all([
-      getEmployeeAnalytics(cycleId).catch(() => null),
-      getEmployeesToReviewAsPeer(cycleId).catch(() => [] as EmployeeToReview[]),
-      getEmployeesToReview(cycleId).catch(() => [] as EmployeeToReview[]),
+      getEmployeeAnalytics(cycleId).catch((err) => { console.error('❌ Failed to load employee analytics:', err); return null; }),
+      getEmployeesToReviewAsPeer(cycleId).catch((err) => { console.error('❌ Failed to load peer list:', err); return [] as EmployeeToReview[]; }),
+      getEmployeesToReview(cycleId).catch((err) => { console.error('❌ Failed to load manager list:', err); return [] as EmployeeToReview[]; }),
     ]);
     setAnalytics(data);
     setAllPeers(peers);

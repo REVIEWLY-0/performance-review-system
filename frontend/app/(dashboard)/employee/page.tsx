@@ -87,14 +87,14 @@ export default function EmployeeDashboard() {
     try {
       const [data, peers, managers] = await Promise.all([
         getEmployeeAnalytics(cycleId),
-        getEmployeesToReviewAsPeer(cycleId).catch(() => [] as EmployeeToReview[]),
-        getEmployeesToReview(cycleId).catch(() => [] as EmployeeToReview[]),
+        getEmployeesToReviewAsPeer(cycleId).catch((err) => { console.error('❌ Failed to load peer list:', err); return [] as EmployeeToReview[]; }),
+        getEmployeesToReview(cycleId).catch((err) => { console.error('❌ Failed to load manager list:', err); return [] as EmployeeToReview[]; }),
       ]);
       setAnalytics(data);
       setPendingPeers(peers.filter((p) => p.reviewStatus !== 'SUBMITTED'));
       setPendingManagers(managers.filter((m) => m.reviewStatus !== 'SUBMITTED'));
     } catch (err) {
-      console.error('Analytics load error:', err);
+      console.error('❌ Failed to load analytics:', err);
     }
   };
 

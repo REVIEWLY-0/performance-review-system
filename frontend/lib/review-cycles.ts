@@ -87,7 +87,7 @@ export const reviewCyclesApi = {
       ? `${API_URL}/review-cycles?status=${status}&limit=200`
       : `${API_URL}/review-cycles?limit=200`;
     const data = await fetchWithAuth(url);
-    setCache(key, data, 30_000); // 30s TTL — cycles change infrequently
+    setCache(key, data, 5_000); // 5s TTL — short enough to catch admin activations quickly
     return data;
   },
 
