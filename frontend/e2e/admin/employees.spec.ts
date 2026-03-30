@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { Buffer } from 'buffer';
 import { loginAs, TEST_USERS } from '../helpers/auth';
 
 test.describe('Admin — Employee Management', () => {
@@ -32,6 +33,55 @@ test.describe('Admin — Employee Management', () => {
     await expect(
       page.locator('text=/import employees from csv/i').first(),
     ).toBeVisible({ timeout: 5_000 });
+  });
+
+  test('CSV import: preview shows after selecting a valid file', async ({ page }) => {
+    // Use a timestamp to make the email unique per test run
+    const ts = Date.now();
+    const csvContent = [
+      'name,email,role,department,manager_email,employee_id',
+      `CSV Test User ${ts},csvtest${ts}@example.com,EMPLOYEE,Engineering,,`,
+    ].join('\n');
+
+    await page.getByRole('button', { name: /import csv/i }).click();
+    await expect(page.getByText(/import employees from csv/i)).toBeVisible({ timeout: 5_000 });
+
+    // Upload the CSV file via the hidden file input
+    await page.locator('input[type="file"][accept=".csv"]').setInputFiles({
+      name: 'test-import.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvContent),
+    });
+
+    // Preview step should appear showing the parsed row
+    await expect(page.getByText(/rows parsed from/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(`CSV Test User ${ts}`)).toBeVisible({ timeout: 5_000 });
+  });
+
+  test('CSV import: importing a valid employee succeeds', async ({ page }) => {
+    const ts = Date.now();
+    const csvContent = [
+      'name,email,role,department,manager_email,employee_id',
+      `Import E2E ${ts},e2eimport${ts}@testcompany.com,EMPLOYEE,QA,,`,
+    ].join('\n');
+
+    await page.getByRole('button', { name: /import csv/i }).click();
+    await expect(page.getByText(/import employees from csv/i)).toBeVisible({ timeout: 5_000 });
+
+    await page.locator('input[type="file"][accept=".csv"]').setInputFiles({
+      name: 'import-e2e.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvContent),
+    });
+
+    // Wait for preview, then click the Import button
+    await expect(page.getByText(/rows parsed from/i)).toBeVisible({ timeout: 5_000 });
+    await page.getByRole('button', { name: /import \d+ employee/i }).click();
+
+    // Result step: should show "Import complete!" or at least "imported"
+    await expect(
+      page.getByText(/import complete|imported/i).first(),
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test('search filters employees', async ({ page }) => {

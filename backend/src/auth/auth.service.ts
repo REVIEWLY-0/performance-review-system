@@ -237,6 +237,7 @@ export class AuthService {
       role: user.role,
       companyId: user.companyId,
       companyName: user.company.name,
+      avatarUrl: user.avatarUrl ?? null,
     };
   }
 

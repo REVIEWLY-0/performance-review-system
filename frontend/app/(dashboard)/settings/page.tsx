@@ -93,8 +93,11 @@ export default function SettingsPage() {
     try {
       const updated = await usersApi.uploadAvatar(file);
       invalidateUserCache();
+      // Append a cache-busting param so the browser fetches the new image even if
+      // the Supabase CDN URL is identical (same path, upsert replaces the file).
+      const bustedUrl = updated.avatarUrl ? `${updated.avatarUrl}?t=${Date.now()}` : updated.avatarUrl;
       setUser((prev) => {
-        const next = prev ? { ...prev, avatarUrl: updated.avatarUrl } : prev;
+        const next = prev ? { ...prev, avatarUrl: bustedUrl } : prev;
         if (next) window.dispatchEvent(new CustomEvent('user-updated', { detail: next }));
         return next;
       });

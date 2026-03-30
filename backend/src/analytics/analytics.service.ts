@@ -103,6 +103,7 @@ export class AnalyticsService {
     // Fetch employees and review status counts in parallel (count queries, no heavy includes)
     const [
       allNonAdminUsers,
+      totalUserCount,
       submitted,
       draft,
       assignmentCount,
@@ -110,9 +111,10 @@ export class AnalyticsService {
       managerPending,
       peerPending,
     ] = await Promise.all([
-      // All non-admin users (EMPLOYEE + MANAGER) — for totalEmployees display
-      // and for self-review count in completionRate denominator
+      // All non-admin users (EMPLOYEE + MANAGER) — for scoring and completion rate denominator
       this.prisma.user.findMany({ where: { companyId, role: { not: 'ADMIN' } } }),
+      // Total headcount including admins — shown on the dashboard stat card
+      this.prisma.user.count({ where: { companyId } }),
       // cycleId already verified to belong to companyId above — no JOIN needed
       this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'SUBMITTED' } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'DRAFT' } }),
@@ -153,7 +155,7 @@ export class AnalyticsService {
     const completionRate = totalExpected > 0 ? Math.min(100, (submitted / totalExpected) * 100) : 0;
 
     return {
-      totalEmployees: allNonAdminUsers.length,
+      totalEmployees: totalUserCount,
       activeEmployees: validScores.length,
       completionRate: Math.round(completionRate),
       averageScore: averageScore ? Number(averageScore.toFixed(2)) : null,
@@ -190,16 +192,20 @@ export class AnalyticsService {
     }
 
     // Get team members (employees this manager is assigned to review — downward only)
-    const assignments = await this.prisma.reviewerAssignment.findMany({
-      where: {
-        reviewCycleId: cycleId,
-        reviewerId: managerId,
-        reviewerType: 'MANAGER',
-        employee: { role: 'EMPLOYEE' }, // downward only — direct reports
-        // cycleId already verified to belong to companyId above
-      },
-      include: { employee: true },
-    });
+    const [assignments, directReportCount] = await Promise.all([
+      this.prisma.reviewerAssignment.findMany({
+        where: {
+          reviewCycleId: cycleId,
+          reviewerId: managerId,
+          reviewerType: 'MANAGER',
+          employee: { role: 'EMPLOYEE' }, // downward only — direct reports
+          // cycleId already verified to belong to companyId above
+        },
+        include: { employee: true },
+      }),
+      // Count actual direct reports (managerId relationship) for the Team Size stat
+      this.prisma.user.count({ where: { managerId, companyId } }),
+    ]);
 
     const teamMemberIds = assignments.map((a) => a.employeeId);
 
@@ -294,7 +300,7 @@ export class AnalyticsService {
         : null;
 
     return {
-      teamSize: teamMemberIds.length,
+      teamSize: directReportCount,
       teamAverageScore: teamAverageScore
         ? Number(teamAverageScore.toFixed(2))
         : null,
