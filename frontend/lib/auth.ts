@@ -74,11 +74,17 @@ async function _fetchUser(retries: number): Promise<User | null> {
         await new Promise(resolve => setTimeout(resolve, 500 * attempt))
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      })
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 8_000)
+      let response: Response
+      try {
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+          signal: controller.signal,
+        })
+      } finally {
+        clearTimeout(timeout)
+      }
 
       if (!response.ok) {
         if (response.status === 401) {

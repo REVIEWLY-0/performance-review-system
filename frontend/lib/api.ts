@@ -88,15 +88,26 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     throw new Error('Not authenticated')
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 8_000)
+  let response: Response
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      signal: controller.signal,
+    })
+  } catch (err: any) {
+    clearTimeout(timeout)
+    if (err.name === 'AbortError') throw new Error('Request timed out — backend may be starting up, please try again.')
+    throw err
+  }
+  clearTimeout(timeout)
 
   // On 401, clear local caches and throw — the calling layout will redirect to
   // /login naturally. Do NOT call signOut() or window.location.href here:
