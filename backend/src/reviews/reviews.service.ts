@@ -1508,4 +1508,81 @@ export class ReviewsService {
       };
     });
   }
+
+  // ============================================================================
+  // Admin — View All Review Responses for an Employee
+  // ============================================================================
+
+  /**
+   * Return all SUBMITTED reviews for a specific employee in a cycle.
+   * PEER reviewer identities are anonymised; all other reviewer names are included.
+   * Answers include question text, type, rating, and text/task responses.
+   */
+  async getAdminEmployeeReviews(
+    adminCompanyId: string,
+    cycleId: string,
+    employeeId: string,
+  ) {
+    // Verify cycle belongs to this company (no status restriction — admins can view completed cycles)
+    const cycle = await this.prisma.reviewCycle.findFirst({
+      where: { id: cycleId, companyId: adminCompanyId },
+      select: { id: true, name: true },
+    });
+    if (!cycle) throw new NotFoundException('Review cycle not found or access denied');
+
+    // Verify employee belongs to the same company
+    const employee = await this.prisma.user.findFirst({
+      where: { id: employeeId, companyId: adminCompanyId },
+      select: { id: true, name: true, email: true, department: true },
+    });
+    if (!employee) throw new NotFoundException('Employee not found or access denied');
+
+    // Fetch all SUBMITTED reviews for this employee, with reviewer info + full answers
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        reviewCycleId: cycleId,
+        employeeId,
+        status: 'SUBMITTED',
+        reviewCycle: { companyId: adminCompanyId }, // multi-tenancy guard
+      },
+      include: {
+        reviewer: { select: { id: true, name: true } },
+        answers: {
+          include: {
+            question: {
+              select: { id: true, text: true, type: true, order: true, tasks: true },
+            },
+          },
+          orderBy: { question: { order: 'asc' } },
+        },
+      },
+      orderBy: { reviewType: 'asc' },
+    });
+
+    // Shape response — anonymise PEER reviewers
+    const entries = reviews.map((review) => {
+      const isPeer = review.reviewType === 'PEER';
+      return {
+        reviewId: review.id,
+        reviewType: review.reviewType,
+        submittedAt: review.updatedAt,
+        reviewer: {
+          id: isPeer ? null : review.reviewer.id,
+          name: isPeer ? null : review.reviewer.name,
+          isAnonymous: isPeer,
+        },
+        answers: review.answers.map((a) => ({
+          questionId: a.questionId,
+          questionText: a.question.text,
+          questionType: a.question.type,
+          questionOrder: a.question.order,
+          tasks: a.question.tasks,
+          rating: a.rating,
+          textAnswer: a.textAnswer,
+        })),
+      };
+    });
+
+    return { employee, cycle, reviews: entries };
+  }
 }

@@ -254,9 +254,12 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                 {pagedScores.map((score) => (
                   <tr key={score.employeeId} className="hover:bg-surface-container-low">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-on-surface">
+                      <Link
+                        href={`/admin/cycles/${params.id}/employee/${score.employeeId}/reviews`}
+                        className="text-sm font-medium text-on-surface hover:text-primary hover:underline transition-colors"
+                      >
                         {score.employeeName}
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-on-surface">

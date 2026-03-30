@@ -260,3 +260,42 @@ export async function savePeerReview(
     body: JSON.stringify({ answers, submit }),
   });
 }
+
+// ============================================================================
+// Admin — Employee Review Detail
+// ============================================================================
+
+export interface AdminReviewAnswer {
+  questionId: string;
+  questionText: string;
+  questionType: 'RATING' | 'TEXT' | 'TASK_LIST';
+  questionOrder: number;
+  tasks: { id: string; label: string; description?: string }[] | null;
+  rating: number | null;
+  textAnswer: string | null;
+}
+
+export interface AdminReviewEntry {
+  reviewId: string;
+  reviewType: 'SELF' | 'MANAGER' | 'PEER' | 'DOWNWARD';
+  submittedAt: string;
+  reviewer: {
+    id: string | null;
+    name: string | null;
+    isAnonymous: boolean;
+  };
+  answers: AdminReviewAnswer[];
+}
+
+export interface AdminEmployeeReviewsResponse {
+  employee: { id: string; name: string; email: string; department: string | null };
+  cycle: { id: string; name: string };
+  reviews: AdminReviewEntry[];
+}
+
+export function getAdminEmployeeReviews(
+  cycleId: string,
+  employeeId: string,
+): Promise<AdminEmployeeReviewsResponse> {
+  return fetchWithAuth(`${API_URL}/reviews/admin/${cycleId}/employee/${employeeId}`);
+}

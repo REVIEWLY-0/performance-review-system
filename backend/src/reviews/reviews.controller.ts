@@ -13,6 +13,8 @@ import {
   SubmitReviewDto,
 } from './reviews.service';
 import { AuthGuard } from '../common/guards/auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CompanyId } from '../common/decorators/company-id.decorator';
 
@@ -285,6 +287,25 @@ export class ReviewsController {
    * Save or submit peer review
    * Body should include { answers: [...], submit: boolean }
    */
+  // ============================================================================
+  // Admin Endpoints
+  // ============================================================================
+
+  /**
+   * GET /reviews/admin/:cycleId/employee/:employeeId
+   * ADMIN only — all submitted reviews for an employee (peer reviewers anonymised)
+   */
+  @Get('admin/:cycleId/employee/:employeeId')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async getAdminEmployeeReviews(
+    @Param('cycleId') cycleId: string,
+    @Param('employeeId') employeeId: string,
+    @CompanyId() companyId: string,
+  ) {
+    return this.reviewsService.getAdminEmployeeReviews(companyId, cycleId, employeeId);
+  }
+
   @Post('peer/:cycleId/:employeeId')
   async savePeerReview(
     @Param('cycleId') cycleId: string,
