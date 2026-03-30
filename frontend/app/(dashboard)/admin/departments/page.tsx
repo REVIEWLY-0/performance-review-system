@@ -92,8 +92,10 @@ export default function DepartmentsPage() {
           const updated = await departmentsApi.archive(dept.id);
           setDepartments((prev) => prev.filter((d) => d.id !== dept.id));
           setArchived((prev) => [...prev, updated]);
+          setConfirmDialog(null);
           toast.success(`"${dept.name}" archived`);
         } catch (err: any) {
+          setConfirmDialog(null);
           toast.error(err.message || 'Failed to archive department');
         }
       },

@@ -174,6 +174,7 @@ export default function EmployeeManagerReviewPage({ params }: PageProps) {
           await saveManagerReview(cycleId, params.managerId, allAnswers, true);
           router.push(`/employee/reviews/manager?cycleId=${cycleId}`);
         } catch (err: any) {
+          setConfirmDialog(null);
           setError(err.message || 'Failed to submit review');
         } finally {
           setSaving(false);

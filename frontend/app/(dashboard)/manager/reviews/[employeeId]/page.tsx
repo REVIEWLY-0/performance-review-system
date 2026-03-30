@@ -206,6 +206,7 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
           await saveDownwardReview(cycleId, params.employeeId, allAnswers, true);
           router.push(`/manager/reviews?cycleId=${cycleId}`);
         } catch (err: any) {
+          setConfirmDialog(null);
           setError(err.message || 'Failed to submit review');
         } finally {
           setSaving(false);

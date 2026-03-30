@@ -42,8 +42,11 @@ export class ReviewCyclesController {
   /**
    * GET /review-cycles/:id/insights
    * HR insights: per-employee completion status, reviewer matrix, aggregate stats
+   * Admin only
    */
   @Get(':id/insights')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   async getInsights(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.reviewCyclesService.getInsights(id, companyId);
   }

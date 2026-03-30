@@ -30,8 +30,6 @@ export default function AdminDashboard() {
       ]);
 
       if (!currentUser) {
-        const { signOut } = await import('@/lib/auth');
-        await signOut();
         router.push('/login');
         return;
       }

@@ -138,8 +138,10 @@ export default function ReviewTypesPage() {
         try {
           await reviewTypeConfigsApi.delete(config.id);
           setConfigs((prev) => prev.filter((c) => c.id !== config.id));
+          setConfirmDialog(null);
           toast.success(`"${config.label}" deleted`);
         } catch (err: any) {
+          setConfirmDialog(null);
           toast.error(err.message || 'Failed to delete review type');
         } finally {
           setDeletingId(null);
