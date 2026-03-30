@@ -26,13 +26,14 @@ import { PrismaService } from './common/services/prisma.service';
   imports: [
     SentryModule.forRoot(),
     // Rate limiting
-    // - default: 10 req/s per IP (general API protection)
+    // - default: 100 req/s per IP — SPAs fire 8-15 concurrent requests per page;
+    //   React StrictMode in dev doubles that. 10/s was hitting the limit on every load.
     // - auth: 10 attempts per 15 min per IP (brute-force protection on login/signup)
     ThrottlerModule.forRoot([
       {
         name: 'default',
         ttl: 1000,
-        limit: 10,
+        limit: 100,
       },
       {
         name: 'auth',

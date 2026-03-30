@@ -13,6 +13,8 @@ export interface User {
 // Module-level caches — survive re-renders, cleared on sign-out
 let _sessionCache: { session: any; expires: number } | null = null
 let _userCache: { user: User; expires: number } | null = null
+// In-flight deduplication: concurrent calls share one fetch instead of firing N
+let _userFetchInFlight: Promise<User | null> | null = null
 
 export async function getSession() {
   // Return cached session if still valid (avoids repeated Supabase storage reads)
@@ -47,6 +49,20 @@ export async function getCurrentUser(retries = 2): Promise<User | null> {
     return _userCache.user
   }
 
+  // Deduplicate concurrent calls — layout + page both call this on every navigation.
+  // Without this, StrictMode + concurrent renders fire N requests before _userCache is set.
+  if (_userFetchInFlight) {
+    return _userFetchInFlight
+  }
+
+  _userFetchInFlight = _fetchUser(retries).finally(() => {
+    _userFetchInFlight = null
+  })
+
+  return _userFetchInFlight
+}
+
+async function _fetchUser(retries: number): Promise<User | null> {
   const session = await getSession()
   if (!session) {
     return null
@@ -200,12 +216,14 @@ export async function signUp(email: string, password: string, name: string, comp
 export async function signOut() {
   _sessionCache = null
   _userCache = null
+  _userFetchInFlight = null
   await supabase.auth.signOut()
 }
 
 /** Clear the user cache so the next getCurrentUser() call fetches fresh data */
 export function invalidateUserCache() {
   _userCache = null
+  _userFetchInFlight = null
 }
 
 /**
@@ -216,6 +234,7 @@ export function invalidateUserCache() {
 export function invalidateSession() {
   _sessionCache = null
   _userCache = null
+  _userFetchInFlight = null
 }
 
 /**

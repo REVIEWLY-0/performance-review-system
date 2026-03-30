@@ -11,6 +11,7 @@ export interface RequestWithUser extends Request {
     name: string;
     role: string;
     companyId: string;
+    companyName: string;
   };
 }
 
@@ -69,8 +70,8 @@ export class TenantContextMiddleware implements NestMiddleware {
         throw new UnauthorizedException('Invalid or expired token');
       }
 
-      // Fetch user from database with company_id
-      const user = await this.prisma.user.findUnique({
+      // Fetch user from database with company_id and company name
+      const dbUser = await this.prisma.user.findUnique({
         where: { id: data.user.id },
         select: {
           id: true,
@@ -78,12 +79,22 @@ export class TenantContextMiddleware implements NestMiddleware {
           name: true,
           role: true,
           companyId: true,
+          company: { select: { name: true } },
         },
       });
 
-      if (!user) {
+      if (!dbUser) {
         throw new UnauthorizedException('User not found in system');
       }
+
+      const user: RequestWithUser['user'] = {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        role: dbUser.role,
+        companyId: dbUser.companyId,
+        companyName: dbUser.company.name,
+      };
 
       // Cache for next requests within TTL window
       userCache.set(token, { user, expiresAt: Date.now() + USER_CACHE_TTL_MS });

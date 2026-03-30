@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Headers, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { SignUpDto, SignInDto } from './auth.dto';
@@ -38,12 +38,10 @@ export class AuthController {
   }
 
   @Get('me')
-  async getCurrentUser(@Headers('authorization') authorization: string) {
-    if (!authorization) {
-      throw new UnauthorizedException('No authorization token provided');
-    }
-
-    const token = authorization.replace('Bearer ', '');
-    return this.authService.verifyToken(token);
+  @UseGuards(AuthGuard)
+  async getCurrentUser(@CurrentUser() user: any) {
+    // User already verified + fetched by TenantContextMiddleware — return directly.
+    // This avoids a second supabase.auth.getUser() call on every /auth/me request.
+    return user;
   }
 }
