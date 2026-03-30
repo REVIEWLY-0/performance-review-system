@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { getEmployeesToReviewDownward, EmployeeToReview } from '@/lib/reviews';
@@ -23,8 +23,11 @@ export default function ManagerReviewsPage() {
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
+  const initialized = useRef(false);
 
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
     initPage();
   }, []);
 
