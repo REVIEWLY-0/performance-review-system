@@ -1,4 +1,4 @@
-import { getSession } from './auth'
+import { getSession, invalidateSession } from './auth'
 import { getCached, setCache, invalidateCache } from './cache'
 
 export interface PaginatedResponse<T> {
@@ -98,14 +98,13 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     },
   })
 
-  // Handle 401 by signing out
+  // On 401, clear local caches and throw — the calling layout will redirect to
+  // /login naturally. Do NOT call signOut() or window.location.href here:
+  // multiple concurrent API calls can all hit 401 simultaneously and a hard
+  // redirect race causes the login loop + rate limit exhaustion.
   if (response.status === 401) {
-    console.error('❌ 401 Unauthorized - signing out')
-    const { signOut } = await import('./auth')
-    await signOut()
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
-    }
+    console.warn('⚠️ API 401 — invalidating session cache, throwing for caller to handle')
+    invalidateSession()
     throw new Error('Session expired')
   }
 

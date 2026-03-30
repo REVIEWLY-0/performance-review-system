@@ -66,14 +66,18 @@ export async function getCurrentUser(retries = 2): Promise<User | null> {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.error('❌ Unauthorized - session invalid')
-          await supabase.auth.signOut()
+          // Clear our local caches so the next navigation fetches fresh tokens.
+          // Do NOT call supabase.auth.signOut() here — a transient 401 (backend
+          // hiccup, clock skew, first-request race) must not destroy the Supabase
+          // session. Layouts will redirect to /login naturally when this returns null.
+          console.warn('⚠️ /auth/me returned 401 — clearing caches (session may be expired or backend not ready)')
           _sessionCache = null
           _userCache = null
           return null
         }
 
         if (response.status >= 500 && attempt < retries) {
+          console.warn(`⚠️ /auth/me returned ${response.status} — retrying (attempt ${attempt + 1}/${retries})`)
           continue
         }
         return null
@@ -201,6 +205,16 @@ export async function signOut() {
 
 /** Clear the user cache so the next getCurrentUser() call fetches fresh data */
 export function invalidateUserCache() {
+  _userCache = null
+}
+
+/**
+ * Clear both session and user caches without signing out of Supabase.
+ * Use this when an API call returns 401 — it forces re-verification on the
+ * next navigation without destroying the underlying Supabase session.
+ */
+export function invalidateSession() {
+  _sessionCache = null
   _userCache = null
 }
 
