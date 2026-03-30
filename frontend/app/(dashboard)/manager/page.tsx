@@ -395,13 +395,15 @@ export default function ManagerDashboard() {
       <div className="bg-surface-container-lowest shadow rounded-lg p-6">
         <h3 className="text-lg font-medium text-on-surface mb-4">Quick Actions</h3>
         <div className="flex flex-wrap gap-3">
-          {/* Primary: review team members */}
-          <button
-            onClick={() => router.push('/manager/reviews')}
-            className="flex-1 inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-xl text-on-primary bg-primary hover:bg-primary-dim whitespace-nowrap"
-          >
-            Review Team Members
-          </button>
+          {/* Primary: review team members — hidden once all downward reviews submitted */}
+          {(!analytics || analytics.pendingReviews > 0) && (
+            <button
+              onClick={() => router.push('/manager/reviews')}
+              className="flex-1 inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-xl text-on-primary bg-primary hover:bg-primary-dim whitespace-nowrap"
+            >
+              Review Team Members
+            </button>
+          )}
 
           {/* Own self-review — only shown if the manager has one pending */}
           {myAnalytics?.pendingTasks?.selfReview && (

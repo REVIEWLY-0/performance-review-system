@@ -93,7 +93,11 @@ export default function SettingsPage() {
     try {
       const updated = await usersApi.uploadAvatar(file);
       invalidateUserCache();
-      setUser((prev) => prev ? { ...prev, avatarUrl: updated.avatarUrl } : prev);
+      setUser((prev) => {
+        const next = prev ? { ...prev, avatarUrl: updated.avatarUrl } : prev;
+        if (next) window.dispatchEvent(new CustomEvent('user-updated', { detail: next }));
+        return next;
+      });
       toast.success('Avatar updated');
     } catch (err: any) {
       toast.error(err.message || 'Failed to upload avatar');
@@ -108,7 +112,11 @@ export default function SettingsPage() {
     try {
       await usersApi.deleteAvatar();
       invalidateUserCache();
-      setUser((prev) => prev ? { ...prev, avatarUrl: null } : prev);
+      setUser((prev) => {
+        const next = prev ? { ...prev, avatarUrl: null } : prev;
+        if (next) window.dispatchEvent(new CustomEvent('user-updated', { detail: next }));
+        return next;
+      });
       toast.success('Avatar removed');
     } catch (err: any) {
       toast.error(err.message || 'Failed to remove avatar');

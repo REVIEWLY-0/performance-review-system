@@ -77,6 +77,13 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Listen for avatar/name updates dispatched by the settings page
+  useEffect(() => {
+    const handler = (e: Event) => setUser((prev) => prev ? { ...prev, ...(e as CustomEvent).detail } : prev)
+    window.addEventListener('user-updated', handler)
+    return () => window.removeEventListener('user-updated', handler)
+  }, [])
+
   const isManager = user?.role === 'MANAGER'
   const NAV_ITEMS = isManager ? MANAGER_NAV_ITEMS : EMPLOYEE_NAV_ITEMS
   const BOTTOM_NAV = isManager ? MANAGER_BOTTOM_NAV : EMPLOYEE_BOTTOM_NAV

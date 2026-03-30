@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   getManagerReview,
   saveManagerReview,
+  invalidateReviewCaches,
   ManagerReviewData,
   Answer,
   QuestionWithAnswer,
@@ -35,13 +36,18 @@ export default function EmployeeManagerReviewPage({ params }: PageProps) {
 
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const loadedKey = useRef('');
   useEffect(() => {
     if (!cycleId) {
       setError('Review cycle not specified');
       setLoading(false);
       return;
     }
+    const key = `${cycleId}:${params.managerId}`;
+    if (loadedKey.current === key) return;
+    loadedKey.current = key;
     loadReviewData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cycleId, params.managerId]);
 
   useEffect(() => {
@@ -172,6 +178,7 @@ export default function EmployeeManagerReviewPage({ params }: PageProps) {
           setError('');
           const allAnswers = Array.from(answers.values());
           await saveManagerReview(cycleId, params.managerId, allAnswers, true);
+          invalidateReviewCaches();
           router.push(`/employee/reviews/manager?cycleId=${cycleId}`);
         } catch (err: any) {
           setConfirmDialog(null);

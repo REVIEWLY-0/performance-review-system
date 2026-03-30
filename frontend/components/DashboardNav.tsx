@@ -23,7 +23,7 @@ export default function DashboardNav({ user }: { user: User }) {
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-surface shadow-sm border-b border-outline-variant/40">
+    <nav className="sticky top-0 z-50 bg-surface dark:bg-[#0b1326] border-b border-outline-variant/40 dark:border-white/[0.06]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-2">

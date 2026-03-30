@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   getPeerReview,
   savePeerReview,
+  invalidateReviewCaches,
   PeerReviewData,
   Answer,
   QuestionWithAnswer,
@@ -37,13 +38,18 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
 
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const loadedKey = useRef('');
   useEffect(() => {
     if (!cycleId) {
       setError('Review cycle not specified');
       setLoading(false);
       return;
     }
+    const key = `${cycleId}:${params.employeeId}`;
+    if (loadedKey.current === key) return;
+    loadedKey.current = key;
     loadReviewData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cycleId, params.employeeId]);
 
   useEffect(() => {
@@ -178,6 +184,7 @@ export default function PeerReviewPage({ params }: PeerReviewPageProps) {
           setError('');
           const allAnswers = Array.from(answers.values());
           await savePeerReview(cycleId, params.employeeId, allAnswers, true);
+          invalidateReviewCaches();
           router.push(`/employee/reviews/peer?cycleId=${cycleId}`);
         } catch (err: any) {
           setConfirmDialog(null);

@@ -6,6 +6,7 @@ import {
   getSelfReview,
   saveDraft,
   submitReview,
+  invalidateReviewCaches,
   SelfReviewData,
   QuestionWithAnswer,
   Answer,
@@ -50,15 +51,18 @@ export default function SelfReviewPage() {
   // Auto-save timer ref
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Load review data on mount
+  // Load review data on mount — loadedKey guard prevents StrictMode double-fire
+  const loadedKey = useRef('');
   useEffect(() => {
     if (!cycleId) {
       setError('Review cycle ID is required');
       setLoading(false);
       return;
     }
-
+    if (loadedKey.current === cycleId) return;
+    loadedKey.current = cycleId;
     loadReview();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cycleId]);
 
   const loadReview = async () => {
@@ -251,6 +255,7 @@ export default function SelfReviewPage() {
 
       const allAnswers = Array.from(answers.values());
       await submitReview(cycleId, allAnswers);
+      invalidateReviewCaches();
 
       // Redirect to dashboard with success message
       router.push('/employee/reviews?message=Review submitted successfully');

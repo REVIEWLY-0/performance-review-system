@@ -149,7 +149,7 @@ export default function EmployeeScoresPage() {
         <div>
           <button
             onClick={() => router.push('/employee')}
-            className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline mb-2"
+            className="flex items-center gap-1.5 text-sm font-semibold text-primary bg-primary/8 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors mb-3"
           >
             <Icon name="arrow_back" className="text-[16px]" />
             Back to Dashboard

@@ -1,5 +1,12 @@
 import { fetchWithAuth } from './api';
-import { cachedFetch } from './cache';
+import { cachedFetch, invalidateCache } from './cache';
+
+/** Call after any review submission to force fresh data on list pages */
+export function invalidateReviewCaches() {
+  invalidateCache('reviews:');
+  invalidateCache('analytics:');
+  invalidateCache('score:');
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 

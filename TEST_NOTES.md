@@ -654,3 +654,108 @@ Output:
 - Fix: `users.service.ts` `remove()` now checks `reviewerAssignment.count({ where: { reviewerId: userId } })` before deletion. If the user has pending reviewer assignments, returns a descriptive 400 error: "Cannot delete user with N pending reviewer assignment(s). Remove their reviewer assignments first."
 - Note: there were already checks for `review.count({ where: { reviewerId } })` (submitted reviews) and `reviewerAssignment.count({ where: { employeeId } })` (being reviewed). The missing check was when the user IS the assigned reviewer but hasn't submitted yet.
 
+---
+
+## 2026-03-14 — Critical Bugs Found During Intern Testing
+
+### P0 — Auth/Session Instability (Blocks deployment)
+1) Successful sign-in redirects back to sign-in (loop) + rate limits
+Symptoms:
+- After “sign in successful”, app sometimes returns to sign-in page without staying logged in
+- Repeated attempts eventually hit rate limit
+- Also happened for manager account
+
+Expected:
+- After successful login, user remains authenticated and is routed to correct dashboard.
+- No login loop; no rate limit triggered by auth retries.
+
+Suspected:
+- Session not persisted (cookie/localStorage issue)
+- Auth guard/middleware rejecting token after navigation
+- Infinite retry on /me or profile fetch causing rate limit
+- CORS / credentials mismatch
+- Token refresh logic or “signOut on 401” handler misfiring
+
+Acceptance Criteria:
+- Login succeeds reliably 10/10 times (no loop).
+- Refresh page does not log user out.
+- /me (or profile endpoint) succeeds and does not refetch infinitely.
+- Rate limit not triggered during normal login.
+
+2) Random logout while active (admin logged out mid-session)
+Symptoms:
+- Admin got logged out while using the app
+- Afterwards cannot sign back in; manager also stuck in sign-in loop
+
+Expected:
+- No unexpected logout unless token expires; refresh should renew session or prompt re-login cleanly.
+
+---
+
+### P0 — Wrong statuses + dashboard data regression
+3) “My Reviews” shows IN PROGRESS after submitting review
+Symptoms:
+- After completing self assessment/review, returning to My Reviews shows “In Progress” instead of Completed/Submitted
+- Dashboard progress resets to 0 instead of complete
+- Dashboard shows “None active review cycle” even when there is one
+- Similar issue for manager
+
+Expected:
+- Submitted reviews show Submitted/Completed.
+- Dashboard reflects accurate completion and active cycle status.
+
+Suspected:
+- Frontend not refetching/revalidating after submit
+- Backend status not updated properly OR UI reading wrong field
+- Cached server component data stale
+- Incorrect status mapping
+
+Acceptance Criteria:
+- After submit, status updates immediately (without hard refresh).
+- Dashboard reflects active cycle and progress correctly.
+
+---
+
+### P0 — Scores become blank on re-open
+4) My Scores blank after revisiting
+Symptoms:
+- After completing a review, score shows once
+- If user navigates away and comes back later, score becomes blank
+- Same for manager/employee
+
+Expected:
+- Scores persist and load consistently every time.
+
+Suspected:
+- Score API returns null intermittently
+- UI state reset / missing fetch dependency
+- Access rule gating misapplied after first view
+- Stale cache
+
+Acceptance Criteria:
+- Score always loads if available.
+- No “blank after second visit”.
+
+---
+
+### P1 — Email template formatting bug
+5) Email shows “10. Out of 5.00”
+Symptoms:
+- After completing self assessment, email is sent to employee and displays a score like “10. Out of 5.00”
+- Looks like wrong max scale or formatting bug.
+
+Expected:
+- Correct score format (e.g., “4.2 out of 5” or “8.4 out of 10”) consistent with configured rating scale and should only be sent after review is complete.
+
+Acceptance Criteria:
+- Email score matches actual scoring scale + formatting.
+
+---
+
+### P2 — UI preference / theme
+6) App loads dark mode by default
+Expected:
+- Respect saved user preference OR OS preference OR default to light (choose intended behavior and document it).
+
+Acceptance Criteria:
+- Default theme behavior is consistent and predictable.

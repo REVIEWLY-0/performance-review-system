@@ -217,6 +217,15 @@ export default function MyReviewsPage() {
   return (
     <div>
 
+      {/* ── Back to dashboard ─────────────────────────────────────────────── */}
+      <button
+        onClick={() => router.push('/employee')}
+        className="flex items-center gap-1.5 text-sm font-semibold text-primary bg-primary/8 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors mb-6"
+      >
+        <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 0" }}>arrow_back</span>
+        Back to Dashboard
+      </button>
+
       {/* ── Success banner ────────────────────────────────────────────────── */}
       {successMessage && (
         <div className="mb-6 flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-2xl px-4 py-3">

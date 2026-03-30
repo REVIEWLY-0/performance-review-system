@@ -63,6 +63,13 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Listen for avatar/name updates dispatched by the settings page
+  useEffect(() => {
+    const handler = (e: Event) => setUser((prev) => prev ? { ...prev, ...(e as CustomEvent).detail } : prev)
+    window.addEventListener('user-updated', handler)
+    return () => window.removeEventListener('user-updated', handler)
+  }, [])
+
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href)
 

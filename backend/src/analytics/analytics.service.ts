@@ -102,7 +102,7 @@ export class AnalyticsService {
 
     // Fetch employees and review status counts in parallel (count queries, no heavy includes)
     const [
-      allEmployees,
+      allNonAdminUsers,
       submitted,
       draft,
       assignmentCount,
@@ -110,7 +110,9 @@ export class AnalyticsService {
       managerPending,
       peerPending,
     ] = await Promise.all([
-      this.prisma.user.findMany({ where: { companyId, role: 'EMPLOYEE' } }),
+      // All non-admin users (EMPLOYEE + MANAGER) — for totalEmployees display
+      // and for self-review count in completionRate denominator
+      this.prisma.user.findMany({ where: { companyId, role: { not: 'ADMIN' } } }),
       // cycleId already verified to belong to companyId above — no JOIN needed
       this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'SUBMITTED' } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'DRAFT' } }),
@@ -122,6 +124,9 @@ export class AnalyticsService {
       this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'MANAGER', status: { not: 'SUBMITTED' } } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'PEER',    status: { not: 'SUBMITTED' } } }),
     ]);
+
+    // Scoring uses EMPLOYEE role only (managers are not scored as reviewees)
+    const allEmployees = allNonAdminUsers.filter((u) => u.role === 'EMPLOYEE');
 
     // Calculate scores using a single batch query internally
     const employeeScores = await this.calculateAllEmployeeScores(
@@ -141,13 +146,14 @@ export class AnalyticsService {
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 5);
 
-    // totalExpected = reviewer assignments + 1 self-review per employee
-    const totalExpected = assignmentCount + allEmployees.length;
+    // totalExpected = reviewer assignments + 1 self-review per non-admin user
+    // Using allNonAdminUsers (not just EMPLOYEE) so manager self-reviews don't push > 100%
+    const totalExpected = assignmentCount + allNonAdminUsers.length;
     const notStarted = Math.max(0, totalExpected - submitted - draft);
-    const completionRate = totalExpected > 0 ? (submitted / totalExpected) * 100 : 0;
+    const completionRate = totalExpected > 0 ? Math.min(100, (submitted / totalExpected) * 100) : 0;
 
     return {
-      totalEmployees: allEmployees.length,
+      totalEmployees: allNonAdminUsers.length,
       activeEmployees: validScores.length,
       completionRate: Math.round(completionRate),
       averageScore: averageScore ? Number(averageScore.toFixed(2)) : null,

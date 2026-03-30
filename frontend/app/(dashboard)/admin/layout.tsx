@@ -76,6 +76,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Listen for avatar/name updates dispatched by the settings page
+  useEffect(() => {
+    const handler = (e: Event) => setUser((e as CustomEvent).detail)
+    window.addEventListener('user-updated', handler)
+    return () => window.removeEventListener('user-updated', handler)
+  }, [])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface-container">

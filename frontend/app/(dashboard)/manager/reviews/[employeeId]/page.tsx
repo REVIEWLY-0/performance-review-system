@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   getDownwardReview,
   saveDownwardReview,
+  invalidateReviewCaches,
   ManagerReviewData,
   Answer,
   QuestionWithAnswer,
@@ -154,6 +155,7 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
           setSaving(true);
           setError('');
           await saveDownwardReview(cycleId, params.employeeId, Array.from(answers.values()), true);
+          invalidateReviewCaches();
           router.push(`/manager/reviews?cycleId=${cycleId}`);
         } catch (err: any) {
           setConfirmDialog(null);
