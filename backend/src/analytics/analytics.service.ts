@@ -105,6 +105,7 @@ export class AnalyticsService {
       allEmployees,
       submitted,
       draft,
+      total,
       selfPending,
       managerPending,
       peerPending,
@@ -113,6 +114,7 @@ export class AnalyticsService {
       // cycleId already verified to belong to companyId above — no JOIN needed
       this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'SUBMITTED' } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, status: 'DRAFT' } }),
+      this.prisma.review.count({ where: { reviewCycleId: cycleId } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'SELF',    status: { not: 'SUBMITTED' } } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'MANAGER', status: { not: 'SUBMITTED' } } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'PEER',    status: { not: 'SUBMITTED' } } }),
@@ -136,10 +138,8 @@ export class AnalyticsService {
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 5);
 
-    const expectedReviews = allEmployees.length * 3; // Self + Manager + Peers (approx)
-    const notStarted = Math.max(0, expectedReviews - submitted - draft);
-    const completionRate =
-      expectedReviews > 0 ? (submitted / expectedReviews) * 100 : 0;
+    const notStarted = Math.max(0, total - submitted - draft);
+    const completionRate = total > 0 ? (submitted / total) * 100 : 0;
 
     return {
       totalEmployees: allEmployees.length,
