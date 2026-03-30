@@ -174,7 +174,7 @@ export default function ManagerDashboard() {
       )}
 
       {/* Analytics sections — fades while a cycle change is in flight */}
-      <div className={analyticsLoading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
+      <div className={`transition-opacity ${analyticsLoading ? 'opacity-50' : ''}`}>
 
         {/* Key Metrics */}
         {analytics && (

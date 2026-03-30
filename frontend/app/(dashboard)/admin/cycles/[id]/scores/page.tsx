@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { reviewCyclesApi, ReviewCycle } from '@/lib/review-cycles';
 import { calculateAllScores, AllScoresResponse } from '@/lib/scoring';
 import SkeletonCard from '@/components/skeletons/SkeletonCard';
@@ -17,7 +17,6 @@ interface ScoresPageProps {
 }
 
 export default function CycleScoresPage({ params }: ScoresPageProps) {
-  const router = useRouter();
   const [cycle, setCycle] = useState<ReviewCycle | null>(null);
   const [scoresData, setScoresData] = useState<AllScoresResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,12 +122,10 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
     );
   }
 
+  const scoredEmployees = scoresData?.scores.filter((s) => s.overall_score !== null) ?? [];
   const averageScore =
-    scoresData && scoresData.scores.length > 0
-      ? scoresData.scores
-          .filter((s) => s.overall_score !== null)
-          .reduce((sum, s) => sum + (s.overall_score || 0), 0) /
-        scoresData.scores.filter((s) => s.overall_score !== null).length
+    scoredEmployees.length > 0
+      ? scoredEmployees.reduce((sum, s) => sum + (s.overall_score || 0), 0) / scoredEmployees.length
       : null;
 
   const totalScorePages = scoresData ? Math.ceil(scoresData.scores.length / PAGE_SIZE) : 1;
@@ -140,12 +137,12 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
     <div className="px-4 py-6 sm:px-0">
       {/* Header */}
       <div className="mb-6">
-        <button
-          onClick={() => router.push('/admin/review-cycles')}
-          className="text-sm text-primary hover:text-primary-dim mb-2"
+        <Link
+          href="/admin/review-cycles"
+          className="text-sm text-primary hover:text-primary-dim mb-2 inline-block"
         >
           ← Back to Review Cycles
-        </button>
+        </Link>
         <h1 className="text-2xl font-bold text-on-surface">
           Performance Scores: {cycle.name}
         </h1>
@@ -212,7 +209,7 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
               Scores Calculated
             </p>
             <p className="mt-2 text-3xl font-bold text-on-surface">
-              {scoresData.scores.filter((s) => s.overall_score !== null).length}
+              {scoredEmployees.length}
             </p>
           </div>
           <div className="bg-surface-container-lowest shadow rounded-lg p-6">
@@ -251,9 +248,6 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                   <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Reviews
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-surface-container-lowest divide-y divide-outline-variant">
@@ -281,29 +275,11 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                       {score.breakdown.peer?.toFixed(2) || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-on-surface-variant">
-                      <div className="flex gap-2">
-                        <span title="Self">
-                          {score.review_counts.self_reviews}S
-                        </span>
-                        <span title="Manager">
-                          {score.review_counts.manager_reviews}M
-                        </span>
-                        <span title="Peer">
-                          {score.review_counts.peer_reviews}P
-                        </span>
+                      <div className="flex flex-col gap-0.5 text-xs">
+                        <span>{score.review_counts.self_reviews} Self</span>
+                        <span>{score.review_counts.manager_reviews} Manager</span>
+                        <span>{score.review_counts.peer_reviews} Peer</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() =>
-                          router.push(
-                            `/employee/scores?cycleId=${params.id}`,
-                          )
-                        }
-                        className="text-primary hover:text-primary-dim"
-                      >
-                        View Details
-                      </button>
                     </td>
                   </tr>
                 ))}

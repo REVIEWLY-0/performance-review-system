@@ -217,10 +217,7 @@ export class ScoringService {
           empReviews,
           ratingQuestions,
         );
-        // Scores only visible once cycle is completed — null them out otherwise
-        if (cycle.status !== 'COMPLETED') {
-          result.overall_score = null;
-        }
+        // Admin calculate-all always shows real scores regardless of cycle status
         scores.push(result);
       } catch (err: any) {
         console.error(
@@ -267,94 +264,73 @@ export class ScoringService {
 
     const warnings: string[] = [];
 
-    // Calculate per-question scores
+    // Helper: average all RATING answers in a review directly from embedded question.type
+    // This is the source of truth — avoids cross-referencing with the current question list
+    // which may be empty or out of sync with the questions used in the actual reviews.
+    const ratingAvg = (review: any): number | null => {
+      const ratings: number[] = (review.answers as any[])
+        .filter((a) => a.question?.type === 'RATING' && a.rating != null)
+        .map((a) => a.rating as number);
+      return ratings.length > 0
+        ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+        : null;
+    };
+
+    const selfAvg = selfReview ? ratingAvg(selfReview) : null;
+
+    const managerRatings = managerReviews
+      .map(ratingAvg)
+      .filter((v): v is number => v !== null);
+    const managerOverallAvg =
+      managerRatings.length > 0
+        ? managerRatings.reduce((sum, s) => sum + s, 0) / managerRatings.length
+        : null;
+
+    const peerRatings = peerReviews
+      .map(ratingAvg)
+      .filter((v): v is number => v !== null);
+    const peerOverallAvg =
+      peerRatings.length > 0
+        ? peerRatings.reduce((sum, s) => sum + s, 0) / peerRatings.length
+        : null;
+
+    // Build per-question breakdown for API response (best-effort; uses current question list)
     const byQuestion: QuestionScore[] = ratingQuestions.map((question) => {
-      const selfAnswer = selfReview?.answers.find(
+      const selfScore = selfReview?.answers.find(
         (a: any) => a.questionId === question.id,
-      );
-      const selfScore = selfAnswer?.rating || null;
+      )?.rating ?? null;
 
       const managerScores = managerReviews
-        .map((review: any) => {
-          const answer = review.answers.find(
-            (a: any) => a.questionId === question.id,
-          );
-          return answer?.rating;
-        })
-        .filter(
-          (score: any): score is number =>
-            score !== null && score !== undefined,
-        );
+        .map((r: any) => r.answers.find((a: any) => a.questionId === question.id)?.rating)
+        .filter((s: any): s is number => s != null);
 
       const peerScores = peerReviews
-        .map((review: any) => {
-          const answer = review.answers.find(
-            (a: any) => a.questionId === question.id,
-          );
-          return answer?.rating;
-        })
-        .filter(
-          (score: any): score is number =>
-            score !== null && score !== undefined,
-        );
+        .map((r: any) => r.answers.find((a: any) => a.questionId === question.id)?.rating)
+        .filter((s: any): s is number => s != null);
 
-      const managerAvg =
-        managerScores.length > 0
-          ? managerScores.reduce((sum: number, s: number) => sum + s, 0) /
-            managerScores.length
-          : null;
-
-      const peerAvg =
-        peerScores.length > 0
-          ? peerScores.reduce((sum: number, s: number) => sum + s, 0) /
-            peerScores.length
-          : null;
-
-      const scores = [selfScore, managerAvg, peerAvg].filter(
-        (s): s is number => s !== null,
-      );
-      const overallAvg =
-        scores.length > 0
-          ? scores.reduce((sum, s) => sum + s, 0) / scores.length
-          : null;
+      const mgAvg = managerScores.length > 0
+        ? managerScores.reduce((s: number, n: number) => s + n, 0) / managerScores.length
+        : null;
+      const prAvg = peerScores.length > 0
+        ? peerScores.reduce((s: number, n: number) => s + n, 0) / peerScores.length
+        : null;
+      const combined = [selfScore, mgAvg, prAvg].filter((s): s is number => s !== null);
+      const overallAvg = combined.length > 0
+        ? combined.reduce((s, n) => s + n, 0) / combined.length
+        : null;
 
       return {
         questionId: question.id,
         questionText: question.text,
-        questionType: question.reviewType,
+        questionType: question.type,
         selfScore,
         managerScores,
         peerScores,
-        managerAvg: managerAvg ? Number(managerAvg.toFixed(2)) : null,
-        peerAvg: peerAvg ? Number(peerAvg.toFixed(2)) : null,
-        overallAvg: overallAvg ? Number(overallAvg.toFixed(2)) : null,
+        managerAvg: mgAvg != null ? Number(mgAvg.toFixed(2)) : null,
+        peerAvg: prAvg != null ? Number(prAvg.toFixed(2)) : null,
+        overallAvg: overallAvg != null ? Number(overallAvg.toFixed(2)) : null,
       };
     });
-
-    // Calculate overall category averages
-    const selfScores = byQuestion
-      .map((q) => q.selfScore)
-      .filter((s): s is number => s !== null);
-    const selfAvg =
-      selfScores.length > 0
-        ? selfScores.reduce((sum, s) => sum + s, 0) / selfScores.length
-        : null;
-
-    const managerAvgs = byQuestion
-      .map((q) => q.managerAvg)
-      .filter((s): s is number => s !== null);
-    const managerOverallAvg =
-      managerAvgs.length > 0
-        ? managerAvgs.reduce((sum, s) => sum + s, 0) / managerAvgs.length
-        : null;
-
-    const peerAvgs = byQuestion
-      .map((q) => q.peerAvg)
-      .filter((s): s is number => s !== null);
-    const peerOverallAvg =
-      peerAvgs.length > 0
-        ? peerAvgs.reduce((sum, s) => sum + s, 0) / peerAvgs.length
-        : null;
 
     // Final overall score with fallback logic
     let overallScore: number | null = null;

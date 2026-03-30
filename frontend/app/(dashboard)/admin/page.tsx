@@ -129,7 +129,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Bento Grid ──────────────────────────────────────────────────── */}
-      <div className={`grid grid-cols-12 gap-6 ${analyticsLoading ? 'opacity-60 pointer-events-none' : ''} transition-opacity`}>
+      <div className="grid grid-cols-12 gap-6">
 
         {/* Cycle selector card */}
         <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl flex items-center justify-between shadow-sm border border-outline-variant/10 dark:border-transparent dark:border-transparent">
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── Stat Cards ────────────────────────────────────────────────── */}
-        <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className={`col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 transition-opacity ${analyticsLoading ? 'opacity-50' : ''}`}>
           {/* Total Employees */}
           <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent">
             <div className="flex justify-between items-start mb-4">
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── Charts ────────────────────────────────────────────────────── */}
-        <div className="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className={`col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity ${analyticsLoading ? 'opacity-50' : ''}`}>
           {/* Review Progress */}
           <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 dark:border-transparent flex flex-col items-center justify-between min-h-[300px]">
             <div className="w-full flex justify-between items-start mb-4">
