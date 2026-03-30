@@ -16,31 +16,45 @@ let _userCache: { user: User; expires: number } | null = null
 // In-flight deduplication: concurrent calls share one fetch instead of firing N
 let _userFetchInFlight: Promise<User | null> | null = null
 
+// Storage key must match supabase.ts `storageKey` config
+const SUPABASE_STORAGE_KEY = 'supabase.auth.token'
+
+/** Read and validate a session from localStorage without going through the
+ *  Supabase SDK's internal lock (_acquireLock / _initialize). The SDK lock can
+ *  stall for up to 10 s while it tries to refresh a previous session on page
+ *  load, blocking every subsequent auth call.  Reading localStorage directly is
+ *  safe — Supabase's autoRefreshToken timer keeps the stored token fresh in the
+ *  background, and we cache the result for 30 s to avoid repeated reads. */
+function _readSessionFromStorage(): any | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(SUPABASE_STORAGE_KEY)
+    if (!raw) return null
+    const session = JSON.parse(raw)
+    if (!session?.access_token) return null
+    // Treat as expired if it expires within the next 60 s
+    const expiresAt: number | undefined = session.expires_at
+    if (expiresAt && Date.now() / 1000 > expiresAt - 60) return null
+    return session
+  } catch {
+    return null
+  }
+}
+
 export async function getSession() {
-  // Return cached session if still valid (avoids repeated Supabase storage reads)
+  // 1. In-memory cache (survives re-renders, cleared on sign-out)
   if (_sessionCache && Date.now() < _sessionCache.expires) {
     return _sessionCache.session
   }
 
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession()
-
-    if (error) {
-      console.error('❌ Error getting session:', error.message)
-      return null
-    }
-
-    if (session) {
-      _sessionCache = { session, expires: Date.now() + 30_000 } // 30s cache
-    } else {
-      _sessionCache = null
-    }
-
+  // 2. Read directly from localStorage — bypasses the Supabase SDK lock entirely
+  const session = _readSessionFromStorage()
+  if (session) {
+    _sessionCache = { session, expires: Date.now() + 30_000 }
     return session
-  } catch (error) {
-    console.error('❌ Exception getting session:', error)
-    return null
   }
+
+  return null
 }
 
 export async function getCurrentUser(retries = 2): Promise<User | null> {
@@ -209,7 +223,12 @@ export async function signOut() {
   _sessionCache = null
   _userCache = null
   _userFetchInFlight = null
-  await supabase.auth.signOut()
+  // Clear from localStorage immediately (don't wait for the SDK lock)
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(SUPABASE_STORAGE_KEY)
+  }
+  // Also tell Supabase server to revoke the token (best-effort, don't await lock issues)
+  supabase.auth.signOut().catch(() => {})
 }
 
 /** Clear the user cache so the next getCurrentUser() call fetches fresh data */

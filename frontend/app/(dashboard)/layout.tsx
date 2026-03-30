@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getCurrentUser, User } from '@/lib/auth'
 import DashboardNav from '@/components/DashboardNav'
@@ -14,12 +14,10 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const initialized = useRef(false)
 
   useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
-
+    // No `initialized` guard here — React Strict Mode runs effects twice in dev.
+    // The `mounted` flag is enough to discard the stale first invocation's result.
     let mounted = true
     async function checkAuth() {
       try {
