@@ -364,6 +364,7 @@ This is an automated message from Reviewly.${unsub.text}
     score: number,
     cycleName: string,
     userId: string,
+    maxRating: number = 5,
   ): { html: string; text: string } {
     const scoresUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/employee/scores`;
     const unsub = this.unsubscribeFooter(userId);
@@ -393,7 +394,7 @@ This is an automated message from Reviewly.${unsub.text}
             <p>Your performance review score for <strong>${cycleName}</strong> is now available!</p>
             <div class="score-box">
               <div class="score">${score.toFixed(2)}</div>
-              <div>out of 5.00</div>
+              <div>out of ${maxRating.toFixed(2)}</div>
             </div>
             <p>View your detailed feedback and score breakdown in your dashboard.</p>
             <a href="${scoresUrl}" class="button">View Details</a>
@@ -414,7 +415,7 @@ Hi ${employeeName},
 
 Your performance review score for ${cycleName} is now available!
 
-Score: ${score.toFixed(2)} out of 5.00
+Score: ${score.toFixed(2)} out of ${maxRating.toFixed(2)}
 
 View your detailed feedback and score breakdown in your dashboard.
 
@@ -618,7 +619,12 @@ This is an automated message from Reviewly.${unsub.text}
       return;
     }
 
-    const scoreTemplate = this.scoreAvailableTemplate(employee.name, score, cycle.name, employee.id);
+    const ratingScale = await this.prisma.ratingScale.findUnique({
+      where: { companyId: employee.companyId },
+    });
+    const maxRating = ratingScale?.maxRating ?? 5;
+
+    const scoreTemplate = this.scoreAvailableTemplate(employee.name, score, cycle.name, employee.id, maxRating);
     await this.sendEmail({
       to: employee.email,
       subject: `Your Review Score for ${cycle.name}`,
