@@ -1583,6 +1583,56 @@ export class ReviewsService {
       };
     });
 
-    return { employee, cycle, reviews: entries };
+    // Include any existing manual score override
+    const override = await this.prisma.scoreOverride.findUnique({
+      where: { employeeId_cycleId: { employeeId, cycleId } },
+      select: { score: true, note: true, createdAt: true },
+    });
+
+    return { employee, cycle, reviews: entries, scoreOverride: override ?? null };
+  }
+
+  // ============================================================================
+  // Admin — Manual Score Override
+  // ============================================================================
+
+  async setScoreOverride(
+    adminCompanyId: string,
+    adminId: string,
+    cycleId: string,
+    employeeId: string,
+    score: number,
+    note?: string,
+  ) {
+    // Verify employee and cycle belong to admin's company
+    const [employee, cycle] = await Promise.all([
+      this.prisma.user.findFirst({ where: { id: employeeId, companyId: adminCompanyId }, select: { id: true, name: true } }),
+      this.prisma.reviewCycle.findFirst({ where: { id: cycleId, companyId: adminCompanyId }, select: { id: true, name: true } }),
+    ]);
+    if (!employee) throw new NotFoundException('Employee not found');
+    if (!cycle) throw new NotFoundException('Review cycle not found');
+
+    const override = await this.prisma.scoreOverride.upsert({
+      where: { employeeId_cycleId: { employeeId, cycleId } },
+      create: { companyId: adminCompanyId, employeeId, cycleId, score, note: note ?? null, createdBy: adminId },
+      update: { score, note: note ?? null },
+    });
+
+    return { message: 'Score override saved', override: { score: override.score, note: override.note } };
+  }
+
+  async deleteScoreOverride(
+    adminCompanyId: string,
+    cycleId: string,
+    employeeId: string,
+  ) {
+    // Verify ownership
+    const existing = await this.prisma.scoreOverride.findFirst({
+      where: { employeeId, cycleId, companyId: adminCompanyId },
+    });
+    if (!existing) throw new NotFoundException('No override found');
+
+    await this.prisma.scoreOverride.delete({ where: { employeeId_cycleId: { employeeId, cycleId } } });
+    return { message: 'Score override removed' };
   }
 }

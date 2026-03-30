@@ -247,6 +247,15 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
         </div>
       )}
 
+      {/* Employee self-review context */}
+      {reviewData.employeeSelfReview && (
+        <SelfReviewPanel
+          employeeName={reviewData.employee.name}
+          selfReview={reviewData.employeeSelfReview}
+          ratingScale={ratingScale}
+        />
+      )}
+
       {/* Questions */}
       <div className="space-y-4">
         {reviewData.questions.map((question, idx) => (
@@ -293,6 +302,180 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
   );
 }
 
+// ── Self-review read-only answer ────────────────────────────────────────────
+
+function SelfAnswerBlock({ question, ratingScale }: { question: QuestionWithAnswer; ratingScale: RatingScale }) {
+  const answer = question.answer;
+
+  if (question.type === 'RATING') {
+    if (!answer?.rating) return <span className="text-sm text-on-surface-variant italic">No rating given</span>;
+    const label = ratingScale.labels[answer.rating - 1];
+    return (
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: ratingScale.maxRating }, (_, i) => i + 1).map((num) => (
+            <div
+              key={num}
+              className={`min-w-[34px] px-2 py-1.5 border-2 rounded-lg text-center text-xs font-semibold ${
+                answer.rating === num
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-outline-variant text-on-surface-variant opacity-25'
+              }`}
+            >
+              {num}
+            </div>
+          ))}
+        </div>
+        {label && (
+          <p className="text-xs text-on-surface-variant">
+            <span className="font-semibold text-on-surface">{answer.rating} — {label.title}</span>
+            {label.description && <span className="ml-1">· {label.description}</span>}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (question.type === 'TEXT') {
+    return answer?.textAnswer?.trim() ? (
+      <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap bg-surface-container-low rounded-lg px-4 py-3 border border-outline-variant">
+        {answer.textAnswer}
+      </p>
+    ) : (
+      <span className="text-sm text-on-surface-variant italic">No response</span>
+    );
+  }
+
+  if (question.type === 'TASK_LIST') {
+    let tasks: { text: string; completed: boolean }[] = [];
+    try {
+      const parsed = answer?.textAnswer ? JSON.parse(answer.textAnswer) : null;
+      const raw = parsed?.tasks ?? question.tasks ?? [];
+      tasks = raw.map((t: any) => ({ text: t.text ?? t.label ?? '', completed: Boolean(t.completed) }));
+    } catch {
+      tasks = (question.tasks ?? []).map((t) => ({ text: t.label, completed: false }));
+    }
+    if (tasks.length === 0) return <span className="text-sm text-on-surface-variant italic">No tasks recorded</span>;
+    const done = tasks.filter((t) => t.completed).length;
+    return (
+      <div>
+        <p className="text-xs font-medium text-on-surface-variant mb-2">{done}/{tasks.length} completed</p>
+        <ul className="space-y-1.5">
+          {tasks.map((task, i) => (
+            <li key={i} className="flex items-start gap-2.5">
+              <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] font-bold ${
+                task.completed ? 'border-primary bg-primary text-on-primary' : 'border-outline-variant bg-surface-container'
+              }`}>
+                {task.completed ? '✓' : ''}
+              </span>
+              <span className={`text-sm ${task.completed ? 'line-through text-on-surface-variant' : 'text-on-surface'}`}>
+                {task.text}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ── Self-review panel ────────────────────────────────────────────────────────
+
+function SelfReviewPanel({
+  employeeName,
+  selfReview,
+  ratingScale,
+}: {
+  employeeName: string;
+  selfReview: { status: string; questions: QuestionWithAnswer[] };
+  ratingScale: RatingScale;
+}) {
+  const [open, setOpen] = useState(false);
+  const isSubmitted = selfReview.status === 'SUBMITTED';
+  const answeredQuestions = selfReview.questions.filter((q) => {
+    if (!q.answer) return false;
+    if (q.type === 'RATING') return q.answer.rating != null;
+    return q.answer.textAnswer != null && q.answer.textAnswer.trim() !== '';
+  });
+
+  return (
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest shadow-sm overflow-hidden mb-6">
+      {/* Panel header — always visible */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-surface-container-low transition-colors text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-on-surface">{employeeName}'s Self-Review</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              {!isSubmitted
+                ? 'Not yet submitted'
+                : answeredQuestions.length === 0
+                ? 'No responses yet'
+                : `${answeredQuestions.length} response${answeredQuestions.length === 1 ? '' : 's'} · Click to ${open ? 'hide' : 'view'}`}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-4">
+          {isSubmitted ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 uppercase tracking-wide">
+              Submitted
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-high text-on-surface-variant uppercase tracking-wide">
+              {selfReview.status.replace('_', ' ')}
+            </span>
+          )}
+          <svg
+            className={`h-4 w-4 text-on-surface-variant transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {open && (
+        <div className="border-t border-outline-variant divide-y divide-outline-variant">
+          {!isSubmitted && (
+            <div className="px-6 py-5 text-sm text-on-surface-variant italic">
+              {employeeName} hasn't submitted their self-review yet.
+            </div>
+          )}
+          {isSubmitted && answeredQuestions.length === 0 && (
+            <div className="px-6 py-5 text-sm text-on-surface-variant italic">No responses recorded.</div>
+          )}
+          {isSubmitted && answeredQuestions.map((q, idx) => (
+            <div key={q.id} className="px-6 py-5">
+              <div className="flex items-start gap-2 mb-3">
+                <p className="text-sm font-semibold text-on-surface flex-1">{idx + 1}. {q.text}</p>
+                {(q.type === 'TEXT' || q.type === 'TASK_LIST') && (
+                  <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                    {q.type === 'TASK_LIST' ? 'Tasks' : 'Text'}
+                  </span>
+                )}
+              </div>
+              <SelfAnswerBlock question={q} ratingScale={ratingScale} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Question card ────────────────────────────────────────────────────────────
+
 function QuestionCard({
   question,
   number,
@@ -310,9 +493,17 @@ function QuestionCard({
 }) {
   return (
     <div className="bg-surface-container-lowest shadow rounded-lg p-6">
-      <h3 className="text-sm font-medium text-on-surface mb-4">
-        Q{number}. {question.text}
-      </h3>
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-on-surface">
+          Q{number}. {question.text}
+        </h3>
+        {(question.type === 'TEXT' || question.type === 'TASK_LIST') && (
+          <p className="mt-1.5 flex items-center gap-2 text-xs text-on-surface-variant">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 font-semibold tracking-wide uppercase text-[10px]">Qualitative</span>
+            This response supports conversations and is not included in the score.
+          </p>
+        )}
+      </div>
 
       {question.type === 'RATING' && (
         <div className="space-y-2">

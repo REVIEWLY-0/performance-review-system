@@ -344,9 +344,17 @@ function ReviewQuestionCard({
 }) {
   return (
     <div className="bg-surface-container-lowest dark:bg-[#131b2e] rounded-2xl p-6">
-      <h3 className="text-sm font-semibold text-on-surface mb-4">
-        {number}. {question.text}
-      </h3>
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-on-surface">
+          {number}. {question.text}
+        </h3>
+        {(question.type === 'TEXT' || question.type === 'TASK_LIST') && (
+          <p className="mt-1.5 flex items-center gap-2 text-xs text-on-surface-variant">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 font-semibold tracking-wide uppercase text-[10px]">Qualitative</span>
+            This response supports conversations and is not included in the score.
+          </p>
+        )}
+      </div>
 
       {question.type === 'RATING' && (
         <div className="space-y-2">

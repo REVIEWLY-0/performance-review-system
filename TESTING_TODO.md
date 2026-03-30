@@ -370,6 +370,94 @@ Read this before starting so you know what changed and what to watch for.
 
 ---
 
+### 3H — Admin: View Answers & Manual Score Override ⏱ 5 min
+
+1. Admin → Review Cycles → any cycle with submitted reviews → Scores → Calculate All Scores
+2. Confirm each employee row has a **"View Answers"** button on the right
+
+**Expected:** ✅ Button visible per row (not just a hidden link on the name)
+
+3. Click "View Answers" for an employee
+4. Confirm **"← Back to Scores"** link is visible at the top
+
+**Expected:** ✅ Clicking it returns to the scores page
+
+5. Expand a review card — check a **Rating** question
+
+**Expected:** ✅ Full rating scale displayed as boxes; selected value highlighted in primary colour; unselected values dimmed; label/description shown below
+
+6. Check a **Text** question
+
+**Expected:** ✅ Answer displayed as a prose block with border
+
+7. Check a **Task List** question
+
+**Expected:** ✅ Checklist with completion count (e.g. "2/3 completed"); completed items struck through
+
+8. Check a **Peer** review card
+
+**Expected:** ✅ Reviewer shown as "Peer Reviewer 1 (Anonymous)" — never their real name
+
+9. In the **Manual Score Override** panel, enter a score (e.g. `7.5`) and optional note → Save Override
+
+**Expected:** ✅ Success message shown; current override displayed in the panel header
+
+10. Navigate away and return to the same View Answers page
+
+**Expected:** ✅ Score and note fields are pre-populated with the saved override
+
+11. Go back to Scores → Calculate All Scores
+
+**Expected:** ✅ That employee's overall score now shows the override value (7.50)
+
+12. Return to View Answers → click **"Remove Override"**
+
+**Expected:** ✅ Fields clear; message: "Override removed — calculated score will be used"
+
+13. Recalculate scores
+
+**Expected:** ✅ Score reverts to formula-calculated value
+
+---
+
+### 3I — Manager: Employee Self-Review Context Panel ⏱ 3 min
+
+1. Sign in as a manager → open a review for an employee (employee must have submitted their self-review)
+2. Confirm a **"[Employee]'s Self-Review"** panel is visible above the manager's form — collapsed by default
+
+**Expected:** ✅ Panel visible, shows "Submitted" badge and response count, collapsed by default
+
+3. Click the panel to expand it
+
+**Expected:** ✅ All answered questions shown read-only: ratings as highlighted scale, text as prose, tasks as checklist
+
+4. Unanswered questions should not appear (no empty noise)
+
+5. Try with an employee who has NOT yet submitted their self-review
+
+**Expected:** ✅ Panel shows "Not yet submitted" when expanded
+
+---
+
+### 3J — Qualitative Badge on Review Forms ⏱ 2 min
+
+1. Open any review form (Self, Manager, Peer, or Upward review)
+2. Find a **Text** or **Task List** question
+
+**Expected:** ✅ Amber **QUALITATIVE** badge shown below question text with caption: "This response supports conversations and is not included in your score."
+
+3. Check a **Rating** question on the same form
+
+**Expected:** ✅ No qualitative badge — only the rating buttons and scale
+
+4. Toggle **dark mode** and check all three question types
+
+**Expected:** ✅ Qualitative badge readable in dark mode (amber tones, not washed out); rating highlights, type pills, and review type badges all legible
+
+
+
+---
+
 ### 3A — Auth Rate Limiting
 
 1. Go to `/login`

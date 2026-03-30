@@ -580,8 +580,14 @@ function QuestionCard({
           {index + 1}. {question.text}
           <span className="text-red-500 ml-1">*</span>
         </label>
+        {(question.type === 'TEXT' || question.type === 'TASK_LIST') && (
+          <p className="mt-1.5 flex items-center gap-2 text-xs text-on-surface-variant">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 font-semibold tracking-wide uppercase text-[10px]">Qualitative</span>
+            This response supports conversations and is not included in your score.
+          </p>
+        )}
         {question.maxChars && (
-          <p className="text-sm text-on-surface-variant">Maximum {question.maxChars} characters</p>
+          <p className="text-sm text-on-surface-variant mt-1">Maximum {question.maxChars} characters</p>
         )}
       </div>
 

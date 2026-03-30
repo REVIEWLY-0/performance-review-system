@@ -3,9 +3,11 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ReviewsService,
@@ -304,6 +306,31 @@ export class ReviewsController {
     @CompanyId() companyId: string,
   ) {
     return this.reviewsService.getAdminEmployeeReviews(companyId, cycleId, employeeId);
+  }
+
+  @Patch('admin/:cycleId/employee/:employeeId/score')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async setScoreOverride(
+    @Param('cycleId') cycleId: string,
+    @Param('employeeId') employeeId: string,
+    @Body() body: { score: number; note?: string },
+    @CurrentUser() user: any,
+    @CompanyId() companyId: string,
+  ) {
+    return this.reviewsService.setScoreOverride(companyId, user.id, cycleId, employeeId, body.score, body.note);
+  }
+
+  @Delete('admin/:cycleId/employee/:employeeId/score')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @HttpCode(200)
+  async deleteScoreOverride(
+    @Param('cycleId') cycleId: string,
+    @Param('employeeId') employeeId: string,
+    @CompanyId() companyId: string,
+  ) {
+    return this.reviewsService.deleteScoreOverride(companyId, cycleId, employeeId);
   }
 
   @Post('peer/:cycleId/:employeeId')

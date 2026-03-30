@@ -69,6 +69,7 @@ model Company {
   departments       Department[]
   ratingScale       RatingScale?
   orgChart          OrgChartNode[]
+  scoreOverrides    ScoreOverride[]
 
   @@map("companies")
 }
@@ -98,6 +99,8 @@ model User {
   assignmentsAsEmployee ReviewerAssignment[] @relation("EmployeeAssignments")
   assignmentsAsReviewer ReviewerAssignment[] @relation("ReviewerAssignments")
   userDepartments       UserDepartment[]
+  scoreOverridesReceived ScoreOverride[] @relation("EmployeeOverrides")
+  scoreOverridesCreated  ScoreOverride[] @relation("AdminOverrides")
 
   @@unique([companyId, email])
   @@unique([companyId, employeeId])
@@ -154,6 +157,7 @@ model ReviewCycle {
   reviewConfigs       ReviewConfig[]
   reviews             Review[]
   reviewerAssignments ReviewerAssignment[]
+  scoreOverrides      ScoreOverride[]
 
   @@index([companyId])
   @@index([status])
@@ -344,6 +348,27 @@ model ScoreNotification {
 
   @@unique([employeeId, cycleId])
   @@map("score_notifications")
+}
+
+model ScoreOverride {
+  id          String   @id @default(cuid())
+  companyId   String   @map("company_id")
+  employeeId  String   @map("employee_id")
+  cycleId     String   @map("cycle_id")
+  score       Float
+  note        String?
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee User        @relation("EmployeeOverrides", fields: [employeeId], references: [id], onDelete: Cascade)
+  creator  User        @relation("AdminOverrides", fields: [createdBy], references: [id])
+  cycle    ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, cycleId])
+  @@index([companyId])
+  @@map("score_overrides")
 }
 
 model OrgChartNode {

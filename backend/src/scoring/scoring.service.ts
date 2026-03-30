@@ -114,12 +114,21 @@ export class ScoringService {
 
     console.log(`📊 Found ${reviews.length} submitted reviews`);
 
+    // Check for manual override first
+    const override = await this.prisma.scoreOverride.findUnique({
+      where: { employeeId_cycleId: { employeeId, cycleId } },
+    });
+
     const result = this.calculateScoreFromData(
       employee,
       cycle,
       reviews,
       ratingQuestions,
     );
+
+    if (override) {
+      result.overall_score = override.score;
+    }
 
     // Scores are only visible once the cycle is officially completed.
     // Return null overall_score for active/draft cycles so every employee's
@@ -176,8 +185,8 @@ export class ScoringService {
       throw new NotFoundException('Review cycle not found or access denied');
     }
 
-    // Batch load everything in parallel — 3 queries total
-    const [employees, allReviews, ratingQuestions] = await Promise.all([
+    // Batch load everything in parallel — 4 queries total
+    const [employees, allReviews, ratingQuestions, allOverrides] = await Promise.all([
       this.prisma.user.findMany({
         where: { companyId, role: 'EMPLOYEE' },
         orderBy: { name: 'asc' },
@@ -194,6 +203,10 @@ export class ScoringService {
         where: { companyId, type: 'RATING' },
         orderBy: { order: 'asc' },
       }),
+      this.prisma.scoreOverride.findMany({
+        where: { cycleId, companyId },
+        select: { employeeId: true, score: true },
+      }),
     ]);
 
     console.log(`👥 Found ${employees.length} employees`);
@@ -204,6 +217,12 @@ export class ScoringService {
       const list = reviewsByEmployee.get(review.employeeId) ?? [];
       list.push(review);
       reviewsByEmployee.set(review.employeeId, list);
+    }
+
+    // Map overrides by employeeId for O(1) lookup
+    const overrideByEmployee = new Map<string, number>();
+    for (const ov of allOverrides) {
+      overrideByEmployee.set(ov.employeeId, ov.score);
     }
 
     // Calculate all scores in memory — no additional DB calls
@@ -217,6 +236,10 @@ export class ScoringService {
           empReviews,
           ratingQuestions,
         );
+        // Apply manual override if set
+        if (overrideByEmployee.has(employee.id)) {
+          result.overall_score = overrideByEmployee.get(employee.id)!;
+        }
         // Admin calculate-all always shows real scores regardless of cycle status
         scores.push(result);
       } catch (err: any) {

@@ -759,3 +759,29 @@ Expected:
 
 Acceptance Criteria:
 - Default theme behavior is consistent and predictable.
+
+---
+
+## 2026-03-31 — Admin Review Detail + Manager Self-Review Context
+
+### What was built
+- **Admin: View Answers** — Scores table now has a "View Answers" button per employee row linking to the review detail page.
+- **Admin: Review detail page** — Shows all submitted reviews per employee grouped by type (Self, Downward, Manager, Peer). Ratings display the full scale with the selected value highlighted. Text answers shown as prose blocks. Task checklists show completion count. Peer reviewers are anonymised.
+- **Admin: Manual Score Override** — On the review detail page, admin can enter a score (0–10) + optional note to override the calculated score. Override persists and is pre-populated on return visits. Remove Override button reverts to formula.
+- **Manager: Self-review context panel** — Manager review form now shows a collapsible panel above the form with the employee's self-review responses (ratings, text, tasks). Collapsed by default, shows submission status.
+- **Qualitative badge** — TEXT and TASK_LIST questions in all review forms (self, manager, peer, upward) now show an amber "QUALITATIVE" badge with caption: "This response supports conversations and is not included in your score."
+
+### What to test manually
+1. Admin → Review Cycle → Scores → "View Answers" button appears per row
+2. View Answers page has "← Back to Scores" link at top
+3. Rating answers show the full scale with selected number highlighted + label
+4. Text answers render as prose, tasks as checklists with completion count
+5. Peer reviewers show as "Peer Reviewer N (Anonymous)"
+6. Manual score override: enter score → Save → recalculate scores → override value appears
+7. Reload review detail page → override score and note are pre-populated
+8. Remove Override → recalculate → reverts to formula score
+9. Manager review form → "Employee's Self-Review" panel is visible and collapsed by default
+10. Expand panel → see employee's text, rating, and task answers read-only
+11. If employee hasn't submitted, panel shows "Not yet submitted"
+12. Qualitative badge appears on TEXT and TASK_LIST questions in self/manager/peer/upward review forms
+13. Toggle dark mode → all badges and colours look correct (no washed-out amber/red/green)

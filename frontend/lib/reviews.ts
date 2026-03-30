@@ -291,6 +291,7 @@ export interface AdminEmployeeReviewsResponse {
   employee: { id: string; name: string; email: string; department: string | null };
   cycle: { id: string; name: string };
   reviews: AdminReviewEntry[];
+  scoreOverride: { score: number; note: string | null; createdAt: string } | null;
 }
 
 export function getAdminEmployeeReviews(
@@ -298,4 +299,25 @@ export function getAdminEmployeeReviews(
   employeeId: string,
 ): Promise<AdminEmployeeReviewsResponse> {
   return fetchWithAuth(`${API_URL}/reviews/admin/${cycleId}/employee/${employeeId}`);
+}
+
+export function setScoreOverride(
+  cycleId: string,
+  employeeId: string,
+  score: number,
+  note?: string,
+): Promise<{ message: string; override: { score: number; note: string | null } }> {
+  return fetchWithAuth(`${API_URL}/reviews/admin/${cycleId}/employee/${employeeId}/score`, {
+    method: 'PATCH',
+    body: JSON.stringify({ score, note }),
+  });
+}
+
+export function deleteScoreOverride(
+  cycleId: string,
+  employeeId: string,
+): Promise<{ message: string }> {
+  return fetchWithAuth(`${API_URL}/reviews/admin/${cycleId}/employee/${employeeId}/score`, {
+    method: 'DELETE',
+  });
 }

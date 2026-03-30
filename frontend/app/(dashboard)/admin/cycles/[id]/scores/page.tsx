@@ -248,6 +248,9 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                   <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Reviews
                   </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-surface-container-lowest divide-y divide-outline-variant">
@@ -283,6 +286,14 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                         <span>{score.review_counts.manager_reviews} Manager</span>
                         <span>{score.review_counts.peer_reviews} Peer</span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <Link
+                        href={`/admin/cycles/${params.id}/employee/${score.employeeId}/reviews`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-container-low border border-outline-variant text-on-surface hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
+                      >
+                        View Answers
+                      </Link>
                     </td>
                   </tr>
                 ))}
