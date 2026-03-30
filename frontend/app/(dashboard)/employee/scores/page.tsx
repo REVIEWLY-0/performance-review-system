@@ -157,8 +157,8 @@ export default function EmployeeScoresPage() {
         </div>
       )}
 
-      {/* Locked banner */}
-      {isLocked && (
+      {/* Locked banner — only show after fetch completes, not during initial load */}
+      {isLocked && !calculating && (
         <div className="mb-8 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-4 flex items-center gap-4">
           <div className="bg-amber-100 dark:bg-amber-900/40 p-2.5 rounded-xl shrink-0">
             <Icon name="lock" fill className="text-amber-800 dark:text-amber-400 text-[20px]" />
