@@ -150,21 +150,25 @@ export async function signIn(email: string, password: string) {
   // Set the session in Supabase client
   if (data.session) {
     console.log('💾 Setting session in Supabase client...')
-    const { error } = await supabase.auth.setSession({
+    const timeout8s = <T>(promise: Promise<T>): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Session setup timed out — please try again.')), 8_000)
+        ),
+      ])
+
+    const { error } = await timeout8s(supabase.auth.setSession({
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
-    })
+    }))
     if (error) {
       console.error('❌ Error setting session:', error)
       throw new Error('Failed to persist session')
     }
 
-    // Wait longer to ensure session is fully persisted
-    console.log('⏳ Waiting for session persistence...')
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // Verify session was persisted
-    const { data: { session: verifySession } } = await supabase.auth.getSession()
+    // Verify session was persisted (also guarded by the same timeout helper)
+    const { data: { session: verifySession } } = await timeout8s(supabase.auth.getSession())
     if (!verifySession) {
       console.error('❌ Session not persisted correctly')
       throw new Error('Session persistence failed')
@@ -200,21 +204,24 @@ export async function signUp(email: string, password: string, name: string, comp
   // Set the session in Supabase client
   if (data.session) {
     console.log('💾 Setting session in Supabase client...')
-    const { error } = await supabase.auth.setSession({
+    const timeout8s = <T>(promise: Promise<T>): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Session setup timed out — please try again.')), 8_000)
+        ),
+      ])
+
+    const { error } = await timeout8s(supabase.auth.setSession({
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
-    })
+    }))
     if (error) {
       console.error('❌ Error setting session:', error)
       throw new Error('Failed to persist session')
     }
 
-    // Wait longer to ensure session is fully persisted
-    console.log('⏳ Waiting for session persistence...')
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // Verify session was persisted
-    const { data: { session: verifySession } } = await supabase.auth.getSession()
+    const { data: { session: verifySession } } = await timeout8s(supabase.auth.getSession())
     if (!verifySession) {
       console.error('❌ Session not persisted correctly')
       throw new Error('Session persistence failed')
