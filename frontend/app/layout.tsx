@@ -21,13 +21,11 @@ export const metadata: Metadata = {
 }
 
 // Inline script runs synchronously before first paint to prevent flash of
-// unstyled content (FOUC). Reads localStorage; falls back to system preference.
+// unstyled content (FOUC). Reads localStorage; defaults to light if no preference saved.
 const themeScript = `
 (function(){
   try {
-    var s = localStorage.getItem('theme');
-    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (s === 'dark' || (!s && prefersDark)) {
+    if (localStorage.getItem('theme') === 'dark') {
       document.documentElement.classList.add('dark');
     }
   } catch(e){}
