@@ -108,6 +108,13 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     throw new Error('Session expired')
   }
 
+  // 429 — rate limit hit. Session is fine; just surface a human-readable message.
+  // Do NOT invalidate session on rate-limit — it would cause an unnecessary logout loop.
+  if (response.status === 429) {
+    console.warn('⚠️ API 429 — rate limit hit, please try again shortly')
+    throw new Error('Too many requests — please wait a moment and try again.')
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Request failed' }))
     throw new Error(error.message || `HTTP ${response.status}`)

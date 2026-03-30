@@ -111,7 +111,22 @@ export default function EmployeeScoresPage() {
     );
   }
 
-  if (!user) return null;
+  // If data failed to load, show a recoverable error instead of a blank page
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <p className="text-sm text-on-surface-variant text-center max-w-sm">
+          {error || 'Could not load scores. Please check your connection and try again.'}
+        </p>
+        <button
+          onClick={loadData}
+          className="px-5 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-xl hover:bg-primary-dim"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   const selectedCycle = cycles.find((c) => c.id === selectedCycleId);
   const isLocked = !scoreData || scoreData.overall_score === null || scoreData.warnings?.length > 0;

@@ -58,10 +58,12 @@ export default function EmployeeDashboard() {
   const [pendingManagers, setPendingManagers] = useState<EmployeeToReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
+    setLoadError('');
     try {
       const currentUser = await getCurrentUser();
       if (currentUser) setUser(currentUser);
@@ -76,8 +78,9 @@ export default function EmployeeDashboard() {
         setSelectedCycle(initial);
         await loadCycleData(initial.id);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Dashboard load error:', err);
+      setLoadError(err.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -188,6 +191,19 @@ export default function EmployeeDashboard() {
         <div className="mb-6 flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-2xl px-4 py-3">
           <Icon name="check_circle" fill className="text-green-600 text-[20px] shrink-0" />
           <p className="text-sm font-medium text-green-800 dark:text-green-300">{successMessage}</p>
+        </div>
+      )}
+
+      {/* Load error — surface the problem with a retry instead of silent empty state */}
+      {loadError && (
+        <div className="mb-6 flex items-center justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-2xl px-4 py-3">
+          <p className="text-sm font-medium text-red-800 dark:text-red-300">{loadError}</p>
+          <button
+            onClick={loadData}
+            className="shrink-0 text-sm font-semibold text-red-700 dark:text-red-400 underline hover:no-underline"
+          >
+            Retry
+          </button>
         </div>
       )}
 
