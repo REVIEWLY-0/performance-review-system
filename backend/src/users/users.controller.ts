@@ -14,6 +14,7 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -24,6 +25,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CompanyId } from '../common/decorators/company-id.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { invalidateUserTokenCache, RequestWithUser } from '../common/middleware/tenant-context.middleware';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -102,9 +104,15 @@ export class UsersController {
   async uploadAvatar(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() currentUser: { id: string; companyId: string },
+    @Req() req: RequestWithUser,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
-    return this.usersService.uploadAvatar(currentUser.id, currentUser.companyId, file);
+    const result = await this.usersService.uploadAvatar(currentUser.id, currentUser.companyId, file);
+    // Bust the middleware's in-memory token cache so the next /auth/me call
+    // immediately returns the new avatarUrl instead of the stale cached entry.
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token) invalidateUserTokenCache(token);
+    return result;
   }
 
   /**
@@ -114,8 +122,12 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async deleteAvatar(
     @CurrentUser() currentUser: { id: string; companyId: string },
+    @Req() req: RequestWithUser,
   ) {
-    return this.usersService.removeAvatar(currentUser.id, currentUser.companyId);
+    const result = await this.usersService.removeAvatar(currentUser.id, currentUser.companyId);
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token) invalidateUserTokenCache(token);
+    return result;
   }
 
   /**

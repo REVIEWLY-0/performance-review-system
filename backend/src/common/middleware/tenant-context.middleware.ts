@@ -12,6 +12,7 @@ export interface RequestWithUser extends Request {
     role: string;
     companyId: string;
     companyName: string;
+    avatarUrl?: string | null;
   };
 }
 
@@ -79,6 +80,7 @@ export class TenantContextMiddleware implements NestMiddleware {
           name: true,
           role: true,
           companyId: true,
+          avatarUrl: true,
           company: { select: { name: true } },
         },
       });
@@ -94,6 +96,7 @@ export class TenantContextMiddleware implements NestMiddleware {
         role: dbUser.role,
         companyId: dbUser.companyId,
         companyName: dbUser.company.name,
+        avatarUrl: dbUser.avatarUrl ?? null,
       };
 
       // Cache for next requests within TTL window
