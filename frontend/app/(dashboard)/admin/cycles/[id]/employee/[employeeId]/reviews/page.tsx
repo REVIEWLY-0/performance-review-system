@@ -229,8 +229,8 @@ export default function AdminEmployeeReviewsPage({ params }: PageProps) {
 
   const handleSaveOverride = async () => {
     const score = parseFloat(overrideScore);
-    if (isNaN(score) || score < 0 || score > 10) {
-      setOverrideMsg('Score must be between 0 and 10');
+    if (isNaN(score) || score < 0 || score > ratingScale.maxRating) {
+      setOverrideMsg(`Score must be between 0 and ${ratingScale.maxRating}`);
       return;
     }
     try {
@@ -347,7 +347,7 @@ export default function AdminEmployeeReviewsPage({ params }: PageProps) {
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6">
         <h2 className="text-base font-bold text-on-surface mb-1">Manual Score Override</h2>
         <p className="text-sm text-on-surface-variant mb-4">
-          After reading text answers, you can assign a manual overall score (0–10) that overrides the calculated score.
+          After reading text answers, you can assign a manual overall score (0–{ratingScale.maxRating}) that overrides the calculated score.
           {data.scoreOverride && (
             <span className="ml-1 font-medium text-primary">
               Current override: {data.scoreOverride.score.toFixed(2)}
@@ -356,11 +356,11 @@ export default function AdminEmployeeReviewsPage({ params }: PageProps) {
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <div>
-            <label className="block text-xs font-medium text-on-surface-variant mb-1">Score (0–10)</label>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">Score (0–{ratingScale.maxRating})</label>
             <input
               type="number"
               min={0}
-              max={10}
+              max={ratingScale.maxRating}
               step={0.1}
               value={overrideScore}
               onChange={(e) => setOverrideScore(e.target.value)}
