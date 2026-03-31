@@ -25,7 +25,7 @@ ENV NODE_ENV=production
 # Install production dependencies only, then regenerate Prisma client
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci --omit=dev && npx prisma generate
+RUN npm ci --omit=dev --legacy-peer-deps && npx prisma generate
 
 # Copy compiled output from builder
 COPY --from=builder /app/dist ./dist
