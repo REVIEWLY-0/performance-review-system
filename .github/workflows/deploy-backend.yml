@@ -1,0 +1,37 @@
+name: Deploy Backend to ECS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t reviewly-backend ./backend
+          docker tag reviewly-backend:latest 659788916559.dkr.ecr.eu-west-2.amazonaws.com/reviewly-backend:latest
+          docker push 659788916559.dkr.ecr.eu-west-2.amazonaws.com/reviewly-backend:latest
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster reviewly-cluster \
+            --service reviewly-backend-service \
+            --force-new-deployment
