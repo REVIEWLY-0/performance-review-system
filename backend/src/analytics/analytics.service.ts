@@ -429,6 +429,7 @@ export class AnalyticsService {
     const peerRequired = requiredBaseTypes.has('PEER');
 
     const allReviewsComplete =
+      cycle.status === 'COMPLETED' &&
       (!selfRequired || hasSelfReview) &&
       (!managerRequired || assignedManagerReviewers === 0 || managerReviews.length > 0) &&
       (!peerRequired || assignedPeerReviewers === 0 || peerReviews.length > 0);
