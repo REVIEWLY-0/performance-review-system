@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install all dependencies (including dev — needed for tsc + prisma generate)
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy Prisma schema and generate client (architecture-specific binaries)
 COPY prisma ./prisma/
