@@ -1,3 +1,5 @@
+const { withAmplifyHosting } = require('@aws-amplify/adapter-nextjs/next-config');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -11,4 +13,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withAmplifyHosting(nextConfig);
