@@ -380,6 +380,7 @@ export class UsersService {
       const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
         type: 'recovery',
         email,
+        options: { redirectTo: `${process.env.FRONTEND_URL}/login` },
       });
       if (!linkError && linkData?.properties?.action_link) {
         setupLink = linkData.properties.action_link;
@@ -605,6 +606,7 @@ export class UsersService {
           const { data: linkData } = await this.supabase.auth.admin.generateLink({
             type: 'recovery',
             email: userData.email,
+            options: { redirectTo: `${process.env.FRONTEND_URL}/login` },
           });
           if (linkData?.properties?.action_link) {
             importSetupLink = linkData.properties.action_link;
