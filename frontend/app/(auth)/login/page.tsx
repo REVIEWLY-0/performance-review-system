@@ -35,21 +35,30 @@ export default function LoginPage() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
 
   useEffect(() => {
-    const hash = window.location.hash.substring(1)
-    const params = new URLSearchParams(hash)
-    if (params.get('type') === 'recovery' && params.get('access_token')) {
-      const accessToken = params.get('access_token')!
-      const refreshToken = params.get('refresh_token') ?? ''
-      supabase.auth
-        .setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(() => {
-          window.history.replaceState(null, '', window.location.pathname)
-          setIsSetPassword(true)
-        })
-        .catch(() => setError('Invalid or expired setup link. Please ask your admin to resend the invite.'))
-    }
-  }, [])
+  // Check for set-password mode from auth callback
+  const searchParams = new URLSearchParams(window.location.search)
+  if (searchParams.get('mode') === 'set-password') {
+    setIsSetPassword(true)
+    return
+  }
 
+  // Also handle direct hash (fallback)
+  const hash = window.location.hash.substring(1)
+  const params = new URLSearchParams(hash)
+  const type = params.get('type')
+  const accessToken = params.get('access_token')
+  const refreshToken = params.get('refresh_token') || ''
+
+  if ((type === 'recovery' || type === 'invite') && accessToken) {
+    supabase.auth
+      .setSession({ access_token: accessToken, refresh_token: refreshToken })
+      .then(() => {
+        window.history.replaceState(null, '', window.location.pathname)
+        setIsSetPassword(true)
+      })
+      .catch(() => setError('Invalid or expired setup link. Please ask your admin to resend the invite.'))
+  }
+}, [])
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')

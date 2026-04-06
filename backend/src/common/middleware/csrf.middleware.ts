@@ -78,7 +78,7 @@ export class CsrfMiddleware implements NestMiddleware {
       requestOrigin.startsWith(allowed),
     );
 
-    if (!originAllowed || !hasXhrHeader) {
+    if (!originAllowed) {
       throw new ForbiddenException(
         'CSRF check failed: request origin not permitted',
       );

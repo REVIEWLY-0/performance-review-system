@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'backend/**'
 
 jobs:
   deploy:
@@ -25,7 +23,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t reviewly-backend ./backend
+          docker build -t reviewly-backend .
           docker tag reviewly-backend:latest 659788916559.dkr.ecr.eu-west-2.amazonaws.com/reviewly-backend:latest
           docker push 659788916559.dkr.ecr.eu-west-2.amazonaws.com/reviewly-backend:latest
 

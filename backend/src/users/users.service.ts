@@ -375,12 +375,14 @@ export class UsersService {
     // Resolve (or generate) the HR employee ID
     const resolvedEmpId = await this.resolveEmployeeId(companyId, requestedEmpId);
 
-    // Generate a password-setup link so the employee can log in for the first time
+   // Generate a password-setup link so the employee can log in for the first time
     if (supabaseId) {
       const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
         type: 'recovery',
         email,
-        options: { redirectTo: `${process.env.FRONTEND_URL}/login` },
+        options: {
+          redirectTo: `${process.env.FRONTEND_URL}/auth/callback`,
+        },
       });
       if (!linkError && linkData?.properties?.action_link) {
         setupLink = linkData.properties.action_link;
