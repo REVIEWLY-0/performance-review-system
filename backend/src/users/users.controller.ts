@@ -193,4 +193,14 @@ export class UsersController {
   async remove(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.usersService.remove(id, companyId);
   }
+
+  /**
+   * Resend invite email to a user (Admin only)
+   */
+  @Post(':id/resend-invite')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async resendInvite(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.usersService.resendInvite(id, companyId);
+  }
 }

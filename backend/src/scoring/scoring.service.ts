@@ -188,7 +188,7 @@ export class ScoringService {
     // Batch load everything in parallel — 4 queries total
     const [employees, allReviews, ratingQuestions, allOverrides] = await Promise.all([
       this.prisma.user.findMany({
-        where: { companyId, role: 'EMPLOYEE' },
+        where: { companyId, role: { in: ['EMPLOYEE', 'MANAGER'] } },
         orderBy: { name: 'asc' },
       }),
       this.prisma.review.findMany({
@@ -282,8 +282,8 @@ export class ScoringService {
     ratingQuestions: any[],
   ): FinalScoreResponse {
     const selfReview = reviews.find((r) => r.reviewType === 'SELF');
-    const managerReviews = reviews.filter((r) => r.reviewType === 'DOWNWARD');
-    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER' || r.reviewType === 'MANAGER');
+    const managerReviews = reviews.filter((r) => r.reviewType === 'DOWNWARD' || r.reviewType === 'MANAGER');
+    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER');
 
     const warnings: string[] = [];
 
@@ -406,3 +406,4 @@ export class ScoringService {
     };
   }
 }
+// cache-bust

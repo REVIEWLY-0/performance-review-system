@@ -260,6 +260,8 @@ export class AnalyticsService {
       submittedByEmployee.set(review.employeeId, list);
     }
 
+    const cycleCompleted = cycle.status === 'COMPLETED';
+
     const teamScores = assignments.map((assignment) => {
       const counts = reviewCountMap.get(assignment.employeeId) ?? {
         total: 0,
@@ -270,7 +272,7 @@ export class AnalyticsService {
         id: assignment.employee.id,
         name: assignment.employee.name,
         email: assignment.employee.email,
-        score: this.scoreFromReviews(empReviews),
+        score: cycleCompleted ? this.scoreFromReviews(empReviews) : null,
         reviewsCompleted: counts.completed,
         reviewsTotal: counts.total,
       };
@@ -299,10 +301,10 @@ export class AnalyticsService {
 
     return {
       teamSize: directReportCount,
-      teamAverageScore: teamAverageScore
+      teamAverageScore: cycleCompleted && teamAverageScore
         ? Number(teamAverageScore.toFixed(2))
         : null,
-      companyAverageScore: companyAverageScore
+      companyAverageScore: cycleCompleted && companyAverageScore
         ? Number(companyAverageScore.toFixed(2))
         : null,
       teamMembers: teamScores,
@@ -390,7 +392,7 @@ export class AnalyticsService {
 
     const selfReview = submittedReviews.find((r) => r.reviewType === 'SELF');
     const managerReviews = submittedReviews.filter(
-      (r) => r.reviewType === 'DOWNWARD',
+      (r) => r.reviewType === 'DOWNWARD' || r.reviewType === 'MANAGER',
     );
     const peerReviews = submittedReviews.filter((r) => r.reviewType === 'PEER');
 
@@ -547,8 +549,8 @@ export class AnalyticsService {
     if (reviews.length === 0) return null;
 
     const selfReview = reviews.find((r) => r.reviewType === 'SELF');
-    const managerReviews = reviews.filter((r) => r.reviewType === 'DOWNWARD');
-    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER' || r.reviewType === 'MANAGER');
+    const managerReviews = reviews.filter((r) => r.reviewType === 'DOWNWARD' || r.reviewType === 'MANAGER');
+    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER');
 
     const scores: number[] = [];
     if (selfReview) {

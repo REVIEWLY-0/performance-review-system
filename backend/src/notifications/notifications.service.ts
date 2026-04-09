@@ -613,6 +613,11 @@ This is an automated message from Reviewly.${unsub.text}
       return;
     }
 
+    if (employee.role !== 'EMPLOYEE') {
+      this.logger.log(`Skipping score email for ${employee.email} (role: ${employee.role})`);
+      return;
+    }
+
     const prefs = this.getPrefsFromRaw(employee.notificationPreferences);
     if (!prefs.scoreAvailable) {
       this.logger.log(`Skipping score available email for ${employee.email} (opted out)`);

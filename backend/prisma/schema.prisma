@@ -1,6 +1,3 @@
-// This is your Prisma schema file
-// Learn more: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,9 +7,290 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================================
-// ENUMS
-// ============================================================================
+model Company {
+  id                String             @id @default(cuid())
+  name              String
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  departments       Department[]
+  orgChart          OrgChartNode[]
+  questions         Question[]
+  ratingScale       RatingScale?
+  reviewCycles      ReviewCycle[]
+  reviewTypeConfigs ReviewTypeConfig[]
+  teams             Team[]
+  users             User[]
+
+  @@map("companies")
+}
+
+model User {
+  id                      String               @id @default(cuid())
+  companyId               String               @map("company_id")
+  name                    String
+  email                   String
+  password                String
+  role                    UserRole             @default(EMPLOYEE)
+  managerId               String?              @map("manager_id")
+  createdAt               DateTime             @default(now()) @map("created_at")
+  updatedAt               DateTime             @updatedAt @map("updated_at")
+  notificationPreferences Json?                @map("notification_preferences")
+  department              String?              @map("department")
+  employeeId              String?              @map("employee_id")
+  avatarUrl               String?              @map("avatar_url")
+  assignmentsAsEmployee   ReviewerAssignment[] @relation("EmployeeAssignments")
+  assignmentsAsReviewer   ReviewerAssignment[] @relation("ReviewerAssignments")
+  reviewsAsEmployee       Review[]             @relation("EmployeeReviews")
+  reviewsAsReviewer       Review[]             @relation("ReviewerReviews")
+  teamMemberships         TeamMember[]
+  userDepartments         UserDepartment[]
+  company                 Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  manager                 User?                @relation("ManagerToEmployee", fields: [managerId], references: [id])
+  directReports           User[]               @relation("ManagerToEmployee")
+  scoreOverrides          ScoreOverride[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@index([companyId, role])
+  @@index([managerId])
+  @@index([email])
+  @@map("users")
+}
+
+model Team {
+  id        String       @id @default(cuid())
+  companyId String       @map("company_id")
+  name      String
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  members   TeamMember[]
+  company   Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String   @map("team_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model ReviewCycle {
+  id                  String               @id @default(cuid())
+  companyId           String               @map("company_id")
+  name                String
+  startDate           DateTime             @map("start_date")
+  endDate             DateTime             @map("end_date")
+  status              ReviewCycleStatus    @default(DRAFT)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  reviewConfigs       ReviewConfig[]
+  company             Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  reviewerAssignments ReviewerAssignment[]
+  reviews             Review[]
+  scoreOverrides      ScoreOverride[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([companyId, status])
+  @@map("review_cycles")
+}
+
+model ReviewConfig {
+  id            String      @id @default(cuid())
+  reviewCycleId String      @map("review_cycle_id")
+  stepNumber    Int         @map("step_number")
+  reviewType    ReviewType  @map("review_type")
+  startDate     DateTime    @map("start_date")
+  endDate       DateTime    @map("end_date")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  name          String?     @map("name")
+  customTypeKey String?     @map("custom_type_key")
+  reviewCycle   ReviewCycle @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewCycleId, stepNumber])
+  @@index([reviewCycleId])
+  @@map("review_configs")
+}
+
+model ReviewTypeConfig {
+  id         String     @id @default(cuid())
+  companyId  String     @map("company_id")
+  key        String
+  label      String
+  baseType   ReviewType @map("base_type")
+  isBuiltIn  Boolean    @default(false) @map("is_built_in")
+  isActive   Boolean    @default(true) @map("is_active")
+  sortOrder  Int        @default(0) @map("sort_order")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  isRequired Boolean    @default(false) @map("is_required")
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, key])
+  @@index([companyId])
+  @@map("review_type_configs")
+}
+
+model Department {
+  id         String           @id @default(cuid())
+  companyId  String           @map("company_id")
+  name       String
+  archivedAt DateTime?        @map("archived_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @default(now()) @updatedAt @map("updated_at")
+  company    Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userDepts  UserDepartment[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("departments")
+}
+
+model UserDepartment {
+  id           String     @id @default(cuid())
+  userId       String     @map("user_id")
+  departmentId String     @map("department_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, departmentId])
+  @@index([userId])
+  @@index([departmentId])
+  @@map("user_departments")
+}
+
+model Question {
+  id         String       @id @default(cuid())
+  companyId  String       @map("company_id")
+  reviewType ReviewType   @map("review_type")
+  text       String
+  maxChars   Int?         @map("max_chars")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  order      Int          @default(0)
+  type       QuestionType @default(RATING)
+  tasks      Json?        @map("tasks")
+  answers    Answer[]
+  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([companyId, reviewType])
+  @@index([companyId, reviewType, order])
+  @@map("questions")
+}
+
+model Review {
+  id            String       @id @default(cuid())
+  reviewCycleId String       @map("review_cycle_id")
+  employeeId    String       @map("employee_id")
+  reviewerId    String       @map("reviewer_id")
+  reviewType    ReviewType   @map("review_type")
+  status        ReviewStatus @default(NOT_STARTED)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  answers       Answer[]
+  employee      User         @relation("EmployeeReviews", fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewCycle   ReviewCycle  @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
+  reviewer      User         @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewCycleId, employeeId, reviewerId, reviewType])
+  @@index([reviewCycleId])
+  @@index([employeeId])
+  @@index([reviewerId])
+  @@index([reviewCycleId, status])
+  @@index([reviewCycleId, reviewType])
+  @@index([reviewCycleId, reviewType, status])
+  @@index([reviewCycleId, employeeId])
+  @@map("reviews")
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  reviewId   String   @map("review_id")
+  questionId String   @map("question_id")
+  rating     Int?
+  textAnswer String?  @map("text_answer")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  review     Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, questionId])
+  @@index([reviewId])
+  @@index([questionId])
+  @@map("answers")
+}
+
+model RatingScale {
+  id        String   @id @default(cuid())
+  companyId String   @unique @map("company_id")
+  maxRating Int      @default(5) @map("max_rating")
+  labels    Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("rating_scales")
+}
+
+model ReviewerAssignment {
+  id            String       @id @default(cuid())
+  reviewCycleId String       @map("review_cycle_id")
+  employeeId    String       @map("employee_id")
+  reviewerId    String       @map("reviewer_id")
+  reviewerType  ReviewerType @map("reviewer_type")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  employee      User         @relation("EmployeeAssignments", fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewCycle   ReviewCycle  @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
+  reviewer      User         @relation("ReviewerAssignments", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewCycleId, employeeId, reviewerId, reviewerType])
+  @@index([reviewCycleId])
+  @@index([employeeId])
+  @@index([reviewerId])
+  @@index([reviewCycleId, employeeId])
+  @@index([reviewCycleId, reviewerId, reviewerType], map: "reviewer_assignments_cycle_reviewer_type_idx")
+  @@map("reviewer_assignments")
+}
+
+model ScoreNotification {
+  id         String   @id @default(cuid())
+  employeeId String   @map("employee_id")
+  cycleId    String   @map("cycle_id")
+  sentAt     DateTime @default(now()) @map("sent_at")
+
+  @@unique([employeeId, cycleId])
+  @@map("score_notifications")
+}
+
+model OrgChartNode {
+  id        String         @id @default(cuid())
+  companyId String         @map("company_id")
+  title     String
+  parentId  String?        @map("parent_id")
+  order     Int            @default(0)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  company   Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent    OrgChartNode?  @relation("NodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  OrgChartNode[] @relation("NodeHierarchy")
+
+  @@index([companyId])
+  @@map("org_chart_nodes")
+}
 
 enum UserRole {
   ADMIN
@@ -28,9 +306,9 @@ enum ReviewCycleStatus {
 
 enum ReviewType {
   SELF
-  MANAGER    // Upward: employee evaluating their manager
-  PEER       // Horizontal: peer evaluation
-  DOWNWARD   // Downward: manager evaluating team member
+  MANAGER
+  PEER
+  DOWNWARD
 }
 
 enum ReviewStatus {
@@ -49,341 +327,20 @@ enum QuestionType {
   TEXT
   TASK_LIST
 }
-
-// ============================================================================
-// MODELS
-// ============================================================================
-
-model Company {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  users             User[]
-  teams             Team[]
-  reviewCycles      ReviewCycle[]
-  questions         Question[]
-  reviewTypeConfigs ReviewTypeConfig[]
-  departments       Department[]
-  ratingScale       RatingScale?
-  orgChart          OrgChartNode[]
-  scoreOverrides    ScoreOverride[]
-
-  @@map("companies")
-}
-
-model User {
-  id                       String   @id @default(cuid())
-  companyId                String   @map("company_id")
-  name                     String
-  email                    String
-  password                 String
-  role                     UserRole @default(EMPLOYEE)
-  managerId                String?  @map("manager_id")
-  department               String?  @map("department")
-  employeeId               String?  @map("employee_id") // HR employee ID, unique per company
-  notificationPreferences  Json?    @map("notification_preferences")
-  avatarUrl                String?  @map("avatar_url")
-  createdAt                DateTime @default(now()) @map("created_at")
-  updatedAt                DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  company               Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  manager               User?                @relation("ManagerToEmployee", fields: [managerId], references: [id], onDelete: SetNull)
-  directReports         User[]               @relation("ManagerToEmployee")
-  teamMemberships       TeamMember[]
-  reviewsAsEmployee     Review[]             @relation("EmployeeReviews")
-  reviewsAsReviewer     Review[]             @relation("ReviewerReviews")
-  assignmentsAsEmployee ReviewerAssignment[] @relation("EmployeeAssignments")
-  assignmentsAsReviewer ReviewerAssignment[] @relation("ReviewerAssignments")
-  userDepartments       UserDepartment[]
-  scoreOverridesReceived ScoreOverride[] @relation("EmployeeOverrides")
-  scoreOverridesCreated  ScoreOverride[] @relation("AdminOverrides")
-
-  @@unique([companyId, email])
-  @@unique([companyId, employeeId])
-  @@index([companyId])
-  @@index([companyId, role])
-  @@index([managerId])
-  @@index([email])
-  @@map("users")
-}
-
-model Team {
-  id        String   @id @default(cuid())
-  companyId String   @map("company_id")
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  company Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  members TeamMember[]
-
-  @@index([companyId])
-  @@map("teams")
-}
-
-model TeamMember {
-  id        String   @id @default(cuid())
-  teamId    String   @map("team_id")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([teamId, userId])
-  @@index([teamId])
-  @@index([userId])
-  @@map("team_members")
-}
-
-model ReviewCycle {
-  id        String            @id @default(cuid())
-  companyId String            @map("company_id")
-  name      String
-  startDate DateTime          @map("start_date")
-  endDate   DateTime          @map("end_date")
-  status    ReviewCycleStatus @default(DRAFT)
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
-
-  // Relations
-  company             Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  reviewConfigs       ReviewConfig[]
-  reviews             Review[]
-  reviewerAssignments ReviewerAssignment[]
-  scoreOverrides      ScoreOverride[]
-
-  @@index([companyId])
-  @@index([status])
-  @@index([companyId, status])
-  @@map("review_cycles")
-}
-
-model ReviewConfig {
-  id            String     @id @default(cuid())
-  reviewCycleId String     @map("review_cycle_id")
-  stepNumber    Int        @map("step_number")
-  reviewType    ReviewType @map("review_type")
-  customTypeKey String?    @map("custom_type_key") // Set when using a custom ReviewTypeConfig; reviewType stores the base behavior
-  name          String?    @map("name") // Optional step label, e.g. "Self Review Phase"
-  startDate     DateTime   @map("start_date")
-  endDate       DateTime   @map("end_date")
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
-
-  // Relations
-  reviewCycle ReviewCycle @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
-
-  @@unique([reviewCycleId, stepNumber])
-  @@index([reviewCycleId])
-  @@map("review_configs")
-}
-
-model ReviewTypeConfig {
-  id        String     @id @default(cuid())
-  companyId String     @map("company_id")
-  key       String     // Unique per company: "SELF", "PEER", "MANAGER", "LEAD", etc.
-  label     String     // Display name: "Lead Review"
-  baseType  ReviewType @map("base_type") // Underlying behavior: SELF | MANAGER | PEER
-  isBuiltIn  Boolean    @default(false) @map("is_built_in")
-  isRequired Boolean    @default(false) @map("is_required") // If true, this type's reviews must complete before score is shown
-  isActive   Boolean    @default(true) @map("is_active")
-  sortOrder  Int        @default(0) @map("sort_order")
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@unique([companyId, key])
-  @@index([companyId])
-  @@map("review_type_configs")
-}
-
-model Department {
-  id         String    @id @default(cuid())
-  companyId  String    @map("company_id")
-  name       String
-  archivedAt DateTime? @map("archived_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
-
-  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  userDepts UserDepartment[]
-
-  @@unique([companyId, name])
-  @@index([companyId])
-  @@map("departments")
-}
-
-model UserDepartment {
-  id           String   @id @default(cuid())
-  userId       String   @map("user_id")
-  departmentId String   @map("department_id")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, departmentId])
-  @@index([userId])
-  @@index([departmentId])
-  @@map("user_departments")
-}
-
-model Question {
-  id         String       @id @default(cuid())
-  companyId  String       @map("company_id")
-  reviewType ReviewType   @map("review_type")
-  type       QuestionType @default(RATING)
-  text       String
-  maxChars   Int?         @map("max_chars")
-  tasks      Json?        @map("tasks") // For TASK_LIST: [{id,label,description?,required}]
-  order      Int          @default(0)
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt @map("updated_at")
-
-  // Relations
-  company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  answers Answer[]
-
-  @@index([companyId])
-  @@index([companyId, reviewType])
-  @@index([companyId, reviewType, order])
-  @@map("questions")
-}
-
-model Review {
-  id            String       @id @default(cuid())
-  reviewCycleId String       @map("review_cycle_id")
-  employeeId    String       @map("employee_id")
-  reviewerId    String       @map("reviewer_id")
-  reviewType    ReviewType   @map("review_type")
-  status        ReviewStatus @default(NOT_STARTED)
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
-
-  // Relations
-  reviewCycle ReviewCycle @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
-  employee    User        @relation("EmployeeReviews", fields: [employeeId], references: [id], onDelete: Cascade)
-  reviewer    User        @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
-  answers     Answer[]
-
-  @@unique([reviewCycleId, employeeId, reviewerId, reviewType])
-  @@index([reviewCycleId])
-  @@index([employeeId])
-  @@index([reviewerId])
-  @@index([reviewCycleId, status])
-  @@index([reviewCycleId, reviewType])
-  @@index([reviewCycleId, reviewType, status])
-  @@index([reviewCycleId, employeeId])
-  @@map("reviews")
-}
-
-model Answer {
-  id         String   @id @default(cuid())
-  reviewId   String   @map("review_id")
-  questionId String   @map("question_id")
-  rating     Int?     // 1-5 or null for text-only questions
-  textAnswer String?  @map("text_answer")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  review   Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  @@unique([reviewId, questionId])
-  @@index([reviewId])
-  @@index([questionId])
-  @@map("answers")
-}
-
-model RatingScale {
-  id        String   @id @default(cuid())
-  companyId String   @unique @map("company_id")
-  maxRating Int      @default(5) @map("max_rating")
-  labels    Json     // [{ value: Int, title: String, description: String }]
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@map("rating_scales")
-}
-
-model ReviewerAssignment {
-  id            String       @id @default(cuid())
-  reviewCycleId String       @map("review_cycle_id")
-  employeeId    String       @map("employee_id")
-  reviewerId    String       @map("reviewer_id")
-  reviewerType  ReviewerType @map("reviewer_type")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
-
-  // Relations
-  reviewCycle ReviewCycle @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
-  employee    User        @relation("EmployeeAssignments", fields: [employeeId], references: [id], onDelete: Cascade)
-  reviewer    User        @relation("ReviewerAssignments", fields: [reviewerId], references: [id], onDelete: Cascade)
-
-  @@unique([reviewCycleId, employeeId, reviewerId, reviewerType])
-  @@index([reviewCycleId])
-  @@index([employeeId])
-  @@index([reviewerId])
-  @@index([reviewCycleId, employeeId])
-  @@index([reviewCycleId, reviewerId, reviewerType])
-  @@map("reviewer_assignments")
-}
-
-model ScoreNotification {
+ model ScoreOverride {
   id         String   @id @default(cuid())
   employeeId String   @map("employee_id")
   cycleId    String   @map("cycle_id")
-  sentAt     DateTime @default(now()) @map("sent_at")
+  companyId  String?  @map("company_id")
+  score      Float
+  note       String?
+  createdBy  String?  @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
-  @@unique([employeeId, cycleId])
-  @@map("score_notifications")
-}
-
-model ScoreOverride {
-  id          String   @id @default(cuid())
-  companyId   String   @map("company_id")
-  employeeId  String   @map("employee_id")
-  cycleId     String   @map("cycle_id")
-  score       Float
-  note        String?
-  createdBy   String   @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  employee User        @relation("EmployeeOverrides", fields: [employeeId], references: [id], onDelete: Cascade)
-  creator  User        @relation("AdminOverrides", fields: [createdBy], references: [id])
+  employee User        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   cycle    ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, cycleId])
-  @@index([companyId])
   @@map("score_overrides")
-}
-
-model OrgChartNode {
-  id        String   @id @default(cuid())
-  companyId String   @map("company_id")
-  title     String
-  parentId  String?  @map("parent_id")
-  order     Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  parent   OrgChartNode?  @relation("NodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children OrgChartNode[] @relation("NodeHierarchy")
-
-  @@index([companyId])
-  @@map("org_chart_nodes")
 }

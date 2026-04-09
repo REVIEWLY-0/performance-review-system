@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { User } from '@/lib/api'
+import { usersApi } from '@/lib/api'
 import EditEmployeeModal from './EditEmployeeModal'
 import DeleteEmployeeModal from './DeleteEmployeeModal'
 import { useToast } from '@/components/ToastProvider'
@@ -26,7 +27,20 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
   const [employees, setEmployees] = useState(initialEmployees)
   const [editingEmployee, setEditingEmployee]   = useState<User | null>(null)
   const [deletingEmployee, setDeletingEmployee] = useState<User | null>(null)
+  const [resendingId, setResendingId] = useState<string | null>(null)
   const toast = useToast()
+
+  const handleResendInvite = async (emp: User) => {
+    setResendingId(emp.id)
+    try {
+      await usersApi.resendInvite(emp.id)
+      toast.success(`Invite resent to ${emp.email}`)
+    } catch {
+      toast.error('Failed to resend invite. Please try again.')
+    } finally {
+      setResendingId(null)
+    }
+  }
 
   useEffect(() => { setEmployees(initialEmployees) }, [initialEmployees])
 
@@ -108,6 +122,14 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
                   </div>
                   <div className="shrink-0 flex items-center gap-1">
                     <button
+                      onClick={() => handleResendInvite(emp)}
+                      disabled={resendingId === emp.id}
+                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-50"
+                      aria-label="Resend invite"
+                    >
+                      {resendingId === emp.id ? <SpinnerIcon /> : <MailIcon />}
+                    </button>
+                    <button
                       onClick={() => setEditingEmployee(emp)}
                       className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
                       aria-label="Edit employee"
@@ -177,6 +199,14 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
                   {/* col 11–12: Actions */}
                   <div className="col-span-2 flex items-center justify-end gap-1">
                     <button
+                      onClick={() => handleResendInvite(emp)}
+                      disabled={resendingId === emp.id}
+                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-50"
+                      title="Resend invite"
+                    >
+                      {resendingId === emp.id ? <SpinnerIcon /> : <MailIcon />}
+                    </button>
+                    <button
                       onClick={() => setEditingEmployee(emp)}
                       className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
                       title="Edit employee"
@@ -218,6 +248,19 @@ export default function EmployeeList({ employees: initialEmployees }: EmployeeLi
 }
 
 // ── Shared icon components ────────────────────────────────────────────────────
+const MailIcon = () => (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+)
+
+const SpinnerIcon = () => (
+  <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+)
+
 const PencilIcon = () => (
   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.768-6.768a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H8v-2.414a2 2 0 01.586-1.414z" />

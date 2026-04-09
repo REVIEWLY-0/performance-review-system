@@ -187,6 +187,12 @@ export const usersApi = {
       60_000,
     ),
 
+  resendInvite: async (id: string): Promise<{ success: boolean }> => {
+    return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}/resend-invite`, {
+      method: 'POST',
+    })
+  },
+
   importUsers: async (users: ImportUserPayload[]): Promise<{ successful: number; failed: number; errors: string[] }> => {
     const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/import`, {
       method: 'POST',

@@ -517,6 +517,29 @@ export class UsersService {
   }
 
   /**
+   * Resend invite email to an existing user (Admin only)
+   */
+  async resendInvite(userId: string, companyId: string) {
+    const user = await this.findOne(userId, companyId);
+
+    let setupLink: string | undefined;
+    const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: user.email,
+      options: {
+        redirectTo: `${process.env.FRONTEND_URL}/auth/callback`,
+      },
+    });
+    if (!linkError && linkData?.properties?.action_link) {
+      setupLink = linkData.properties.action_link;
+    }
+
+    await this.notificationsService.sendWelcomeEmail(user.id, setupLink);
+
+    return { success: true };
+  }
+
+  /**
    * Get all managers in company (for dropdown)
    * Hard cap at 200 — dropdown doesn't need pagination
    */

@@ -30,7 +30,6 @@ export default function AssignmentCard({
   const [isDirty, setIsDirty] = useState(false);
   const [localSaving, setLocalSaving] = useState(false);
 
-  // Derive unique departments from all available users (new multi-dept model)
   const availableDepartments = useMemo(() => {
     const seen = new Set<string>();
     const result: { id: string; name: string }[] = [];
@@ -45,7 +44,6 @@ export default function AssignmentCard({
     return result.sort((a, b) => a.name.localeCompare(b.name));
   }, [availableUsers]);
 
-  // Default filter to the employee's first department
   const defaultDeptId = employee.departments?.[0]?.id ?? '';
   const [filterDeptId, setFilterDeptId] = useState(defaultDeptId);
 
@@ -75,9 +73,11 @@ export default function AssignmentCard({
     setIsDirty(true);
   };
 
-  // Filter reviewers by selected department (using new departments array)
   const inDept = (u: User) =>
-    !filterDeptId || (u.departments ?? []).some((d) => d.id === filterDeptId);
+    !filterDeptId ||
+    managerIds.includes(u.id) ||
+    peerIds.includes(u.id) ||
+    (u.departments ?? []).some((d) => d.id === filterDeptId);
 
   const managerOptions = availableUsers.filter(
     (u) => u.role === 'MANAGER' && inDept(u),
@@ -86,7 +86,6 @@ export default function AssignmentCard({
     (u) => u.role === 'EMPLOYEE' && inDept(u),
   );
 
-  const hasValidAssignment = managerIds.length >= 1 && peerIds.length >= 1;
   const filterDeptName = availableDepartments.find((d) => d.id === filterDeptId)?.name ?? '';
 
   return (
@@ -95,7 +94,6 @@ export default function AssignmentCard({
         <div>
           <h3 className="text-lg font-semibold text-on-surface">{employee.name}</h3>
           <p className="text-sm text-on-surface-variant">{employee.email}</p>
-          {/* Department pills */}
           {(employee.departments ?? []).length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {(employee.departments ?? []).map((d) => (
@@ -112,7 +110,7 @@ export default function AssignmentCard({
         {isDirty && (
           <button
             onClick={handleSave}
-            disabled={!hasValidAssignment || localSaving || saving}
+            disabled={localSaving || saving}
             className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dim disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
           >
             {localSaving ? 'Saving…' : 'Save'}
@@ -120,7 +118,6 @@ export default function AssignmentCard({
         )}
       </div>
 
-      {/* Department filter — step 1: select department */}
       <div className="mb-5 flex items-center gap-3 p-3 bg-surface-container-low rounded-lg border border-outline-variant">
         <span className="text-sm font-medium text-on-surface-variant whitespace-nowrap">
           Reviewers from:
@@ -149,10 +146,9 @@ export default function AssignmentCard({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Manager Selection */}
         <div>
           <label className="block text-sm font-medium text-on-surface-variant mb-2">
-            Managers (1+) <span className="text-red-500">*</span>
+            Managers
           </label>
           <ReviewerMultiSelect
             selectedIds={managerIds}
@@ -160,11 +156,6 @@ export default function AssignmentCard({
             onChange={handleManagerChange}
             placeholder="Select managers…"
           />
-          {managerIds.length === 0 && (
-            <p className="mt-1 text-xs text-red-600">
-              At least one manager required
-            </p>
-          )}
           {managerOptions.length === 0 && (
             <p className="mt-1 text-xs text-on-surface-variant">
               No managers{filterDeptName ? ` in ${filterDeptName}` : ''}
@@ -172,10 +163,9 @@ export default function AssignmentCard({
           )}
         </div>
 
-        {/* Peer Selection */}
         <div>
           <label className="block text-sm font-medium text-on-surface-variant mb-2">
-            Peers (1+) <span className="text-red-500">*</span>
+            Peers
           </label>
           <ReviewerMultiSelect
             selectedIds={peerIds}
@@ -183,11 +173,6 @@ export default function AssignmentCard({
             onChange={handlePeerChange}
             placeholder="Select peers…"
           />
-          {peerIds.length === 0 && (
-            <p className="mt-1 text-xs text-red-600">
-              At least one peer required
-            </p>
-          )}
           {peerOptions.length === 0 && (
             <p className="mt-1 text-xs text-on-surface-variant">
               No peers{filterDeptName ? ` in ${filterDeptName}` : ''}
