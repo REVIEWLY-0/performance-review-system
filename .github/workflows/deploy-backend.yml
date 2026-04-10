@@ -30,6 +30,6 @@ jobs:
       - name: Update ECS service
         run: |
           aws ecs update-service \
-            --cluster reviewly-cluster \
+            --cluster reviewly-backend-cluster \
             --service reviewly-backend-service \
             --force-new-deployment
