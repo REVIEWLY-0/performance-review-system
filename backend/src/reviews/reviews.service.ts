@@ -500,13 +500,9 @@ export class ReviewsService {
   }
 
   // ============================================================================
-  // Downward Review Methods (Manager evaluating direct reports automatically)
+  // Downward Review Methods
   // ============================================================================
 
-  /**
-   * Get list of direct reports for downward review
-   * Automatically uses org structure (managerId) — no manual assignment needed
-   */
   async getEmployeesToReviewDownward(
     managerId: string,
     companyId: string,
@@ -522,19 +518,16 @@ export class ReviewsService {
       throw new NotFoundException('Review cycle not found, not active, or access denied');
     }
 
-    // Automatically get direct reports from org structure
     const directReports = await this.prisma.user.findMany({
       where: {
         companyId,
         managerId: managerId,
-        isActive: true,
       },
       select: { id: true, name: true, email: true, department: true },
     });
 
     if (directReports.length === 0) return [];
 
-    // Batch fetch existing downward reviews
     const existingReviews = await this.prisma.review.findMany({
       where: { reviewCycleId: cycleId, reviewerId: managerId, reviewType: 'DOWNWARD' },
       select: { employeeId: true, status: true },
@@ -551,10 +544,6 @@ export class ReviewsService {
     }));
   }
 
-  /**
-   * Get or create downward review for a specific direct report
-   * Validates using org structure instead of manual assignments
-   */
   async findOrCreateDownwardReview(
     managerId: string,
     companyId: string,
@@ -571,7 +560,6 @@ export class ReviewsService {
       throw new NotFoundException('Review cycle not found, not active, or access denied');
     }
 
-    // Verify employee is a direct report of this manager via org structure
     const directReport = await this.prisma.user.findFirst({
       where: {
         id: employeeId,
