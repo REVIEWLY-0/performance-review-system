@@ -32,9 +32,6 @@ import { invalidateUserTokenCache, RequestWithUser } from '../common/middleware/
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  /**
-   * Get all users in company
-   */
   @Get()
   async findAll(
     @CompanyId() companyId: string,
@@ -46,33 +43,21 @@ export class UsersController {
     return this.usersService.findAll(companyId, +page, +limit, search, role);
   }
 
-  /**
-   * Get user statistics
-   */
   @Get('stats')
   async getStats(@CompanyId() companyId: string) {
     return this.usersService.getStats(companyId);
   }
 
-  /**
-   * Get all managers (for dropdown)
-   */
   @Get('managers')
   async getManagers(@CompanyId() companyId: string) {
     return this.usersService.getManagers(companyId);
   }
 
-  /**
-   * Get distinct department names for the company
-   */
   @Get('departments')
   async getDepartments(@CompanyId() companyId: string) {
     return this.usersService.getDepartments(companyId);
   }
 
-  /**
-   * Update own profile (name) — any authenticated user, no admin required
-   */
   @Patch('profile')
   async updateProfile(
     @CurrentUser() currentUser: { id: string; companyId: string },
@@ -81,16 +66,11 @@ export class UsersController {
     return this.usersService.updateProfile(currentUser.id, currentUser.companyId, dto.name);
   }
 
-  /**
-   * Upload avatar for own profile — any authenticated user
-   * Stores at uploads/avatars/{companyId}/{userId}.{ext}
-   * Returns the public URL for immediate use.
-   */
   @Post('me/avatar')
   @UseInterceptors(
     FileInterceptor('avatar', {
       storage: memoryStorage(),
-      limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+      limits: { fileSize: 2 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
         if (allowed.includes(extname(file.originalname).toLowerCase())) {
@@ -108,16 +88,11 @@ export class UsersController {
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
     const result = await this.usersService.uploadAvatar(currentUser.id, currentUser.companyId, file);
-    // Bust the middleware's in-memory token cache so the next /auth/me call
-    // immediately returns the new avatarUrl instead of the stale cached entry.
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (token) invalidateUserTokenCache(token);
     return result;
   }
 
-  /**
-   * Delete own avatar — any authenticated user
-   */
   @Delete('me/avatar')
   @HttpCode(HttpStatus.OK)
   async deleteAvatar(
@@ -130,10 +105,6 @@ export class UsersController {
     return result;
   }
 
-  /**
-   * Get organogram data — all users in company, role-aware field filtering
-   * EMPLOYEE: public fields; MANAGER: +email; ADMIN: +email+employeeId
-   */
   @Get('organogram')
   async getOrganogram(
     @CompanyId() companyId: string,
@@ -142,27 +113,6 @@ export class UsersController {
     return this.usersService.getOrganogramData(companyId, currentUser.role);
   }
 
-  /**
-   * Get specific user
-   */
-  @Get(':id')
-  async findOne(@Param('id') id: string, @CompanyId() companyId: string) {
-    return this.usersService.findOne(id, companyId);
-  }
-
-  /**
-   * Create new user (Admin only)
-   */
-  @Post()
-  @Roles('ADMIN')
-  @UseGuards(RolesGuard)
-  async create(@Body() createUserDto: CreateUserDto, @CompanyId() companyId: string) {
-    return this.usersService.create(companyId, createUserDto);
-  }
-
-  /**
-   * Import users from Excel (Admin only)
-   */
   @Post('import')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
@@ -170,9 +120,25 @@ export class UsersController {
     return this.usersService.importUsers(companyId, body.users);
   }
 
-  /**
-   * Update user (Admin only)
-   */
+  @Post(':id/resend-invite')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async resendInvite(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.usersService.resendInvite(id, companyId);
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string, @CompanyId() companyId: string) {
+    return this.usersService.findOne(id, companyId);
+  }
+
+  @Post()
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async create(@Body() createUserDto: CreateUserDto, @CompanyId() companyId: string) {
+    return this.usersService.create(companyId, createUserDto);
+  }
+
   @Put(':id')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
@@ -184,23 +150,10 @@ export class UsersController {
     return this.usersService.update(id, companyId, updateUserDto);
   }
 
-  /**
-   * Delete user (Admin only)
-   */
   @Delete(':id')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
   async remove(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.usersService.remove(id, companyId);
-  }
-
-  /**
-   * Resend invite email to a user (Admin only)
-   */
-  @Post(':id/resend-invite')
-  @Roles('ADMIN')
-  @UseGuards(RolesGuard)
-  async resendInvite(@Param('id') id: string, @CompanyId() companyId: string) {
-    return this.usersService.resendInvite(id, companyId);
   }
 }
