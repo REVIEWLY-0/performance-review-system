@@ -524,10 +524,19 @@ export class ReviewCyclesService {
       }
 
       const emp = employeeMap.get(a.employeeId)!;
-      const reviewType = a.reviewerType === 'MANAGER' ? ReviewType.MANAGER : ReviewType.PEER;
-      const reviewStatus =
-        reviewLookup.get(`${a.employeeId}:${a.reviewerId}:${reviewType}`) ??
-        ReviewStatus.NOT_STARTED;
+      // MANAGER assignments can produce either MANAGER (upward) or DOWNWARD reviews.
+      // Check both keys so downward reviews are not incorrectly shown as Pending.
+      let reviewStatus: ReviewStatus;
+      if (a.reviewerType === 'MANAGER') {
+        reviewStatus =
+          reviewLookup.get(`${a.employeeId}:${a.reviewerId}:MANAGER`) ??
+          reviewLookup.get(`${a.employeeId}:${a.reviewerId}:DOWNWARD`) ??
+          ReviewStatus.NOT_STARTED;
+      } else {
+        reviewStatus =
+          reviewLookup.get(`${a.employeeId}:${a.reviewerId}:PEER`) ??
+          ReviewStatus.NOT_STARTED;
+      }
 
       const entry: ReviewerStatusEntry = {
         reviewer: a.reviewer,

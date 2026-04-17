@@ -1,4 +1,4 @@
-# ── Stage 1: Install dependencies ─────────────────────────────────────────────
+﻿# â”€â”€ Stage 1: Install dependencies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 FROM node:20-alpine AS deps
 
 WORKDIR /app
@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# ── Stage 2: Build ─────────────────────────────────────────────────────────────
+# â”€â”€ Stage 2: Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -33,7 +33,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
-# ── Stage 3: Production runner ─────────────────────────────────────────────────
+# â”€â”€ Stage 3: Production runner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 FROM node:20-alpine AS runner
 
 WORKDIR /app
@@ -44,7 +44,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # next.config.js output: 'standalone' produces a self-contained server
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+RUN mkdir -p ./public
 
 EXPOSE 3000
 

@@ -310,7 +310,6 @@ export class ReviewsService {
         reviewCycleId: cycleId,
         reviewerId: managerId,
         reviewerType: 'MANAGER',
-        employee: { role: 'MANAGER' },
         reviewCycle: { companyId },
       },
       include: {

@@ -1,0 +1,83 @@
+﻿
+# Dev stack — runs Postgres + backend + frontend locally with one command.
+#
+# Usage:
+#   1. Copy .env.dev.example to .env.dev and fill in your values
+#   2. docker compose -f docker-compose.dev.yml --env-file .env.dev up --build
+#
+# Frontend: http://localhost:3000
+# Backend:  http://localhost:4000/api/health
+# Adminer:  http://localhost:8080
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: reviewly
+      POSTGRES_PASSWORD: reviewly
+      POSTGRES_DB: reviewly_dev
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U reviewly']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://reviewly:reviewly@postgres:5432/reviewly_dev
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      MAILTRAP_HOST: ${MAILTRAP_HOST}
+      MAILTRAP_PORT: ${MAILTRAP_PORT:-587}
+      MAILTRAP_USER: ${MAILTRAP_USER}
+      MAILTRAP_PASS: ${MAILTRAP_PASS}
+      EMAIL_FROM: ${EMAIL_FROM:-Reviewly Dev noreply@reviewly.com}
+      PORT: 4000
+      NODE_ENV: development
+      FRONTEND_URL: http://localhost:3000
+      BACKEND_URL: http://localhost:4000
+      CORS_ORIGIN: http://localhost:3000
+      UNSUBSCRIBE_SECRET: ${UNSUBSCRIBE_SECRET:-dev-secret}
+    ports:
+      - '4000:4000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000/api
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Reviewly Dev}
+        NEXT_PUBLIC_APP_URL: http://localhost:3000
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data_dev:
