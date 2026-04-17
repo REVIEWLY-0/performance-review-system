@@ -305,11 +305,21 @@ export class ReviewsService {
       throw new NotFoundException('Review cycle not found, not active, or access denied');
     }
 
+    // Upward reviews: current user is reviewing their own manager
+    // First find who the current user's manager is
+    const currentUser = await this.prisma.user.findFirst({
+      where: { id: managerId, companyId },
+      select: { managerId: true },
+    });
+
+    if (!currentUser?.managerId) return [];
+
     const assignments = await this.prisma.reviewerAssignment.findMany({
       where: {
         reviewCycleId: cycleId,
         reviewerId: managerId,
         reviewerType: 'MANAGER',
+        employeeId: currentUser.managerId, // Only reviewing own manager (upward)
         reviewCycle: { companyId },
       },
       include: {
@@ -517,32 +527,56 @@ export class ReviewsService {
       throw new NotFoundException('Review cycle not found, not active, or access denied');
     }
 
-    const directReports = await this.prisma.user.findMany({
-      where: {
-        companyId,
-        managerId: managerId,
-      },
-      select: { id: true, name: true, email: true, department: true },
+    // Downward reviews: find all MANAGER assignments where this manager reviews employees
+    // Exclude assignments where the employee is this manager's own manager (those are upward)
+    const currentManager = await this.prisma.user.findFirst({
+      where: { id: managerId, companyId },
+      select: { managerId: true },
     });
 
-    if (directReports.length === 0) return [];
+    const whereClause: any = {
+      reviewCycleId: cycleId,
+      reviewerId: managerId,
+      reviewerType: 'MANAGER',
+      reviewCycle: { companyId },
+    };
+
+    // Exclude the assignment for reviewing own manager (upward direction)
+    if (currentManager?.managerId) {
+      whereClause.NOT = { employeeId: currentManager.managerId };
+    }
+
+    const assignments = await this.prisma.reviewerAssignment.findMany({
+      where: whereClause,
+      include: {
+        employee: {
+          select: { id: true, name: true, email: true, department: true },
+        },
+      },
+    });
+
+    if (assignments.length === 0) return [];
 
     const existingReviews = await this.prisma.review.findMany({
-      where: { reviewCycleId: cycleId, reviewerId: managerId, reviewType: 'DOWNWARD' },
+      where: {
+        reviewCycleId: cycleId,
+        reviewerId: managerId,
+        reviewType: { in: ['DOWNWARD', 'MANAGER'] },
+      },
       select: { employeeId: true, status: true },
     });
 
     const reviewStatusMap = new Map(existingReviews.map((r) => [r.employeeId, r.status]));
 
-    return directReports.map((employee) => ({
-      id: employee.id,
-      name: employee.name,
-      email: employee.email,
-      department: employee.department,
-      reviewStatus: reviewStatusMap.get(employee.id) ?? 'NOT_STARTED',
+    return assignments.map((a) => ({
+      id: a.employee.id,
+      name: a.employee.name,
+      email: a.employee.email,
+      department: a.employee.department,
+      reviewStatus: reviewStatusMap.get(a.employeeId) ?? 'NOT_STARTED',
     }));
-  }
 
+  }
   async findOrCreateDownwardReview(
     managerId: string,
     companyId: string,
@@ -559,18 +593,21 @@ export class ReviewsService {
       throw new NotFoundException('Review cycle not found, not active, or access denied');
     }
 
-    const directReport = await this.prisma.user.findFirst({
+    // Validate access via ReviewerAssignment (not org chart)
+    // This covers both org-chart direct reports and manually assigned employees
+    const assignment = await this.prisma.reviewerAssignment.findFirst({
       where: {
-        id: employeeId,
-        companyId,
-        managerId: managerId,
+        reviewCycleId: cycleId,
+        employeeId,
+        reviewerId: managerId,
+        reviewerType: 'MANAGER',
+        reviewCycle: { companyId },
       },
     });
 
-    if (!directReport) {
-      throw new NotFoundException('Employee is not a direct report or access denied');
+    if (!assignment) {
+      throw new NotFoundException('Not assigned to review this employee or access denied');
     }
-
     const employee = await this.prisma.user.findFirst({
       where: { id: employeeId, companyId },
       select: { id: true, name: true, email: true },
