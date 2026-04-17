@@ -6,6 +6,7 @@ export function invalidateReviewCaches() {
   invalidateCache('reviews:');
   invalidateCache('analytics:');
   invalidateCache('score:');
+  invalidateCache('cycles:insights:');
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
