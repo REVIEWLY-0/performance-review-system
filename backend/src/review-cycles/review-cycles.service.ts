@@ -524,14 +524,19 @@ export class ReviewCyclesService {
       }
 
       const emp = employeeMap.get(a.employeeId)!;
-      // MANAGER assignments can produce either MANAGER (upward) or DOWNWARD reviews.
-      // Check both keys so downward reviews are not incorrectly shown as Pending.
+      // Pick the most advanced status across MANAGER and DOWNWARD review types.
+      // A stale NOT_STARTED MANAGER record must not shadow a SUBMITTED DOWNWARD record.
       let reviewStatus: ReviewStatus;
       if (a.reviewerType === 'MANAGER') {
-        reviewStatus =
-          reviewLookup.get(`${a.employeeId}:${a.reviewerId}:MANAGER`) ??
-          reviewLookup.get(`${a.employeeId}:${a.reviewerId}:DOWNWARD`) ??
-          ReviewStatus.NOT_STARTED;
+        const s1 = reviewLookup.get(`${a.employeeId}:${a.reviewerId}:MANAGER`);
+        const s2 = reviewLookup.get(`${a.employeeId}:${a.reviewerId}:DOWNWARD`);
+        if (s1 === ReviewStatus.SUBMITTED || s2 === ReviewStatus.SUBMITTED) {
+          reviewStatus = ReviewStatus.SUBMITTED;
+        } else if (s1 === ReviewStatus.DRAFT || s2 === ReviewStatus.DRAFT) {
+          reviewStatus = ReviewStatus.DRAFT;
+        } else {
+          reviewStatus = ReviewStatus.NOT_STARTED;
+        }
       } else {
         reviewStatus =
           reviewLookup.get(`${a.employeeId}:${a.reviewerId}:PEER`) ??
