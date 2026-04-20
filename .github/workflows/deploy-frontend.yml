@@ -23,6 +23,6 @@ jobs:
       - name: Trigger Amplify deployment
         run: |
           aws amplify start-job \
-            --app-id d3kxctmexhxajh \
+            --app-id dpjqa44jlz1nr \
             --branch-name main \
             --job-type RELEASE
