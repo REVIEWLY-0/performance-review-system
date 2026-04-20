@@ -294,6 +294,8 @@ export default function OrganogramPage() {
   const [downloading, setDownloading] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
+  const [chartScale, setChartScale] = useState(1);
+
   const moveDescendantIds = useMemo(
     () => (movingId ? getDescendantIds(movingId, nodes) : new Set<string>()),
     [movingId, nodes],
@@ -319,6 +321,16 @@ export default function OrganogramPage() {
     const data = await orgChartApi.getAll();
     setNodes(data);
   };
+
+  useEffect(() => {
+    if (!chartRef.current || nodes.length === 0) return;
+    const el = chartRef.current;
+    const parent = el.parentElement;
+    if (!parent) return;
+    const naturalWidth = el.scrollWidth;
+    const available = parent.clientWidth;
+    setChartScale(naturalWidth > available ? available / naturalWidth : 1);
+  }, [nodes]);
 
   const handleStartEdit = (node: OrgTreeNode) => { setAddingChildOf(null); setEditingId(node.id); };
   const handleSaveEdit = async (id: string, title: string) => {
@@ -574,7 +586,7 @@ export default function OrganogramPage() {
             </button>
           )}
 
-          <div ref={chartRef} className="w-full pb-12">
+          <div ref={chartRef} className="w-full pb-12" style={{ transform: `scale(${chartScale})`, transformOrigin: 'top center', height: chartScale < 1 ? `calc(100% * ${chartScale})` : undefined }}>
             <div className="flex justify-center pt-4 flex-wrap">
               {topLevelItems.length === 1 && topLevelItems[0] !== null ? (
                 <TreeNode node={topLevelItems[0]} isRoot {...sharedNodeProps} />
