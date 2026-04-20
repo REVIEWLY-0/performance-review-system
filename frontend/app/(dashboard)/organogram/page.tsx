@@ -574,8 +574,8 @@ export default function OrganogramPage() {
             </button>
           )}
 
-          <div ref={chartRef} className="overflow-x-auto overflow-y-visible pb-12">
-            <div className="inline-flex min-w-full justify-center pt-4">
+          <div ref={chartRef} className="w-full overflow-x-auto overflow-y-visible pb-12">
+            <div className="flex justify-center pt-4 w-max min-w-full">
               {topLevelItems.length === 1 && topLevelItems[0] !== null ? (
                 <TreeNode node={topLevelItems[0]} isRoot {...sharedNodeProps} />
               ) : (
