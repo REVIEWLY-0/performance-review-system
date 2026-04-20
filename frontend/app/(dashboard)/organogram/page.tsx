@@ -293,6 +293,7 @@ export default function OrganogramPage() {
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
+  const chartWrapperRef = useRef<HTMLDivElement>(null);
 
   const [chartScale, setChartScale] = useState(1);
 
@@ -323,12 +324,9 @@ export default function OrganogramPage() {
   };
 
   useEffect(() => {
-    if (!chartRef.current || nodes.length === 0) return;
-    const el = chartRef.current;
-    const parent = el.parentElement;
-    if (!parent) return;
-    const naturalWidth = el.scrollWidth;
-    const available = parent.clientWidth;
+    if (!chartRef.current || !chartWrapperRef.current || nodes.length === 0) return;
+    const naturalWidth = chartRef.current.scrollWidth;
+    const available = chartWrapperRef.current.clientWidth;
     setChartScale(naturalWidth > available ? available / naturalWidth : 1);
   }, [nodes]);
 
@@ -586,8 +584,8 @@ export default function OrganogramPage() {
             </button>
           )}
 
-          <div ref={chartRef} className="w-full pb-12" style={{ transform: `scale(${chartScale})`, transformOrigin: 'top center', height: chartScale < 1 ? `calc(100% * ${chartScale})` : undefined }}>
-            <div className="flex justify-center pt-4 flex-wrap">
+          <div ref={chartWrapperRef} className="w-full overflow-hidden pb-12">
+            <div ref={chartRef} className="inline-flex justify-center pt-4 min-w-full" style={{ transform: `scale(${chartScale})`, transformOrigin: 'top left', marginBottom: chartScale < 1 ? `${-(chartRef.current?.scrollHeight ?? 0) * (1 - chartScale)}px` : undefined }}>
               {topLevelItems.length === 1 && topLevelItems[0] !== null ? (
                 <TreeNode node={topLevelItems[0]} isRoot {...sharedNodeProps} />
               ) : (
