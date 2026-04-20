@@ -374,16 +374,19 @@ export default function OrganogramPage() {
     try {
       const { default: html2canvas } = await import('html2canvas');
       const el = chartRef.current;
+      // Temporarily remove CSS scale so html2canvas captures the full natural size
+      const prevTransform = el.style.transform;
+      const prevMarginBottom = el.style.marginBottom;
+      el.style.transform = 'none';
+      el.style.marginBottom = '0';
+      el.getBoundingClientRect(); // force reflow
       const canvas = await html2canvas(el, {
         backgroundColor: '#ffffff',
         scale: 2,
-        width: el.scrollWidth,
-        height: el.scrollHeight,
-        windowWidth: el.scrollWidth,
-        windowHeight: el.scrollHeight,
-        scrollX: 0,
-        scrollY: 0,
+        useCORS: true,
       });
+      el.style.transform = prevTransform;
+      el.style.marginBottom = prevMarginBottom;
       const link = document.createElement('a');
       link.download = 'organogram.png';
       link.href = canvas.toDataURL('image/png');

@@ -121,7 +121,7 @@ export class AnalyticsService {
       // that have been created; employees who haven't started yet have no record.
       this.prisma.reviewerAssignment.count({ where: { reviewCycleId: cycleId } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'SELF',    status: { not: 'SUBMITTED' } } }),
-      this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'MANAGER', status: { not: 'SUBMITTED' } } }),
+      this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: { in: ['MANAGER', 'DOWNWARD'] }, status: { not: 'SUBMITTED' } } }),
       this.prisma.review.count({ where: { reviewCycleId: cycleId, reviewType: 'PEER',    status: { not: 'SUBMITTED' } } }),
     ]);
 
