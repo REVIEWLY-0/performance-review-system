@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
 import { orgChartApi, buildTree, OrgChartNode, OrgTreeNode } from '@/lib/org-chart';
 import BackButton from '@/components/BackButton';
 import { useToast } from '@/components/ToastProvider';
+import html2canvas from 'html2canvas';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -291,6 +292,8 @@ export default function OrganogramPage() {
   const [addingChildOf, setAddingChildOf] = useState<string | 'root' | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const chartRef = useRef<HTMLDivElement>(null);
 
   const moveDescendantIds = useMemo(
     () => (movingId ? getDescendantIds(movingId, nodes) : new Set<string>()),
@@ -353,6 +356,34 @@ export default function OrganogramPage() {
     } catch (err: any) { toast.error(err.message || 'Failed to delete'); }
     finally { setSaving(false); }
   };
+
+  // ── Download handler ──────────────────────────────────────────────────────
+
+  const handleDownload = useCallback(async () => {
+    if (!chartRef.current) return;
+    setDownloading(true);
+    try {
+      const el = chartRef.current;
+      const canvas = await html2canvas(el, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+      });
+      const link = document.createElement('a');
+      link.download = 'organogram.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Download failed:', err);
+    } finally {
+      setDownloading(false);
+    }
+  }, []);
 
   // ── Move handlers ──────────────────────────────────────────────────────────
 
@@ -430,28 +461,54 @@ export default function OrganogramPage() {
           <p className="mt-1 text-sm text-on-surface-variant">Organisational hierarchy</p>
         </div>
 
-        {isAdmin && (
-          <div className="flex items-center gap-2 mt-1 flex-shrink-0">
-            {editMode && !isInMoveMode && (
-              <button
-                onClick={() => handleStartAdd('root')}
-                disabled={saving || addingChildOf === 'root'}
-                className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium border border-dashed border-indigo-400 text-indigo-600 rounded-lg hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                + Add root position
-              </button>
-            )}
+        <div className="flex items-center gap-2 mt-1 flex-shrink-0">
+          {!isEmpty && (
             <button
-              onClick={() => { setEditMode((v) => !v); setEditingId(null); setAddingChildOf(null); setMovingId(null); }}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
-                editMode ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
-                         : 'bg-surface-container-lowest text-on-surface-variant border-outline hover:bg-surface-container-low'
-              }`}
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-outline bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {editMode ? '✓ Done editing' : '✎ Edit'}
+              {downloading ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Exporting…
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download PNG
+                </>
+              )}
             </button>
-          </div>
-        )}
+          )}
+          {isAdmin && (
+            <>
+              {editMode && !isInMoveMode && (
+                <button
+                  onClick={() => handleStartAdd('root')}
+                  disabled={saving || addingChildOf === 'root'}
+                  className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium border border-dashed border-indigo-400 text-indigo-600 rounded-lg hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  + Add root position
+                </button>
+              )}
+              <button
+                onClick={() => { setEditMode((v) => !v); setEditingId(null); setAddingChildOf(null); setMovingId(null); }}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                  editMode ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
+                           : 'bg-surface-container-lowest text-on-surface-variant border-outline hover:bg-surface-container-low'
+                }`}
+              >
+                {editMode ? '✓ Done editing' : '✎ Edit'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Empty state */}
@@ -517,7 +574,7 @@ export default function OrganogramPage() {
             </button>
           )}
 
-          <div className="overflow-x-auto overflow-y-visible pb-12">
+          <div ref={chartRef} className="overflow-x-auto overflow-y-visible pb-12">
             <div className="inline-flex min-w-full justify-center pt-4">
               {topLevelItems.length === 1 && topLevelItems[0] !== null ? (
                 <TreeNode node={topLevelItems[0]} isRoot {...sharedNodeProps} />
