@@ -487,6 +487,8 @@ export class ReviewCyclesService {
     for (const r of reviews) {
       reviewLookup.set(`${r.employeeId}:${r.reviewerId}:${r.reviewType}`, r.status);
     }
+    console.log(`🔍 getInsights cycle=${id}: ${reviews.length} reviews, ${assignments.length} assignments`);
+    console.log(`🔍 Review keys:`, Array.from(reviewLookup.entries()).map(([k,v]) => `${k}=${v}`));
 
     // Build per-employee insights
     type ReviewerStatusEntry = {
@@ -530,6 +532,7 @@ export class ReviewCyclesService {
       if (a.reviewerType === 'MANAGER') {
         const s1 = reviewLookup.get(`${a.employeeId}:${a.reviewerId}:MANAGER`);
         const s2 = reviewLookup.get(`${a.employeeId}:${a.reviewerId}:DOWNWARD`);
+        console.log(`🔍 MANAGER assignment emp=${a.employee.name} reviewer=${a.reviewer.name}: MANAGER=${s1} DOWNWARD=${s2}`);
         if (s1 === ReviewStatus.SUBMITTED || s2 === ReviewStatus.SUBMITTED) {
           reviewStatus = ReviewStatus.SUBMITTED;
         } else if (s1 === ReviewStatus.DRAFT || s2 === ReviewStatus.DRAFT) {
