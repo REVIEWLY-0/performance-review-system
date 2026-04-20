@@ -6,7 +6,6 @@ import { getCurrentUser, User } from '@/lib/auth';
 import { orgChartApi, buildTree, OrgChartNode, OrgTreeNode } from '@/lib/org-chart';
 import BackButton from '@/components/BackButton';
 import { useToast } from '@/components/ToastProvider';
-import html2canvas from 'html2canvas';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -363,6 +362,7 @@ export default function OrganogramPage() {
     if (!chartRef.current) return;
     setDownloading(true);
     try {
+      const { default: html2canvas } = await import('html2canvas');
       const el = chartRef.current;
       const canvas = await html2canvas(el, {
         backgroundColor: '#ffffff',
