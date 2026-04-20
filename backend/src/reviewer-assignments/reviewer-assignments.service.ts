@@ -129,14 +129,29 @@ export class ReviewerAssignmentsService {
           employeeId: dto.employeeId,
         },
       });
-
-      await prisma.reviewerAssignment.deleteMany({
+      // Only delete reverse assignments auto-created for this employee's own
+      // MANAGER assignments, not assignments where this employee is explicitly
+      // a reviewer for someone else (e.g. manager reviewing a direct report).
+      const currentManagerAssignments = await prisma.reviewerAssignment.findMany({
         where: {
           reviewCycleId: dto.reviewCycleId,
-          reviewerId: dto.employeeId,
+          employeeId: dto.employeeId,
           reviewerType: 'MANAGER',
         },
+        select: { reviewerId: true },
       });
+
+      const currentManagerIds = currentManagerAssignments.map((a) => a.reviewerId);
+      if (currentManagerIds.length > 0) {
+        await prisma.reviewerAssignment.deleteMany({
+          where: {
+            reviewCycleId: dto.reviewCycleId,
+            employeeId: { in: currentManagerIds },
+            reviewerId: dto.employeeId,
+            reviewerType: 'MANAGER',
+          },
+        });
+      }
 
       if (dto.assignments.length > 0) {
         await prisma.reviewerAssignment.createMany({
