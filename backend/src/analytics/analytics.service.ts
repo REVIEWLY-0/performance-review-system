@@ -431,10 +431,8 @@ export class AnalyticsService {
     const peerRequired = requiredBaseTypes.has('PEER');
 
     // Once the cycle is COMPLETED the admin has intentionally closed it —
-    // missing manager/peer reviews should not block an employee from seeing scores.
-    const allReviewsComplete =
-      cycle.status === 'COMPLETED' &&
-      (!selfRequired || hasSelfReview);
+    // scores unlock for all employees regardless of which reviews are missing.
+    const allReviewsComplete = cycle.status === 'COMPLETED';
 
     return {
       personalScore: allReviewsComplete ? personalScore : null,
