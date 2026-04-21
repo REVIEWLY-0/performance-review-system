@@ -134,7 +134,7 @@ export default function EmployeeScoresPage() {
   }
 
   const selectedCycle = cycles.find((c) => c.id === selectedCycleId);
-  const isLocked = !scoreData || scoreData.overall_score === null || scoreData.warnings?.length > 0;
+  const isLocked = !scoreData || scoreData.overall_score === null;
   const cycleEndDate = selectedCycle?.endDate
     ? new Date(selectedCycle.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
