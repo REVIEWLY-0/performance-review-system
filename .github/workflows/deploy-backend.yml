@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   deploy:
@@ -21,15 +22,27 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Set environment variables
+        run: |
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            echo "ECR_REPO=659788916559.dkr.ecr.eu-west-2.amazonaws.com/reviewly-backend" >> $GITHUB_ENV
+            echo "ECS_CLUSTER=reviewly-backend-cluster" >> $GITHUB_ENV
+            echo "ECS_SERVICE=reviewly-backend-service" >> $GITHUB_ENV
+          else
+            echo "ECR_REPO=659788916559.dkr.ecr.eu-west-2.amazonaws.com/reviewly-backend-dev" >> $GITHUB_ENV
+            echo "ECS_CLUSTER=reviewly-backend-cluster" >> $GITHUB_ENV
+            echo "ECS_SERVICE=reviewly-backend-dev-service" >> $GITHUB_ENV
+          fi
+
       - name: Build and push Docker image
         run: |
           docker build -t reviewly-backend ./backend
-          docker tag reviewly-backend:latest 659788916559.dkr.ecr.eu-west-2.amazonaws.com/reviewly-backend:latest
-          docker push 659788916559.dkr.ecr.eu-west-2.amazonaws.com/reviewly-backend:latest
+          docker tag reviewly-backend:latest ${{ env.ECR_REPO }}:latest
+          docker push ${{ env.ECR_REPO }}:latest
 
       - name: Update ECS service
         run: |
           aws ecs update-service \
-            --cluster reviewly-backend-cluster \
-            --service reviewly-backend-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
             --force-new-deployment
