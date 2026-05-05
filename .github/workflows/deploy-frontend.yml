@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
     paths:
       - 'frontend/**'
 
@@ -22,7 +23,8 @@ jobs:
 
       - name: Trigger Amplify deployment
         run: |
+          BRANCH_NAME=${GITHUB_REF##*/}
           aws amplify start-job \
             --app-id dpjqa44jlz1nr \
-            --branch-name main \
+            --branch-name $BRANCH_NAME \
             --job-type RELEASE

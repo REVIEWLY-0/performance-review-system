@@ -38,8 +38,10 @@ async function bootstrap() {
   );
 
   // CORS configuration
-  const corsOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',')
+  const corsOrigins: string[] | true = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN === '*'
+      ? true
+      : process.env.CORS_ORIGIN.split(',')
     : [
         'http://localhost:3000',
         'http://localhost:3001',
@@ -76,7 +78,7 @@ async function bootstrap() {
   console.log(`🚀 Reviewly Backend`);
   console.log(`   Port: ${port}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`   CORS: ${corsOrigins.join(', ')}`);
+  console.log(`   CORS: ${corsOrigins === true ? '*' : corsOrigins.join(', ')}`);
   console.log(`   Health: http://localhost:${port}/api/health`);
   if (process.env.SENTRY_DSN) {
     console.log(`   Sentry: enabled`);
