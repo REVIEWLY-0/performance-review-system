@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { SignUpDto, SignInDto } from './auth.dto';
+import { SignUpDto, SignInDto, ForgotPasswordDto } from './auth.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
@@ -9,13 +9,13 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ auth: { limit: 5, ttl: 15 * 60 * 1000 } })
+  @Throttle({ default: { limit: 5, ttl: 15 * 60 * 1000 } })
   @Post('signup')
   async signUp(@Body() dto: SignUpDto) {
     return this.authService.signUp(dto.email, dto.password, dto.name, dto.companyName);
   }
 
-  @Throttle({ auth: { limit: 10, ttl: 15 * 60 * 1000 } })
+  @Throttle({ default: { limit: 10, ttl: 15 * 60 * 1000 } })
   @Post('signin')
   async signIn(@Body() dto: SignInDto) {
     return this.authService.signIn(dto.email, dto.password);
@@ -27,7 +27,7 @@ export class AuthController {
   }
 
   /**
-   * Send a password reset email to the currently authenticated user
+   * Send a password reset email to the currently authenticated user (settings page flow).
    */
   @Post('request-password-reset')
   @UseGuards(AuthGuard)
@@ -35,6 +35,16 @@ export class AuthController {
     @CurrentUser() user: { id: string; email: string },
   ) {
     return this.authService.requestPasswordReset(user.id, user.email);
+  }
+
+  /**
+   * Public forgot-password flow (login page — no auth required).
+   * Always returns 200 to prevent email enumeration.
+   */
+  @Throttle({ default: { limit: 5, ttl: 15 * 60 * 1000 } })
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 
   @Get('me')

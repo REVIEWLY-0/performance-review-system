@@ -28,3 +28,8 @@ export class SignInDto {
   password!: string;
 }
 
+export class ForgotPasswordDto {
+  @IsEmail()
+  email!: string;
+}
+

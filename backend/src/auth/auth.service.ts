@@ -261,6 +261,34 @@ export class AuthService {
   }
 
   /**
+   * Public forgot-password flow (unauthenticated).
+   * Generates a Supabase recovery link and emails it.
+   * Always returns the same generic message to prevent email enumeration.
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const GENERIC = { message: 'If that email exists, a reset link has been sent.' };
+
+    const user = await this.prisma.user.findFirst({ where: { email } });
+    if (!user) return GENERIC;
+
+    const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+    });
+
+    if (linkError || !linkData?.properties?.action_link) {
+      console.error('Failed to generate password reset link:', linkError?.message);
+      return GENERIC;
+    }
+
+    await this.notificationsService
+      .sendPasswordResetEmail(user.id, linkData.properties.action_link)
+      .catch((err) => console.error('Failed to send password reset email:', err));
+
+    return GENERIC;
+  }
+
+  /**
    * Get user by ID (with company_id filtering)
    */
   async getUserById(userId: string, companyId: string) {

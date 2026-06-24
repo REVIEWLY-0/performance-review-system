@@ -4,6 +4,7 @@ import { INestApplication, ValidationPipe, UnauthorizedException } from '@nestjs
 const request = require('supertest');
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AuthGuard } from '../common/guards/auth.guard';
 
 // ─── Mock AuthService ─────────────────────────────────────────────────────────
 
@@ -11,12 +12,15 @@ const MOCK_TOKEN    = 'mock.jwt.token';
 const MOCK_USER     = { id: 'user-1', email: 'admin@company.com', name: 'Admin', role: 'ADMIN', companyId: 'co-1' };
 const MOCK_SESSION  = { access_token: MOCK_TOKEN, user: MOCK_USER };
 
+const GENERIC_RESET_MSG = 'If that email exists, a reset link has been sent.';
+
 const mockAuthService = {
   signUp: jest.fn(),
   signIn: jest.fn().mockResolvedValue(MOCK_SESSION),
   signOut: jest.fn().mockResolvedValue({ message: 'Signed out' }),
   verifyToken: jest.fn(),
   requestPasswordReset: jest.fn(),
+  forgotPassword: jest.fn().mockResolvedValue({ message: GENERIC_RESET_MSG }),
 };
 
 // ─── App bootstrap ────────────────────────────────────────────────────────────
@@ -25,7 +29,24 @@ async function createApp(): Promise<INestApplication> {
   const module: TestingModule = await Test.createTestingModule({
     controllers: [AuthController],
     providers: [{ provide: AuthService, useValue: mockAuthService }],
-  }).compile();
+  })
+    // AuthGuard reads request.user set by TenantContextMiddleware (not wired in tests).
+    // Override to inject MOCK_USER so @CurrentUser() resolves correctly.
+    .overrideGuard(AuthGuard)
+    .useValue({
+      // Mirrors what TenantContextMiddleware + AuthGuard do in production:
+      // verify the Bearer token, set request.user on success, throw 401 otherwise.
+      canActivate: async (ctx: any) => {
+        const req = ctx.switchToHttp().getRequest();
+        const header: string | undefined = req.headers['authorization'];
+        if (!header) throw new UnauthorizedException('User not authenticated');
+        const token = header.replace('Bearer ', '');
+        const user = await mockAuthService.verifyToken(token); // uses jest mock
+        req.user = user;
+        return true;
+      },
+    })
+    .compile();
 
   const app = module.createNestApplication();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -163,6 +184,60 @@ describe('AuthController (integration)', () => {
 
       expect(res.status).toBe(201);
       expect(mockAuthService.signOut).toHaveBeenCalled();
+    });
+  });
+
+  // ── POST /api/auth/forgot-password ───────────────────────────────────────
+
+  describe('POST /api/auth/forgot-password', () => {
+    it('returns 201 with generic message for a registered email', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/auth/forgot-password')
+        .send({ email: 'admin@company.com' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.message).toBe(GENERIC_RESET_MSG);
+      expect(mockAuthService.forgotPassword).toHaveBeenCalledWith('admin@company.com');
+    });
+
+    it('returns 201 with same generic message for an unknown email (no enumeration)', async () => {
+      // Service always returns the same message regardless of whether user exists
+      mockAuthService.forgotPassword.mockResolvedValueOnce({ message: GENERIC_RESET_MSG });
+
+      const res = await request(app.getHttpServer())
+        .post('/api/auth/forgot-password')
+        .send({ email: 'nobody@nowhere.com' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.message).toBe(GENERIC_RESET_MSG);
+    });
+
+    it('returns 400 when email is missing', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/auth/forgot-password')
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(mockAuthService.forgotPassword).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when email format is invalid', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/auth/forgot-password')
+        .send({ email: 'not-an-email' });
+
+      expect(res.status).toBe(400);
+      expect(mockAuthService.forgotPassword).not.toHaveBeenCalled();
+    });
+
+    it('does not require an Authorization header', async () => {
+      // Endpoint is public — no auth guard
+      const res = await request(app.getHttpServer())
+        .post('/api/auth/forgot-password')
+        .send({ email: 'admin@company.com' });
+        // Note: no .set('Authorization', ...) header
+
+      expect(res.status).toBe(201);
     });
   });
 });
