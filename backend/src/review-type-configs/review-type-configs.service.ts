@@ -165,7 +165,7 @@ export class ReviewTypeConfigsService {
         {
           companyId,
           key: 'DOWNWARD',
-          label: 'Team Evaluation',
+          label: 'Downward',
           baseType: ReviewType.DOWNWARD,
           isBuiltIn: true,
           isRequired: false,

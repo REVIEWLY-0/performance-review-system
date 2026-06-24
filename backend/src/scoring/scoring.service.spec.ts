@@ -1,6 +1,8 @@
 import { ScoringService } from './scoring.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DepartmentQuantScoresService } from '../department-quant-scores/department-quant-scores.service';
+import { ScoreWeightsService } from '../score-weights/score-weights.service';
 
 // ─── Test fixtures ────────────────────────────────────────────────────────────
 
@@ -26,10 +28,12 @@ function makeReview(type: string, ratings: Record<string, number>) {
 // ─── Service factory ──────────────────────────────────────────────────────────
 
 function makeService(): ScoringService {
-  // calculateScoreFromData is pure — no DB/notification calls needed.
+  // calculateScoreFromData is pure — no DB/dept-quant/weights calls needed.
   return new ScoringService(
     {} as PrismaService,
     {} as NotificationsService,
+    {} as DepartmentQuantScoresService,
+    {} as ScoreWeightsService,
   );
 }
 
@@ -196,5 +200,203 @@ describe('ScoringService — calculateScoreFromData', () => {
     const asString = String(result.overall_score ?? '');
     const decimals = asString.includes('.') ? asString.split('.')[1].length : 0;
     expect(decimals).toBeLessThanOrEqual(2);
+  });
+
+  // ── Weighted formula (configured weights) ─────────────────────────────────
+
+  const calcWeighted = (
+    svc: ScoringService,
+    reviews: any[],
+    weights: { quantWeight: number; managerWeight: number; peerWeight: number; selfWeight: number; minPeerThreshold: number },
+    quantScore: number | null = null,
+  ) =>
+    (svc as any).calculateScoreFromData(EMPLOYEE, CYCLE, reviews, QUESTIONS, weights, quantScore);
+
+  it('applies configured weights (60/30/10) to qual sources', () => {
+    const reviews = [
+      makeReview('SELF',     { 'q-1': 4, 'q-2': 4 }),   // selfAvg = 4
+      makeReview('DOWNWARD', { 'q-1': 5, 'q-2': 5 }),   // managerAvg = 5
+      makeReview('PEER',     { 'q-1': 3, 'q-2': 3 }),   // peerAvg = 3
+    ];
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWeighted(service, reviews, weights);
+
+    // qualScore = 4*0.10 + 5*0.60 + 3*0.30 = 0.4 + 3.0 + 0.9 = 4.30
+    expect(result.overall_score).toBe(4.30);
+    expect(result.breakdown.self).toBe(4.00);
+    expect(result.breakdown.manager).toBe(5.00);
+    expect(result.breakdown.peer).toBe(3.00);
+  });
+
+  it('re-normalises weights when manager is missing', () => {
+    const reviews = [
+      makeReview('SELF', { 'q-1': 4, 'q-2': 4 }),   // selfAvg = 4
+      makeReview('PEER', { 'q-1': 2, 'q-2': 2 }),   // peerAvg = 2
+    ];
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWeighted(service, reviews, weights);
+
+    // present weights: peer=30, self=10; total=40
+    // effective: peer = 30/40 = 0.75, self = 10/40 = 0.25
+    // qualScore = 4*0.25 + 2*0.75 = 1.0 + 1.5 = 2.50
+    expect(result.overall_score).toBe(2.50);
+    expect(result.breakdown.manager).toBeNull();
+  });
+
+  it('re-normalises weights when peer is missing', () => {
+    const reviews = [
+      makeReview('SELF',     { 'q-1': 4, 'q-2': 4 }),   // selfAvg = 4
+      makeReview('DOWNWARD', { 'q-1': 2, 'q-2': 2 }),   // managerAvg = 2
+    ];
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWeighted(service, reviews, weights);
+
+    // present weights: manager=60, self=10; total=70
+    // effective: manager = 60/70 ≈ 0.857, self = 10/70 ≈ 0.143
+    // qualScore = 4*(10/70) + 2*(60/70) = 40/70 + 120/70 = 160/70 ≈ 2.29
+    expect(result.overall_score).toBe(2.29);
+    expect(result.breakdown.peer).toBeNull();
+  });
+
+  it('blends quant + qual when both present (50/50 default split)', () => {
+    const reviews = [
+      makeReview('SELF',     { 'q-1': 4, 'q-2': 4 }),   // selfAvg = 4
+      makeReview('DOWNWARD', { 'q-1': 4, 'q-2': 4 }),   // managerAvg = 4
+      makeReview('PEER',     { 'q-1': 4, 'q-2': 4 }),   // peerAvg = 4
+    ];
+    // All qual sources = 4, quant = 2, weights 50/50
+    const weights = { quantWeight: 50, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+    const quantScore = 2;
+
+    const result = calcWeighted(service, reviews, weights, quantScore);
+
+    // qualScore = 4*0.10 + 4*0.60 + 4*0.30 = 4.00
+    // finalScore = (2 * 50 + 4 * 50) / 100 = (100 + 200) / 100 = 3.00
+    expect(result.overall_score).toBe(3.00);
+    expect(result.breakdown.quant).toBe(2.00);
+  });
+
+  it('uses qual-only (qualWeight=100%) when no quant score available', () => {
+    const reviews = [makeReview('SELF', { 'q-1': 3, 'q-2': 3 })];  // selfAvg = 3
+    const weights = { quantWeight: 50, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWeighted(service, reviews, weights, null);
+
+    // No quant → qualWeight becomes 100%; qualScore = selfAvg = 3
+    expect(result.overall_score).toBe(3.00);
+    expect(result.breakdown.quant).toBeNull();
+  });
+
+  it('exposes quant score in breakdown', () => {
+    const reviews = [makeReview('SELF', { 'q-1': 5, 'q-2': 5 })];
+    const weights = { quantWeight: 50, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWeighted(service, reviews, weights, 3);
+
+    expect(result.breakdown.quant).toBe(3.00);
+  });
+
+  // ── Manager-path overrides ─────────────────────────────────────────────────
+
+  const calcWithOverrides = (
+    svc: ScoringService,
+    reviews: any[],
+    weights: { quantWeight: number; managerWeight: number; peerWeight: number; selfWeight: number; minPeerThreshold: number },
+    overrideManagerAvg: number | null | undefined,
+    overridePeerAvg: number | null | undefined,
+    quantScore: number | null = null,
+  ) =>
+    (svc as any).calculateScoreFromData(
+      EMPLOYEE, CYCLE, reviews, QUESTIONS, weights, quantScore,
+      overrideManagerAvg, overridePeerAvg,
+    );
+
+  it('uses overrideManagerAvg in place of DOWNWARD reviews when provided', () => {
+    const reviews = [
+      makeReview('SELF',     { 'q-1': 4, 'q-2': 4 }),   // selfAvg = 4
+      makeReview('DOWNWARD', { 'q-1': 1, 'q-2': 1 }),   // ignored when override present
+    ];
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWithOverrides(service, reviews, weights, 5, undefined);
+
+    // managerAvg = 5 (override), peerAvg from reviews = null (no PEER reviews)
+    // present: self=4(10%), manager=5(60%) → total=70
+    // qualScore = 4*(10/70) + 5*(60/70) = 40/70 + 300/70 = 340/70 ≈ 4.86
+    expect(result.breakdown.manager).toBe(5.00);
+    expect(result.overall_score).toBe(Number((340 / 70).toFixed(2)));
+  });
+
+  it('uses overridePeerAvg in place of PEER reviews when provided', () => {
+    const reviews = [
+      makeReview('SELF', { 'q-1': 4, 'q-2': 4 }),   // selfAvg = 4
+      makeReview('PEER', { 'q-1': 1, 'q-2': 1 }),   // ignored when override present
+    ];
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWithOverrides(service, reviews, weights, undefined, 3);
+
+    // peerAvg = 3 (override), managerAvg from reviews = null (no DOWNWARD reviews)
+    // present: self=4(10%), peer=3(30%) → total=40
+    // qualScore = 4*(10/40) + 3*(30/40) = 40/40 + 90/40 = 130/40 = 3.25
+    expect(result.breakdown.peer).toBe(3.00);
+    expect(result.overall_score).toBe(3.25);
+  });
+
+  it('uses both overrides together with correct weighted formula', () => {
+    const reviews = [makeReview('SELF', { 'q-1': 4, 'q-2': 4 })];  // selfAvg = 4
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWithOverrides(service, reviews, weights, 5, 3);
+
+    // qualScore = 4*0.10 + 5*0.60 + 3*0.30 = 0.4 + 3.0 + 0.9 = 4.30
+    expect(result.breakdown.self).toBe(4.00);
+    expect(result.breakdown.manager).toBe(5.00);
+    expect(result.breakdown.peer).toBe(3.00);
+    expect(result.overall_score).toBe(4.30);
+  });
+
+  it('re-normalises when overrideManagerAvg is null (CEO review missing)', () => {
+    const reviews = [makeReview('SELF', { 'q-1': 4, 'q-2': 4 })];  // selfAvg = 4
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    // null override = CEO review absent → manager slot drops out
+    const result = calcWithOverrides(service, reviews, weights, null, 3);
+
+    // present: self=4(10%), peer=3(30%) → total=40
+    // qualScore = 4*(10/40) + 3*(30/40) = 1.0 + 2.25 = 3.25
+    expect(result.breakdown.manager).toBeNull();
+    expect(result.breakdown.peer).toBe(3.00);
+    expect(result.overall_score).toBe(3.25);
+  });
+
+  it('re-normalises when overridePeerAvg is null (no upward reviews)', () => {
+    const reviews = [makeReview('SELF', { 'q-1': 4, 'q-2': 4 })];  // selfAvg = 4
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWithOverrides(service, reviews, weights, 5, null);
+
+    // present: self=4(10%), manager=5(60%) → total=70
+    // qualScore = 4*(10/70) + 5*(60/70) = 340/70 ≈ 4.86
+    expect(result.breakdown.peer).toBeNull();
+    expect(result.breakdown.manager).toBe(5.00);
+    expect(result.overall_score).toBe(Number((340 / 70).toFixed(2)));
+  });
+
+  it('undefined overrides fall back to standard review-based classification', () => {
+    const reviews = [
+      makeReview('SELF',     { 'q-1': 4, 'q-2': 4 }),   // selfAvg = 4
+      makeReview('DOWNWARD', { 'q-1': 5, 'q-2': 5 }),   // managerAvg = 5
+      makeReview('PEER',     { 'q-1': 3, 'q-2': 3 }),   // peerAvg = 3
+    ];
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    // undefined = not a manager, use standard path
+    const result = calcWithOverrides(service, reviews, weights, undefined, undefined);
+
+    expect(result.overall_score).toBe(4.30);
   });
 });

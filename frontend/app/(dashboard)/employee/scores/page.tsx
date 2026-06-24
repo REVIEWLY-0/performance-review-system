@@ -233,7 +233,7 @@ export default function EmployeeScoresPage() {
         </div>
 
         {/* Sub-score cards */}
-        <div className="col-span-12 lg:col-span-7 grid grid-cols-3 gap-6">
+        <div className="col-span-12 lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-6">
           {/* Self */}
           <div className="bg-surface-container-lowest dark:bg-[#131b2e] rounded-2xl p-6 flex flex-col items-center justify-center text-center">
             <Icon name="person" className="text-on-surface-variant text-[28px] mb-3" />
@@ -286,6 +286,23 @@ export default function EmployeeScoresPage() {
               <p className="text-xs text-on-surface-variant">
                 {scoreData!.review_counts.peer_reviews} review{scoreData!.review_counts.peer_reviews !== 1 ? 's' : ''}
               </p>
+            )}
+          </div>
+
+          {/* Quant */}
+          <div className="bg-surface-container-lowest dark:bg-[#131b2e] rounded-2xl p-6 flex flex-col items-center justify-center text-center">
+            <Icon name="bar_chart" className="text-on-surface-variant text-[28px] mb-3" />
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-4">Quantitative</p>
+            <p className="text-3xl font-black text-on-surface mb-2">
+              {isLocked ? 'N/A' : (scoreData!.breakdown.quant?.toFixed(2) ?? 'N/A')}
+            </p>
+            {isLocked ? (
+              <div className="flex items-center gap-1 text-on-surface-variant opacity-60">
+                <Icon name="lock" className="text-[14px]" />
+                <span className="text-[10px] font-bold">LOCKED</span>
+              </div>
+            ) : (
+              <p className="text-xs text-on-surface-variant">dept score</p>
             )}
           </div>
         </div>

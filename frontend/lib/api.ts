@@ -26,6 +26,7 @@ export interface User {
   email: string
   name: string
   role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+  isCeo?: boolean
   companyId: string
   managerId?: string
   department?: string
@@ -235,6 +236,15 @@ export const usersApi = {
 
   deleteAvatar: async (): Promise<User> => {
     return fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/me/avatar`, { method: 'DELETE' })
+  },
+
+  setCeo: async (id: string, isCeo: boolean): Promise<User> => {
+    const result = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}/ceo`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isCeo }),
+    })
+    invalidateCache('users:')
+    return result
   },
 }
 

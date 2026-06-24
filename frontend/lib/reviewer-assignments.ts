@@ -60,6 +60,18 @@ export interface ImportResult {
   errors: string[];
 }
 
+export interface MyAssignmentEntry {
+  reviewer?: { id: string; name: string; email: string };
+  employee?: { id: string; name: string; email: string };
+  reviewerType: 'MANAGER' | 'PEER';
+  status: 'NOT_STARTED' | 'DRAFT' | 'SUBMITTED';
+}
+
+export interface MyAssignments {
+  assignedToRateMe: MyAssignmentEntry[];
+  assignedToRate: MyAssignmentEntry[];
+}
+
 // API functions
 export const reviewerAssignmentsApi = {
   /**
@@ -141,4 +153,16 @@ export const reviewerAssignmentsApi = {
     invalidateCache(`assignments:cycle:${reviewCycleId}`);
     return result;
   },
+
+  /**
+   * Get both assignment directions for the calling user in a cycle:
+   *   assignedToRateMe — who is assigned to review me (with status)
+   *   assignedToRate   — who I am assigned to review (with status)
+   */
+  getMyAssignments: (cycleId: string): Promise<MyAssignments> =>
+    cachedFetch(
+      `my-assignments:${cycleId}`,
+      () => fetchWithAuth(`${API_URL}/reviewer-assignments/my-assignments?cycleId=${cycleId}`),
+      30_000,
+    ),
 };

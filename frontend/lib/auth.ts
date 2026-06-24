@@ -249,6 +249,26 @@ export function invalidateSession() {
 }
 
 /**
+ * Public forgot-password flow (unauthenticated — login page).
+ * Always returns a generic message; backend never reveals whether the email exists.
+ */
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    },
+  )
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Request failed' }))
+    throw new Error(error.message || `HTTP ${response.status}`)
+  }
+  return response.json()
+}
+
+/**
  * Request a password reset email for the currently authenticated user.
  * The backend generates a Supabase recovery link and sends it via the
  * notifications service.

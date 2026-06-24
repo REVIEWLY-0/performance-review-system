@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { User } from '@/lib/api';
 import ReviewerMultiSelect from './ReviewerMultiSelect';
 
@@ -30,23 +30,6 @@ export default function AssignmentCard({
   const [isDirty, setIsDirty] = useState(false);
   const [localSaving, setLocalSaving] = useState(false);
 
-  const availableDepartments = useMemo(() => {
-    const seen = new Set<string>();
-    const result: { id: string; name: string }[] = [];
-    for (const u of availableUsers) {
-      for (const d of u.departments ?? []) {
-        if (!seen.has(d.id)) {
-          seen.add(d.id);
-          result.push(d);
-        }
-      }
-    }
-    return result.sort((a, b) => a.name.localeCompare(b.name));
-  }, [availableUsers]);
-
-  const defaultDeptId = employee.departments?.[0]?.id ?? '';
-  const [filterDeptId, setFilterDeptId] = useState(defaultDeptId);
-
   useEffect(() => {
     setManagerIds(existingManagers.map((m) => m.id));
     setPeerIds(existingPeers.map((p) => p.id));
@@ -73,20 +56,8 @@ export default function AssignmentCard({
     setIsDirty(true);
   };
 
-  const inDept = (u: User) =>
-    !filterDeptId ||
-    managerIds.includes(u.id) ||
-    peerIds.includes(u.id) ||
-    (u.departments ?? []).some((d) => d.id === filterDeptId);
-
-  const managerOptions = availableUsers.filter(
-    (u) => u.role === 'MANAGER' && inDept(u),
-  );
-  const peerOptions = availableUsers.filter(
-    (u) => u.role === 'EMPLOYEE' && inDept(u),
-  );
-
-  const filterDeptName = availableDepartments.find((d) => d.id === filterDeptId)?.name ?? '';
+  const managerOptions = availableUsers.filter((u) => u.role === 'MANAGER');
+  const peerOptions = availableUsers.filter((u) => u.role === 'EMPLOYEE');
 
   return (
     <div className="bg-surface-container-lowest shadow rounded-lg p-6">
@@ -118,33 +89,6 @@ export default function AssignmentCard({
         )}
       </div>
 
-      <div className="mb-5 flex items-center gap-3 p-3 bg-surface-container-low rounded-lg border border-outline-variant">
-        <span className="text-sm font-medium text-on-surface-variant whitespace-nowrap">
-          Reviewers from:
-        </span>
-        <select
-          value={filterDeptId}
-          onChange={(e) => setFilterDeptId(e.target.value)}
-          className="flex-1 border border-outline rounded-md py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary bg-surface-container-lowest"
-        >
-          <option value="">All departments</option>
-          {availableDepartments.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-        {filterDeptId !== defaultDeptId && (
-          <button
-            type="button"
-            onClick={() => setFilterDeptId(defaultDeptId)}
-            className="text-xs text-primary hover:text-primary whitespace-nowrap"
-          >
-            Reset
-          </button>
-        )}
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-on-surface-variant mb-2">
@@ -157,9 +101,7 @@ export default function AssignmentCard({
             placeholder="Select managers…"
           />
           {managerOptions.length === 0 && (
-            <p className="mt-1 text-xs text-on-surface-variant">
-              No managers{filterDeptName ? ` in ${filterDeptName}` : ''}
-            </p>
+            <p className="mt-1 text-xs text-on-surface-variant">No managers in company</p>
           )}
         </div>
 
@@ -174,9 +116,7 @@ export default function AssignmentCard({
             placeholder="Select peers…"
           />
           {peerOptions.length === 0 && (
-            <p className="mt-1 text-xs text-on-surface-variant">
-              No peers{filterDeptName ? ` in ${filterDeptName}` : ''}
-            </p>
+            <p className="mt-1 text-xs text-on-surface-variant">No employees in company</p>
           )}
         </div>
       </div>
