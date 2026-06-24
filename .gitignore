@@ -11,3 +11,4 @@ backend/.env
 frontend/.env.local
 .env.dev
 .env.prod
+.env.prod.save
