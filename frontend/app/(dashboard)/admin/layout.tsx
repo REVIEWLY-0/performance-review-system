@@ -34,9 +34,10 @@ const PAGE_TITLE_MAP: { prefix: string; title: string }[] = [
   { prefix: '/admin/review-types', title: 'Review Types'  },
   { prefix: '/admin/questions',    title: 'Questions'      },
   { prefix: '/admin/departments',  title: 'Departments'   },
-  { prefix: '/admin/reports',      title: 'Reports'       },
-  { prefix: '/admin/cycles',       title: 'Reports'       },
-  { prefix: '/admin/organogram',   title: 'Organogram'    },
+  { prefix: '/admin/reports',      title: 'Reports'        },
+  { prefix: '/admin/cycles',       title: 'Reports'        },
+  { prefix: '/admin/organogram',   title: 'Organogram'     },
+  { prefix: '/admin/scoring',      title: 'Scoring Weights'},
   { prefix: '/admin',              title: 'Admin Dashboard'},
 ]
 

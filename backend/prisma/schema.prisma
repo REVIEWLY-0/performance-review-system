@@ -20,6 +20,10 @@ model Company {
   reviewTypeConfigs ReviewTypeConfig[]
   teams             Team[]
   users             User[]
+  scoreWeightConfig ScoreWeightConfig?
+  employeeGoals         EmployeeGoal[]
+  quantScores           QuantScore[]
+  departmentQuantScores DepartmentQuantScore[]
 
   @@map("companies")
 }
@@ -31,6 +35,7 @@ model User {
   email                   String
   password                String
   role                    UserRole             @default(EMPLOYEE)
+  isCeo                   Boolean              @default(false) @map("is_ceo")
   managerId               String?              @map("manager_id")
   createdAt               DateTime             @default(now()) @map("created_at")
   updatedAt               DateTime             @updatedAt @map("updated_at")
@@ -48,6 +53,11 @@ model User {
   manager                 User?                @relation("ManagerToEmployee", fields: [managerId], references: [id])
   directReports           User[]               @relation("ManagerToEmployee")
   scoreOverrides          ScoreOverride[]
+  goalsAsEmployee         EmployeeGoal[]       @relation("GoalsAsEmployee")
+  goalsSetBy              EmployeeGoal[]       @relation("GoalsAsSetBy")
+  quantScoresAsEmployee   QuantScore[]         @relation("QuantScoresAsEmployee")
+  quantScoresSetBy            QuantScore[]             @relation("QuantScoresAsSetBy")
+  deptQuantScoresSetBy        DepartmentQuantScore[]   @relation("DeptQuantScoresAsSetBy")
 
   @@unique([companyId, email])
   @@index([companyId])
@@ -98,6 +108,9 @@ model ReviewCycle {
   reviewerAssignments ReviewerAssignment[]
   reviews             Review[]
   scoreOverrides      ScoreOverride[]
+  employeeGoals         EmployeeGoal[]
+  quantScores           QuantScore[]
+  departmentQuantScores DepartmentQuantScore[]
 
   @@index([companyId])
   @@index([status])
@@ -150,7 +163,8 @@ model Department {
   createdAt  DateTime         @default(now()) @map("created_at")
   updatedAt  DateTime         @default(now()) @updatedAt @map("updated_at")
   company    Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  userDepts  UserDepartment[]
+  userDepts             UserDepartment[]
+  departmentQuantScores DepartmentQuantScore[]
 
   @@unique([companyId, name])
   @@index([companyId])
@@ -309,6 +323,7 @@ enum ReviewType {
   MANAGER
   PEER
   DOWNWARD
+  QUANTITATIVE
 }
 
 enum ReviewStatus {
@@ -327,7 +342,85 @@ enum QuestionType {
   TEXT
   TASK_LIST
 }
- model ScoreOverride {
+model ScoreWeightConfig {
+  id               String   @id @default(cuid())
+  companyId        String   @unique @map("company_id")
+  quantWeight      Int      @default(50) @map("quant_weight")
+  managerWeight    Int      @default(60) @map("manager_weight")
+  peerWeight       Int      @default(30) @map("peer_weight")
+  selfWeight       Int      @default(10) @map("self_weight")
+  minPeerThreshold Int      @default(3)  @map("min_peer_threshold")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt    @map("updated_at")
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("score_weight_configs")
+}
+
+model EmployeeGoal {
+  id          String      @id @default(cuid())
+  companyId   String      @map("company_id")
+  cycleId     String      @map("cycle_id")
+  employeeId  String      @map("employee_id")
+  title       String
+  description String?
+  rating      Int?
+  setBy       String?     @map("set_by")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt      @map("updated_at")
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cycle       ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  employee    User        @relation("GoalsAsEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  setter      User?       @relation("GoalsAsSetBy", fields: [setBy], references: [id])
+
+  @@index([companyId])
+  @@index([cycleId, employeeId])
+  @@map("employee_goals")
+}
+
+model QuantScore {
+  id         String      @id @default(cuid())
+  companyId  String      @map("company_id")
+  cycleId    String      @map("cycle_id")
+  employeeId String      @map("employee_id")
+  score      Float
+  setBy      String      @map("set_by")
+  note       String?
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt      @map("updated_at")
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cycle      ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  employee   User        @relation("QuantScoresAsEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  setter     User        @relation("QuantScoresAsSetBy", fields: [setBy], references: [id])
+
+  @@unique([cycleId, employeeId])
+  @@index([companyId])
+  @@index([cycleId])
+  @@map("quant_scores")
+}
+
+model DepartmentQuantScore {
+  id           String      @id @default(cuid())
+  companyId    String      @map("company_id")
+  cycleId      String      @map("cycle_id")
+  departmentId String      @map("department_id")
+  score        Float
+  note         String?
+  setBy        String      @map("set_by")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at")
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  cycle        ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  department   Department  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  setter       User        @relation("DeptQuantScoresAsSetBy", fields: [setBy], references: [id])
+
+  @@unique([cycleId, departmentId])
+  @@index([companyId])
+  @@index([cycleId])
+  @@map("department_quant_scores")
+}
+
+model ScoreOverride {
   id         String   @id @default(cuid())
   employeeId String   @map("employee_id")
   cycleId    String   @map("cycle_id")

@@ -8,4 +8,7 @@ build/
 *.log
 .DS_Store
 backend/.env
-frontend/.env.local.env.dev
+frontend/.env.local
+.env.dev
+.env.prod
+.env.prod.save

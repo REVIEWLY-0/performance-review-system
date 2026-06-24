@@ -17,6 +17,8 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
   const [managers, setManagers] = useState<User[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [deptError, setDeptError] = useState('')
+  const [ceoSaving, setCeoSaving] = useState(false)
+  const [isCeo, setIsCeo] = useState(employee.isCeo ?? false)
   const [formData, setFormData] = useState({
     name: employee.name,
     email: employee.email,
@@ -29,6 +31,20 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
     usersApi.getManagers().then(setManagers).catch(console.error)
     departmentsApi.getAll().then(setDepartments).catch(console.error)
   }, [])
+
+  const handleCeoToggle = async (next: boolean) => {
+    setCeoSaving(true)
+    setError('')
+    try {
+      const updated = await usersApi.setCeo(employee.id, next)
+      setIsCeo(updated.isCeo ?? next)
+      onSuccess(updated)
+    } catch (err: any) {
+      setError(err.message || 'Failed to update CEO status')
+    } finally {
+      setCeoSaving(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -168,6 +184,34 @@ export default function EditEmployeeModal({ employee, onClose, onSuccess }: Edit
                   </div>
                   {deptError && (
                     <p className="mt-1 text-sm text-red-600">{deptError}</p>
+                  )}
+                </div>
+
+                <div className="border-t border-outline-variant pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-on-surface">Designate as CEO</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        Only one user per company can be CEO. Setting this will unset any current CEO.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={ceoSaving}
+                      onClick={() => handleCeoToggle(!isCeo)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 ${
+                        isCeo ? 'bg-primary' : 'bg-surface-container-high'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          isCeo ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  {ceoSaving && (
+                    <p className="text-xs text-on-surface-variant mt-1">Saving…</p>
                   )}
                 </div>
               </div>

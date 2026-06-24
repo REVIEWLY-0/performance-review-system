@@ -127,6 +127,20 @@ export class UsersController {
     return this.usersService.resendInvite(id, companyId);
   }
 
+  @Patch(':id/ceo')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async setCeo(
+    @Param('id') id: string,
+    @CompanyId() companyId: string,
+    @Body() body: { isCeo: boolean },
+  ) {
+    if (body.isCeo) {
+      return this.usersService.setCeo(id, companyId);
+    }
+    return this.usersService.unsetCeo(id, companyId);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string, @CompanyId() companyId: string) {
     return this.usersService.findOne(id, companyId);

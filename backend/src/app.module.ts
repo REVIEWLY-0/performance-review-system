@@ -17,6 +17,9 @@ import { ReviewTypeConfigsModule } from './review-type-configs/review-type-confi
 import { DepartmentsModule } from './departments/departments.module';
 import { RatingScaleModule } from './rating-scale/rating-scale.module';
 import { OrgChartModule } from './org-chart/org-chart.module';
+import { ScoreWeightsModule } from './score-weights/score-weights.module';
+import { GoalsModule } from './goals/goals.module';
+import { DepartmentQuantScoresModule } from './department-quant-scores/department-quant-scores.module';
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
@@ -26,18 +29,13 @@ import { PrismaService } from './common/services/prisma.service';
   imports: [
     SentryModule.forRoot(),
     // Rate limiting
-    // - default: 10 req/s per IP (general API protection)
-    // - auth: 10 attempts per 15 min per IP (brute-force protection on login/signup)
+    // - default: 300 req/min per IP (covers dashboard burst of 20-30 parallel fetches)
+    // - auth routes (signin/signup/forgot-password) override this via @Throttle on AuthController
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 1000,
-        limit: 100000,
-      },
-      {
-        name: 'auth',
-        ttl: 15 * 60 * 1000, // 15 minutes
-        limit: 10,
+        ttl: 60 * 1000, // 1 minute
+        limit: 300,
       },
     ]),
     AuthModule,
@@ -54,6 +52,9 @@ import { PrismaService } from './common/services/prisma.service';
     DepartmentsModule,
     RatingScaleModule,
     OrgChartModule,
+    ScoreWeightsModule,
+    GoalsModule,
+    DepartmentQuantScoresModule,
   ],
   providers: [
     PrismaService,
@@ -77,7 +78,7 @@ export class AppModule implements NestModule {
     // Apply tenant context middleware to all routes except auth and health
     consumer
       .apply(TenantContextMiddleware)
-      .exclude('auth/signin', 'auth/signup', 'health', 'notifications/unsubscribe')
+      .exclude('auth/signin', 'auth/signup', 'auth/forgot-password', 'health', 'notifications/unsubscribe')
       .forRoutes('*');
 
     // CSRF defense-in-depth: validates Origin header on mutations in production

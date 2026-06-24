@@ -63,6 +63,7 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
       'Self Score',
       'Manager Avg',
       'Peer Avg',
+      'Quant Score',
       'Self Reviews',
       'Manager Reviews',
       'Peer Reviews',
@@ -74,6 +75,7 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
       score.breakdown.self?.toFixed(2) || 'N/A',
       score.breakdown.manager?.toFixed(2) || 'N/A',
       score.breakdown.peer?.toFixed(2) || 'N/A',
+      score.breakdown.quant?.toFixed(2) || 'N/A',
       score.review_counts.self_reviews,
       score.review_counts.manager_reviews,
       score.review_counts.peer_reviews,
@@ -246,6 +248,9 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                     Peer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                    Quant
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-on-surface-variant uppercase tracking-wider">
                     Reviews
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-on-surface-variant uppercase tracking-wider">
@@ -279,6 +284,9 @@ export default function CycleScoresPage({ params }: ScoresPageProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-on-surface-variant">
                       {score.breakdown.peer?.toFixed(2) || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-on-surface-variant">
+                      {score.breakdown.quant?.toFixed(2) || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-on-surface-variant">
                       <div className="flex flex-col gap-0.5 text-xs">

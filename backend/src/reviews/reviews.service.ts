@@ -1029,4 +1029,110 @@ export class ReviewsService {
     await this.prisma.scoreOverride.delete({ where: { employeeId_cycleId: { employeeId, cycleId } } });
     return { message: 'Score override removed' };
   }
+
+  /**
+   * Returns reviews written *about* the caller, visible only after cycle completes.
+   *
+   * ANONYMITY INVARIANT: reviewer fields are never included for PEER or upward MANAGER reviews.
+   * All peer/upward reviews are always returned anonymised regardless of count — no threshold.
+   * Downward (manager→report) reviews are always attributed with reviewer name.
+   */
+  async getMyReceivedReviews(
+    employeeId: string,
+    companyId: string,
+    cycleId: string,
+  ) {
+    const cycle = await this.prisma.reviewCycle.findFirst({
+      where: { id: cycleId, companyId },
+    });
+    if (!cycle) throw new NotFoundException('Review cycle not found');
+
+    // Visibility gate: lock until cycle is COMPLETED
+    if (cycle.status !== 'COMPLETED') {
+      return { locked: true, cycleStatus: cycle.status };
+    }
+
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        employeeId,
+        reviewCycleId: cycleId,
+        status: 'SUBMITTED',
+        reviewCycle: { companyId },
+      },
+      include: {
+        reviewer: { select: { id: true, name: true, email: true, managerId: true } },
+        answers: {
+          include: { question: { select: { id: true, text: true, type: true, order: true } } },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    // Separate review types
+    const selfReviews = reviews.filter((r) => r.reviewType === 'SELF');
+
+    // Upward review: reviewer is a subordinate of employeeId (reviewer.managerId === employeeId)
+    const upwardReviews = reviews.filter(
+      (r) =>
+        (r.reviewType === 'MANAGER' || r.reviewType === 'DOWNWARD') &&
+        r.reviewer.managerId === employeeId,
+    );
+    // Regular downward manager reviews: reviewer is the employee's manager (not subordinate)
+    const managerReviews = reviews.filter(
+      (r) =>
+        (r.reviewType === 'MANAGER' || r.reviewType === 'DOWNWARD') &&
+        r.reviewer.managerId !== employeeId,
+    );
+    const peerReviews = reviews.filter((r) => r.reviewType === 'PEER');
+
+    const serializeAnswers = (review: (typeof reviews)[0]) =>
+      review.answers
+        .sort((a, b) => (a.question?.order ?? 0) - (b.question?.order ?? 0))
+        .map((a) => ({
+          questionId: a.questionId,
+          questionText: a.question?.text ?? '',
+          questionType: a.question?.type ?? '',
+          rating: a.rating,
+          textAnswer: a.textAnswer,
+        }));
+
+    // Attributed: self + downward manager (reviewer identity included)
+    const attributedSelf = selfReviews.map((r) => ({
+      reviewType: r.reviewType,
+      status: r.status,
+      reviewer: { name: r.reviewer.name, email: r.reviewer.email },
+      answers: serializeAnswers(r),
+    }));
+
+    const attributedManager = managerReviews.map((r) => ({
+      reviewType: r.reviewType,
+      status: r.status,
+      reviewer: { name: r.reviewer.name, email: r.reviewer.email },
+      answers: serializeAnswers(r),
+    }));
+
+    // Anonymous helper — strips reviewer fields, always returns all entries (no threshold)
+    const anonymousSection = (sectionReviews: typeof reviews) => {
+      const count = sectionReviews.length;
+      return {
+        withheld: false as const,
+        count,
+        reviews: sectionReviews.map((r) => ({
+          reviewType: r.reviewType,
+          status: r.status,
+          // reviewer identity intentionally absent — never include for anonymous types
+          answers: serializeAnswers(r),
+        })),
+      };
+    };
+
+    return {
+      locked: false,
+      cycleId,
+      self: attributedSelf,
+      manager: attributedManager,
+      peer: anonymousSection(peerReviews),
+      upward: anonymousSection(upwardReviews),
+    };
+  }
 }

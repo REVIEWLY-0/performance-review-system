@@ -11,6 +11,7 @@ import {
 import { ReviewerAssignmentsService } from './reviewer-assignments.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CompanyId } from '../common/decorators/company-id.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import {
@@ -25,6 +26,22 @@ export class ReviewerAssignmentsController {
   constructor(
     private readonly reviewerAssignmentsService: ReviewerAssignmentsService,
   ) {}
+
+  /**
+   * GET /reviewer-assignments/my-assignments?cycleId=xxx
+   * Returns both assignment directions for the calling user:
+   *   assignedToRateMe  — who is assigned to review me
+   *   assignedToRate    — who I am assigned to review
+   * Each entry includes reviewerType and review status. Accessible to all authenticated users.
+   */
+  @Get('my-assignments')
+  async getMyAssignments(
+    @Query('cycleId') cycleId: string,
+    @CompanyId() companyId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.reviewerAssignmentsService.getMyAssignments(user.id, companyId, cycleId);
+  }
 
   /**
    * GET /reviewer-assignments?reviewCycleId=xxx

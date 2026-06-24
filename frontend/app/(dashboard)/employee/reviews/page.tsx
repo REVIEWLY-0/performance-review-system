@@ -9,6 +9,10 @@ import {
   getEmployeesToReview,
   EmployeeToReview,
 } from '@/lib/reviews';
+import {
+  reviewerAssignmentsApi,
+  MyAssignments,
+} from '@/lib/reviewer-assignments';
 
 function Icon({ name, fill = false, className = '', style }: { name: string; fill?: boolean; className?: string; style?: React.CSSProperties }) {
   return (
@@ -126,6 +130,7 @@ export default function MyReviewsPage() {
   const [analytics, setAnalytics] = useState<EmployeeAnalytics | null>(null);
   const [allPeers, setAllPeers] = useState<EmployeeToReview[]>([]);
   const [allManagers, setAllManagers] = useState<EmployeeToReview[]>([]);
+  const [myAssignments, setMyAssignments] = useState<MyAssignments | null>(null);
   const [loading, setLoading] = useState(true);
   const [tips] = useState(pickTwo);
   const searchParams = useSearchParams();
@@ -156,14 +161,16 @@ export default function MyReviewsPage() {
   };
 
   const loadCycleData = async (cycleId: string) => {
-    const [data, peers, managers] = await Promise.all([
+    const [data, peers, managers, assignments] = await Promise.all([
       getEmployeeAnalytics(cycleId).catch((err) => { console.error('❌ Failed to load employee analytics:', err); return null; }),
       getEmployeesToReviewAsPeer(cycleId).catch((err) => { console.error('❌ Failed to load peer list:', err); return [] as EmployeeToReview[]; }),
       getEmployeesToReview(cycleId).catch((err) => { console.error('❌ Failed to load manager list:', err); return [] as EmployeeToReview[]; }),
+      reviewerAssignmentsApi.getMyAssignments(cycleId).catch(() => null),
     ]);
     setAnalytics(data);
     setAllPeers(peers);
     setAllManagers(managers);
+    setMyAssignments(assignments);
   };
 
   const handleCycleChange = async (cycleId: string) => {
@@ -426,6 +433,91 @@ export default function MyReviewsPage() {
           </div>
         )}
       </div>
+
+      {/* ── Assignment tables ─────────────────────────────────────────────── */}
+      {myAssignments && (
+        <div className="mt-10 space-y-6">
+          <h3 className="text-xs uppercase tracking-[0.2em] text-on-surface-variant font-bold">
+            Assignment Overview
+          </h3>
+
+          {/* Table A — Who is assigned to rate me */}
+          <div className="bg-surface-container-lowest dark:bg-[#131b2e] rounded-2xl border border-outline-variant/10 dark:border-transparent overflow-hidden">
+            <div className="px-6 py-4 border-b border-outline-variant/20">
+              <h4 className="font-bold text-on-surface font-display">Who is assigned to rate you</h4>
+              <p className="text-xs text-on-surface-variant mt-0.5">Reviewers assigned to submit a review about you this cycle</p>
+            </div>
+            {myAssignments.assignedToRateMe.length === 0 ? (
+              <p className="px-6 py-4 text-sm text-on-surface-variant">No reviewers assigned yet.</p>
+            ) : (
+              <table className="w-full">
+                <tbody className="divide-y divide-outline-variant/20">
+                  {myAssignments.assignedToRateMe.map((entry, i) => (
+                    <tr key={i} className="px-6">
+                      <td className="px-6 py-3 text-sm font-medium text-on-surface w-1/3">
+                        {entry.reviewer?.name}
+                      </td>
+                      <td className="px-6 py-3 text-xs text-on-surface-variant w-1/4">
+                        {entry.reviewerType === 'MANAGER' ? 'Downward' : 'Peer'}
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className={[
+                          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                          entry.status === 'SUBMITTED'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : entry.status === 'DRAFT'
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            : 'bg-surface-container text-on-surface-variant',
+                        ].join(' ')}>
+                          {entry.status === 'SUBMITTED' ? 'Submitted ✓' : entry.status === 'DRAFT' ? 'In Progress' : 'Pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Table B — Who I am assigned to rate */}
+          <div className="bg-surface-container-lowest dark:bg-[#131b2e] rounded-2xl border border-outline-variant/10 dark:border-transparent overflow-hidden">
+            <div className="px-6 py-4 border-b border-outline-variant/20">
+              <h4 className="font-bold text-on-surface font-display">Who you are assigned to rate</h4>
+              <p className="text-xs text-on-surface-variant mt-0.5">People you are assigned to review this cycle</p>
+            </div>
+            {myAssignments.assignedToRate.length === 0 ? (
+              <p className="px-6 py-4 text-sm text-on-surface-variant">You are not assigned to review anyone yet.</p>
+            ) : (
+              <table className="w-full">
+                <tbody className="divide-y divide-outline-variant/20">
+                  {myAssignments.assignedToRate.map((entry, i) => (
+                    <tr key={i}>
+                      <td className="px-6 py-3 text-sm font-medium text-on-surface w-1/3">
+                        {entry.employee?.name}
+                      </td>
+                      <td className="px-6 py-3 text-xs text-on-surface-variant w-1/4">
+                        {entry.reviewerType === 'MANAGER' ? 'Downward' : 'Peer'}
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className={[
+                          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                          entry.status === 'SUBMITTED'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : entry.status === 'DRAFT'
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            : 'bg-surface-container text-on-surface-variant',
+                        ].join(' ')}>
+                          {entry.status === 'SUBMITTED' ? 'Submitted ✓' : entry.status === 'DRAFT' ? 'In Progress' : 'Pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

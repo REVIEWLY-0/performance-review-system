@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signIn } from '@/lib/auth'
+import { signIn, forgotPassword } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { validateEmail, validatePassword } from '@/lib/validation'
 import Logo from '@/components/Logo'
@@ -29,10 +29,15 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // ── Set-password mode (employee invite link) ───────────────────────────
+  // ── Set-password mode (employee invite link / password reset) ─────────
   const [isSetPassword, setIsSetPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
+
+  // ── Forgot-password mode ───────────────────────────────────────────────
+  const [isForgot, setIsForgot] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotDone, setForgotDone] = useState(false)
 
   useEffect(() => {
   // Check for set-password mode from auth callback
@@ -72,6 +77,20 @@ export default function LoginPage() {
       setTimeout(() => router.push('/employee'), 1500)
     } catch (err: any) {
       setError(err.message || 'Failed to set password.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      await forgotPassword(forgotEmail)
+      setForgotDone(true)
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -185,6 +204,72 @@ export default function LoginPage() {
     )
   }
 
+  // ── Forgot-password view ───────────────────────────────────────────────
+  if (isForgot) {
+    return (
+      <div className="min-h-screen bg-surface-container-low flex flex-col">
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-lg">
+            <TopLogo />
+            <div className="bg-surface rounded-2xl ring-1 ring-outline-variant shadow-sm p-10">
+              <h1 className="text-2xl font-extrabold font-display text-on-surface tracking-tight mb-1">
+                Reset your password
+              </h1>
+              <p className="text-on-surface-variant text-sm mb-8">
+                Enter your email and we&apos;ll send you a link to set a new password.
+              </p>
+
+              {forgotDone ? (
+                <div className="space-y-5">
+                  <SuccessBanner msg="Check your inbox — if that email is registered you'll receive a reset link shortly." />
+                  <button
+                    type="button"
+                    onClick={() => { setIsForgot(false); setForgotDone(false); setForgotEmail('') }}
+                    className="w-full text-primary font-bold text-sm hover:underline underline-offset-4"
+                  >
+                    ← Back to sign in
+                  </button>
+                </div>
+              ) : (
+                <form className="space-y-5" onSubmit={handleForgotPassword}>
+                  <div className="space-y-1.5">
+                    <label htmlFor="forgot-email" className="block text-sm font-semibold text-on-surface-variant">
+                      Email Address <span className="text-error">*</span>
+                    </label>
+                    <input
+                      id="forgot-email" type="email" required autoComplete="email"
+                      placeholder="you@company.com"
+                      className={inputCls(false)}
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                    />
+                  </div>
+                  {error && <ErrorBanner msg={error} />}
+                  <button
+                    type="submit" disabled={loading}
+                    className="w-full bg-primary hover:bg-primary-dim text-on-primary font-display font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
+                  >
+                    {loading ? 'Sending…' : 'Send reset link'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsForgot(false); setError('') }}
+                    className="w-full text-on-surface-variant text-sm hover:text-on-surface transition-colors"
+                  >
+                    ← Back to sign in
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+        <p className="pb-8 text-center text-xs text-on-surface-variant opacity-60">
+          © {new Date().getFullYear()} Reviewly Performance Platform. All rights reserved.
+        </p>
+      </div>
+    )
+  }
+
   // ── Login view ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-surface-container-low flex flex-col">
@@ -226,6 +311,15 @@ export default function LoginPage() {
                   onBlur={() => setPasswordTouched(true)}
                 />
                 {passwordError && <p className="text-sm text-red-600">{passwordError}</p>}
+                <div className="flex justify-end pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => { setIsForgot(true); setError(''); setSuccess('') }}
+                    className="text-sm text-primary font-semibold hover:underline underline-offset-4"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
 
               {error && <ErrorBanner msg={error} />}

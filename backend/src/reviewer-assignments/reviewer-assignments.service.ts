@@ -301,6 +301,77 @@ export class ReviewerAssignmentsService {
     return results;
   }
 
+  /**
+   * Returns both assignment directions for the calling user in a cycle:
+   *   assignedToRateMe  — who is assigned to review me (ReviewerAssignment.employeeId = me)
+   *   assignedToRate    — who I am assigned to review   (ReviewerAssignment.reviewerId = me)
+   * Each entry includes the review status (NOT_STARTED / DRAFT / SUBMITTED).
+   */
+  async getMyAssignments(currentUserId: string, companyId: string, cycleId: string) {
+    await this.validateCycleAccess(cycleId, companyId);
+
+    const [inbound, outbound, inboundReviews, outboundReviews] = await Promise.all([
+      // Who is assigned to rate me
+      this.prisma.reviewerAssignment.findMany({
+        where: { reviewCycleId: cycleId, employeeId: currentUserId },
+        include: { reviewer: { select: { id: true, name: true, email: true } } },
+        orderBy: [{ reviewerType: 'asc' }, { reviewer: { name: 'asc' } }],
+      }),
+      // Who I am assigned to rate
+      this.prisma.reviewerAssignment.findMany({
+        where: { reviewCycleId: cycleId, reviewerId: currentUserId },
+        include: { employee: { select: { id: true, name: true, email: true } } },
+        orderBy: [{ reviewerType: 'asc' }, { employee: { name: 'asc' } }],
+      }),
+      // Review status for inbound (someone reviewing me)
+      this.prisma.review.findMany({
+        where: { reviewCycleId: cycleId, employeeId: currentUserId },
+        select: { reviewerId: true, reviewType: true, status: true },
+      }),
+      // Review status for outbound (me reviewing someone)
+      this.prisma.review.findMany({
+        where: { reviewCycleId: cycleId, reviewerId: currentUserId },
+        select: { employeeId: true, reviewType: true, status: true },
+      }),
+    ]);
+
+    // Pick the "best" status per person: SUBMITTED > DRAFT > NOT_STARTED
+    const statusRank = (s: string) => (s === 'SUBMITTED' ? 2 : s === 'DRAFT' ? 1 : 0);
+
+    const inboundStatusMap = new Map<string, string>();
+    for (const r of inboundReviews) {
+      const existing = inboundStatusMap.get(r.reviewerId) ?? 'NOT_STARTED';
+      if (statusRank(r.status) > statusRank(existing)) {
+        inboundStatusMap.set(r.reviewerId, r.status);
+      } else if (!inboundStatusMap.has(r.reviewerId)) {
+        inboundStatusMap.set(r.reviewerId, r.status);
+      }
+    }
+
+    const outboundStatusMap = new Map<string, string>();
+    for (const r of outboundReviews) {
+      const existing = outboundStatusMap.get(r.employeeId) ?? 'NOT_STARTED';
+      if (statusRank(r.status) > statusRank(existing)) {
+        outboundStatusMap.set(r.employeeId, r.status);
+      } else if (!outboundStatusMap.has(r.employeeId)) {
+        outboundStatusMap.set(r.employeeId, r.status);
+      }
+    }
+
+    return {
+      assignedToRateMe: inbound.map((a) => ({
+        reviewer: a.reviewer,
+        reviewerType: a.reviewerType,
+        status: inboundStatusMap.get(a.reviewerId) ?? 'NOT_STARTED',
+      })),
+      assignedToRate: outbound.map((a) => ({
+        employee: a.employee,
+        reviewerType: a.reviewerType,
+        status: outboundStatusMap.get(a.employeeId) ?? 'NOT_STARTED',
+      })),
+    };
+  }
+
   async remove(id: string, companyId: string) {
     console.log(`🗑️ Deleting assignment ${id} for company ${companyId}`);
 

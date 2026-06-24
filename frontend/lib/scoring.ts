@@ -23,6 +23,7 @@ export interface ScoreBreakdown {
   self: number | null;
   manager: number | null;
   peer: number | null;
+  quant: number | null;
 }
 
 export interface ReviewCounts {

@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
 } from '@nestjs/common';
@@ -331,6 +332,21 @@ export class ReviewsController {
     @CompanyId() companyId: string,
   ) {
     return this.reviewsService.deleteScoreOverride(companyId, cycleId, employeeId);
+  }
+
+  /**
+   * GET /reviews/received?cycleId=
+   * Returns reviews written about the current user.
+   * PEER and upward MANAGER reviews are anonymised server-side.
+   * Locked (returns { locked: true }) until cycle status is COMPLETED.
+   */
+  @Get('received')
+  async getMyReceivedReviews(
+    @Query('cycleId') cycleId: string,
+    @CurrentUser() user: any,
+    @CompanyId() companyId: string,
+  ) {
+    return this.reviewsService.getMyReceivedReviews(user.id, companyId, cycleId);
   }
 
   @Post('peer/:cycleId/:employeeId')

@@ -122,6 +122,7 @@ export class UsersService {
     const { userDepartments, ...rest } = user;
     return {
       ...rest,
+      isCeo: rest.isCeo ?? false,
       departments: (userDepartments ?? [])
         .map((ud: any) => ud.department)
         .filter(Boolean), // guard against null if FK integrity issue
@@ -798,6 +799,36 @@ export class UsersService {
       ...(requestingRole !== 'EMPLOYEE' && { email: u.email }),
       ...(requestingRole === 'ADMIN' && { employeeId: u.employeeId }),
     }));
+  }
+
+  /**
+   * Designate one user as CEO for the company.
+   * Runs in a transaction: clears isCeo on all other users, sets it on the target.
+   */
+  async setCeo(userId: string, companyId: string) {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, companyId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    // isCeo is not yet in the generated Prisma types — cast until `prisma generate` is re-run
+    const userModel = this.prisma.user as any;
+    await this.prisma.$transaction([
+      userModel.updateMany({ where: { companyId }, data: { isCeo: false } }),
+      userModel.update({ where: { id: userId }, data: { isCeo: true } }),
+    ]);
+
+    return this.findOne(userId, companyId);
+  }
+
+  /**
+   * Unset the CEO flag for a user (demote without promoting another).
+   */
+  async unsetCeo(userId: string, companyId: string) {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, companyId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const userModel = this.prisma.user as any;
+    await userModel.update({ where: { id: userId }, data: { isCeo: false } });
+    return this.findOne(userId, companyId);
   }
 
   /**
