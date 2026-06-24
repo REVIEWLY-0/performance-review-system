@@ -20,12 +20,13 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-reviewly}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reviewly}"]
       interval: 10s
       timeout: 5s
       retries: 5
-
   # ── Backend (NestJS) ─────────────────────────────────────────────────────────
   backend:
     build:
@@ -37,6 +38,7 @@ services:
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       MAILTRAP_HOST: ${MAILTRAP_HOST}
       MAILTRAP_PORT: ${MAILTRAP_PORT:-587}
       MAILTRAP_USER: ${MAILTRAP_USER}

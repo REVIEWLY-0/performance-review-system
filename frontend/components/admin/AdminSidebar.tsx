@@ -63,11 +63,18 @@ const QuestionsIcon = () => (
   </svg>
 )
 
+const ScoringIcon = () => (
+  <svg className="h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z" />
+  </svg>
+)
+
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/admin',               exact: true,  Icon: DashboardIcon },
   { label: 'Employees', href: '/admin/employees',      exact: false, Icon: UsersIcon },
   { label: 'Reviews',   href: '/admin/review-cycles',  exact: false, Icon: ReviewIcon },
   { label: 'Questions', href: '/admin/questions',      exact: false, Icon: QuestionsIcon },
+  { label: 'Scoring',   href: '/admin/scoring',        exact: false, Icon: ScoringIcon },
   { label: 'Reports',   href: '/admin/reports',        exact: false, Icon: ReportsIcon },
 ]
 

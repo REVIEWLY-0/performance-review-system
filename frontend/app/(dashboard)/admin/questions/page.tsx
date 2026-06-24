@@ -161,7 +161,7 @@ export default function QuestionsPage() {
     },
     {
       value: 'DOWNWARD',
-      label: 'Team Evaluation',
+      label: 'Downward',
       description: 'Questions managers answer when evaluating their direct reports (downward review)',
     },
     {

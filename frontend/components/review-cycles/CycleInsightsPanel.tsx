@@ -253,6 +253,16 @@ export default function CycleInsightsPanel({
             Assign Reviewers
           </button>
           <button
+            onClick={() => router.push(`/admin/review-cycles/${cycleId}/quant-scores`)}
+            className="inline-flex items-center px-3 py-2 border border-outline text-sm font-medium rounded-md text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container-low transition-colors"
+          >
+            <svg className="mr-1.5 h-4 w-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+            Quant Scores
+          </button>
+          <button
             onClick={() => router.push(`/admin/cycles/${cycleId}/scores`)}
             className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dim transition-colors"
           >

@@ -19,35 +19,37 @@ function Icon({ name, fill = false, className = '' }: { name: string; fill?: boo
 }
 
 const EMPLOYEE_NAV_ITEMS = [
-  { label: 'Dashboard',  href: '/employee',        icon: 'dashboard',   exact: true  },
-  { label: 'My Reviews', href: '/employee/reviews', icon: 'rate_review', exact: false },
-  { label: 'My Scores',  href: '/employee/scores',  icon: 'query_stats', exact: false },
-  { label: 'Help',       href: '/help',             icon: 'help',        exact: false },
+  { label: 'Dashboard',      href: '/employee',                   icon: 'dashboard',    exact: true  },
+  { label: 'My Reviews',     href: '/employee/reviews',           icon: 'rate_review',  exact: false },
+  { label: 'My Scores',      href: '/employee/scores',            icon: 'query_stats',  exact: false },
+  { label: 'Received',       href: '/employee/received-reviews',  icon: 'inbox',        exact: false },
+  { label: 'Help',           href: '/help',                       icon: 'help',         exact: false },
 ]
 
 const MANAGER_NAV_ITEMS = [
-  { label: 'Dashboard',    href: '/manager',          icon: 'dashboard',   exact: true  },
-  { label: 'Team Reviews', href: '/manager/reviews',  icon: 'group',       exact: false },
-  { label: 'My Reviews',   href: '/employee/reviews', icon: 'rate_review', exact: false },
-  { label: 'My Scores',    href: '/employee/scores',  icon: 'query_stats', exact: false },
-  { label: 'Help',         href: '/help',             icon: 'help',        exact: false },
+  { label: 'Dashboard',    href: '/manager',                    icon: 'dashboard',   exact: true  },
+  { label: 'Team Reviews', href: '/manager/reviews',            icon: 'group',       exact: false },
+  { label: 'My Reviews',   href: '/employee/reviews',           icon: 'rate_review', exact: false },
+  { label: 'My Scores',    href: '/employee/scores',            icon: 'query_stats', exact: false },
+  { label: 'Received',     href: '/employee/received-reviews',  icon: 'inbox',       exact: false },
+  { label: 'Help',         href: '/help',                       icon: 'help',        exact: false },
 ]
 
 const EMPLOYEE_BOTTOM_NAV = [
-  { label: 'Dashboard', href: '/employee',         icon: 'dashboard',   exact: true  },
-  { label: 'Reviews',   href: '/employee/reviews', icon: 'rate_review', exact: false },
-  { label: 'Scores',    href: '/employee/scores',  icon: 'query_stats', exact: false },
-  { label: 'Help',      href: '/help',             icon: 'help',        exact: false },
-  { label: 'Settings',  href: '/settings',         icon: 'settings',    exact: false },
+  { label: 'Dashboard', href: '/employee',                  icon: 'dashboard',   exact: true  },
+  { label: 'Reviews',   href: '/employee/reviews',          icon: 'rate_review', exact: false },
+  { label: 'Received',  href: '/employee/received-reviews', icon: 'inbox',       exact: false },
+  { label: 'Scores',    href: '/employee/scores',           icon: 'query_stats', exact: false },
+  { label: 'Settings',  href: '/settings',                  icon: 'settings',    exact: false },
 ]
 
 const MANAGER_BOTTOM_NAV = [
-  { label: 'Dashboard', href: '/manager',          icon: 'dashboard',   exact: true  },
-  { label: 'Team',      href: '/manager/reviews',  icon: 'group',       exact: false },
-  { label: 'Reviews',   href: '/employee/reviews', icon: 'rate_review', exact: false },
-  { label: 'Scores',    href: '/employee/scores',  icon: 'query_stats', exact: false },
-  { label: 'Help',      href: '/help',             icon: 'help',        exact: false },
-  { label: 'Settings',  href: '/settings',         icon: 'settings',    exact: false },
+  { label: 'Dashboard', href: '/manager',                   icon: 'dashboard',   exact: true  },
+  { label: 'Team',      href: '/manager/reviews',           icon: 'group',       exact: false },
+  { label: 'Reviews',   href: '/employee/reviews',          icon: 'rate_review', exact: false },
+  { label: 'Received',  href: '/employee/received-reviews', icon: 'inbox',       exact: false },
+  { label: 'Scores',    href: '/employee/scores',           icon: 'query_stats', exact: false },
+  { label: 'Settings',  href: '/settings',                  icon: 'settings',    exact: false },
 ]
 
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
