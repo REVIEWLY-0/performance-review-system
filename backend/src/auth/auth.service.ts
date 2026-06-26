@@ -248,6 +248,7 @@ export class AuthService {
     const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
       type: 'recovery',
       email,
+      options: { redirectTo: `${process.env.FRONTEND_URL}/auth/callback` },
     });
 
     if (linkError || !linkData?.properties?.action_link) {
@@ -274,6 +275,7 @@ export class AuthService {
     const { data: linkData, error: linkError } = await this.supabase.auth.admin.generateLink({
       type: 'recovery',
       email,
+      options: { redirectTo: `${process.env.FRONTEND_URL}/auth/callback` },
     });
 
     if (linkError || !linkData?.properties?.action_link) {
