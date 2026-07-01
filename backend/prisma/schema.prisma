@@ -209,7 +209,7 @@ model Review {
   id            String       @id @default(cuid())
   reviewCycleId String       @map("review_cycle_id")
   employeeId    String       @map("employee_id")
-  reviewerId    String       @map("reviewer_id")
+  reviewerId    String?      @map("reviewer_id")
   reviewType    ReviewType   @map("review_type")
   status        ReviewStatus @default(NOT_STARTED)
   createdAt     DateTime     @default(now()) @map("created_at")
@@ -217,7 +217,7 @@ model Review {
   answers       Answer[]
   employee      User         @relation("EmployeeReviews", fields: [employeeId], references: [id], onDelete: Cascade)
   reviewCycle   ReviewCycle  @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
-  reviewer      User         @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewer      User?        @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: SetNull)
 
   @@unique([reviewCycleId, employeeId, reviewerId, reviewType])
   @@index([reviewCycleId])
@@ -371,7 +371,7 @@ model EmployeeGoal {
   company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   cycle       ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   employee    User        @relation("GoalsAsEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
-  setter      User?       @relation("GoalsAsSetBy", fields: [setBy], references: [id])
+  setter      User?       @relation("GoalsAsSetBy", fields: [setBy], references: [id], onDelete: SetNull)
 
   @@index([companyId])
   @@index([cycleId, employeeId])
@@ -384,14 +384,14 @@ model QuantScore {
   cycleId    String      @map("cycle_id")
   employeeId String      @map("employee_id")
   score      Float
-  setBy      String      @map("set_by")
+  setBy      String?     @map("set_by")
   note       String?
   createdAt  DateTime    @default(now()) @map("created_at")
   updatedAt  DateTime    @updatedAt      @map("updated_at")
   company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   cycle      ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   employee   User        @relation("QuantScoresAsEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
-  setter     User        @relation("QuantScoresAsSetBy", fields: [setBy], references: [id])
+  setter     User?       @relation("QuantScoresAsSetBy", fields: [setBy], references: [id], onDelete: SetNull)
 
   @@unique([cycleId, employeeId])
   @@index([companyId])
@@ -406,13 +406,13 @@ model DepartmentQuantScore {
   departmentId String      @map("department_id")
   score        Float
   note         String?
-  setBy        String      @map("set_by")
+  setBy        String?     @map("set_by")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at")
   company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   cycle        ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   department   Department  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  setter       User        @relation("DeptQuantScoresAsSetBy", fields: [setBy], references: [id])
+  setter       User?       @relation("DeptQuantScoresAsSetBy", fields: [setBy], references: [id], onDelete: SetNull)
 
   @@unique([cycleId, departmentId])
   @@index([companyId])

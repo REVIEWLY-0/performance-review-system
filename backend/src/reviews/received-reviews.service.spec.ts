@@ -208,6 +208,52 @@ describe('ReviewsService.getMyReceivedReviews — anonymity enforcement', () => 
     expect(result.self[0].reviewer.name).toBe(`User ${EMPLOYEE_ID}`);
   });
 
+  // ── Deleted reviewer (null reviewer) ─────────────────────────────────────
+
+  it('MANAGER review with null reviewer (deleted user) appears in manager section as "Deleted User"', async () => {
+    const deletedReviewer = {
+      id: `rev-${Math.random()}`,
+      reviewCycleId: CYCLE_ID,
+      employeeId: EMPLOYEE_ID,
+      reviewerId: null,        // reviewer was deleted → onDelete: SetNull
+      reviewType: 'MANAGER',
+      status: 'SUBMITTED',
+      updatedAt: new Date(),
+      reviewer: null,          // Prisma returns null for the relation when FK is null
+      answers: [makeAnswer(4)],
+    };
+    const svc = makeService(COMPLETED_CYCLE, [deletedReviewer]);
+
+    const result: any = await svc.getMyReceivedReviews(EMPLOYEE_ID, COMPANY_ID, CYCLE_ID);
+
+    expect(result.manager).toHaveLength(1);
+    expect(result.manager[0].reviewer.name).toBe('Deleted User');
+    expect(result.manager[0].reviewer.email).toBe('');
+  });
+
+  it('PEER review with null reviewer does not expose reviewer identity', async () => {
+    const deletedPeerReviewer = {
+      id: `rev-${Math.random()}`,
+      reviewCycleId: CYCLE_ID,
+      employeeId: EMPLOYEE_ID,
+      reviewerId: null,
+      reviewType: 'PEER',
+      status: 'SUBMITTED',
+      updatedAt: new Date(),
+      reviewer: null,
+      answers: [makeAnswer(3)],
+    };
+    const svc = makeService(COMPLETED_CYCLE, [deletedPeerReviewer]);
+
+    const result: any = await svc.getMyReceivedReviews(EMPLOYEE_ID, COMPANY_ID, CYCLE_ID);
+
+    expect(result.peer.count).toBe(1);
+    for (const review of result.peer.reviews) {
+      expect(review).not.toHaveProperty('reviewer');
+      expect(review).not.toHaveProperty('reviewerId');
+    }
+  });
+
   // ── Mixed reviews ──────────────────────────────────────────────────────────
 
   it('correctly routes mixed review types into the right sections', async () => {
