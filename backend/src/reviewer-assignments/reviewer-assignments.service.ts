@@ -340,6 +340,7 @@ export class ReviewerAssignmentsService {
 
     const inboundStatusMap = new Map<string, string>();
     for (const r of inboundReviews) {
+      if (r.reviewerId == null) continue; // reviewer was deleted; skip status tracking
       const existing = inboundStatusMap.get(r.reviewerId) ?? 'NOT_STARTED';
       if (statusRank(r.status) > statusRank(existing)) {
         inboundStatusMap.set(r.reviewerId, r.status);

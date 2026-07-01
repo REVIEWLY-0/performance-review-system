@@ -559,6 +559,7 @@ This is an automated message from Reviewly.${unsub.text}
       // Group by reviewer
       const reviewsByUser = new Map<string, number>();
       reviews.forEach((review) => {
+        if (review.reviewerId == null) return; // reviewer was deleted; no one to remind
         const count = reviewsByUser.get(review.reviewerId) || 0;
         reviewsByUser.set(review.reviewerId, count + 1);
       });
