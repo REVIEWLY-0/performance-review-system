@@ -968,8 +968,8 @@ export class ReviewsService {
         reviewType: review.reviewType,
         submittedAt: review.updatedAt,
         reviewer: {
-          id: isPeer ? null : review.reviewer.id,
-          name: isPeer ? null : review.reviewer.name,
+          id: isPeer ? null : (review.reviewer?.id ?? null),
+          name: isPeer ? null : (review.reviewer?.name ?? 'Deleted User'),
           isAnonymous: isPeer,
         },
         answers: review.answers.map((a) => ({
@@ -1072,16 +1072,17 @@ export class ReviewsService {
     const selfReviews = reviews.filter((r) => r.reviewType === 'SELF');
 
     // Upward review: reviewer is a subordinate of employeeId (reviewer.managerId === employeeId)
+    // reviewer may be null if the reviewer was deleted — treat as non-upward (manager section)
     const upwardReviews = reviews.filter(
       (r) =>
         (r.reviewType === 'MANAGER' || r.reviewType === 'DOWNWARD') &&
-        r.reviewer.managerId === employeeId,
+        r.reviewer?.managerId === employeeId,
     );
     // Regular downward manager reviews: reviewer is the employee's manager (not subordinate)
     const managerReviews = reviews.filter(
       (r) =>
         (r.reviewType === 'MANAGER' || r.reviewType === 'DOWNWARD') &&
-        r.reviewer.managerId !== employeeId,
+        r.reviewer?.managerId !== employeeId,
     );
     const peerReviews = reviews.filter((r) => r.reviewType === 'PEER');
 
@@ -1097,17 +1098,18 @@ export class ReviewsService {
         }));
 
     // Attributed: self + downward manager (reviewer identity included)
+    // reviewer may be null if the reviewer user was deleted — shown as "Deleted User"
     const attributedSelf = selfReviews.map((r) => ({
       reviewType: r.reviewType,
       status: r.status,
-      reviewer: { name: r.reviewer.name, email: r.reviewer.email },
+      reviewer: { name: r.reviewer?.name ?? 'Deleted User', email: r.reviewer?.email ?? '' },
       answers: serializeAnswers(r),
     }));
 
     const attributedManager = managerReviews.map((r) => ({
       reviewType: r.reviewType,
       status: r.status,
-      reviewer: { name: r.reviewer.name, email: r.reviewer.email },
+      reviewer: { name: r.reviewer?.name ?? 'Deleted User', email: r.reviewer?.email ?? '' },
       answers: serializeAnswers(r),
     }));
 

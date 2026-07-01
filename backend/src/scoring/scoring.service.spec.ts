@@ -399,4 +399,29 @@ describe('ScoringService — calculateScoreFromData', () => {
 
     expect(result.overall_score).toBe(4.30);
   });
+
+  // ── Null reviewer (deleted user) ──────────────────────────────────────────
+
+  it('review with null reviewerId still contributes to score — deletion does not break math', () => {
+    // Simulate a peer reviewer who was deleted after submitting: reviewerId is null
+    // but the review object and its ratings survive (onDelete: SetNull on reviewer FK)
+    const reviewWithNullReviewer = {
+      reviewType: 'PEER',
+      reviewerId: null,
+      answers: [{ questionId: 'q-1', rating: 3 }, { questionId: 'q-2', rating: 3 }],
+    };
+    const reviews = [
+      makeReview('SELF',    { 'q-1': 4, 'q-2': 4 }),   // selfAvg = 4
+      makeReview('DOWNWARD', { 'q-1': 5, 'q-2': 5 }),  // managerAvg = 5
+      reviewWithNullReviewer,                            // peer avg = 3 (reviewer deleted)
+    ];
+    const weights = { quantWeight: 0, managerWeight: 60, peerWeight: 30, selfWeight: 10, minPeerThreshold: 3 };
+
+    const result = calcWeighted(service, reviews, weights);
+
+    // Score is identical to a review with a live reviewer — null reviewerId is irrelevant to math
+    expect(result.overall_score).toBe(4.30);
+    expect(result.breakdown.peer).toBe(3.00);
+    expect(result.review_counts.peer_reviews).toBe(1);
+  });
 });

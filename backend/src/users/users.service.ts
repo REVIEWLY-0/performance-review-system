@@ -460,20 +460,14 @@ export class UsersService {
     return this.findOne(userId, companyId);
   }
 
-  /**
-   * Soft delete user (we don't actually delete, just mark as inactive)
-   * For now, we'll actually delete, but in production you'd add an 'active' field
-   */
   async remove(userId: string, companyId: string) {
     // Verify user exists in company
     await this.findOne(userId, companyId);
 
-    // Check if user has direct reports
+    // Check if user has direct reports — they must be reassigned before deletion
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        directReports: true,
-      },
+      include: { directReports: true },
     });
 
     if (user?.directReports && user.directReports.length > 0) {
@@ -482,39 +476,23 @@ export class UsersService {
       );
     }
 
-    // Check for submitted reviews authored by this user (as reviewer)
-    const reviewCount = await this.prisma.review.count({
-      where: { reviewerId: userId },
-    });
-    if (reviewCount > 0) {
-      throw new BadRequestException(
-        `Cannot delete user who has submitted ${reviewCount} review${reviewCount !== 1 ? 's' : ''}. Remove their reviewer assignments first.`,
-      );
+    // Delete the DB record.
+    // - ReviewerAssignment rows (both directions) cascade-delete automatically.
+    // - Review rows where this user is the SUBJECT (employeeId) cascade-delete.
+    // - Review rows where this user is the REVIEWER (reviewerId) survive with reviewerId set to null,
+    //   preserving historical review data for the employees they reviewed.
+    // - QuantScore/DepartmentQuantScore/EmployeeGoal setBy FK set to null automatically.
+    const deleted = await this.prisma.user.delete({ where: { id: userId } });
+
+    // Remove the Supabase auth account so the ex-employee cannot sign in.
+    // The Prisma user id is the Supabase UUID (set at create time).
+    // Failures here are non-fatal — the DB record is already gone.
+    const { error: authDeleteError } = await this.supabase.auth.admin.deleteUser(userId);
+    if (authDeleteError) {
+      console.error(`Supabase auth deletion failed for user ${userId}:`, authDeleteError.message);
     }
 
-    // Check for reviewer assignments where this user IS the reviewer
-    const reviewerCount = await this.prisma.reviewerAssignment.count({
-      where: { reviewerId: userId },
-    });
-    if (reviewerCount > 0) {
-      throw new BadRequestException(
-        `Cannot delete user with ${reviewerCount} pending reviewer assignment${reviewerCount !== 1 ? 's' : ''}. Remove their reviewer assignments first.`,
-      );
-    }
-
-    // Check for reviewer assignments targeting this user (as employee being reviewed)
-    const assignmentCount = await this.prisma.reviewerAssignment.count({
-      where: { employeeId: userId },
-    });
-    if (assignmentCount > 0) {
-      throw new BadRequestException(
-        `Cannot delete user with ${assignmentCount} active reviewer assignment${assignmentCount !== 1 ? 's' : ''}. Remove assignments first.`,
-      );
-    }
-
-    return this.prisma.user.delete({
-      where: { id: userId },
-    });
+    return deleted;
   }
 
   /**
