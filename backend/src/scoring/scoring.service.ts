@@ -305,7 +305,7 @@ export class ScoringService {
           const upward = allReviews.filter(
             (r) =>
               r.employeeId === employee.id &&
-              reportIds.has(r.reviewerId) &&
+              r.reviewerId != null && reportIds.has(r.reviewerId) &&
               (r.reviewType === 'MANAGER' || r.reviewType === 'DOWNWARD'),
           );
           overridePeerAvg = null;
