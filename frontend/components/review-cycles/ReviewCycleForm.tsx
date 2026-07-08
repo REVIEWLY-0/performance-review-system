@@ -30,7 +30,11 @@ export default function ReviewCycleForm({
     name: initialData?.name || '',
     startDate: initialData?.startDate.split('T')[0] || '',
     endDate: initialData?.endDate.split('T')[0] || '',
-    reviewConfigs: initialData?.reviewConfigs || ([] as ReviewConfig[]),
+    reviewConfigs: (initialData?.reviewConfigs || ([] as ReviewConfig[])).map((c) => ({
+      ...c,
+      startDate: c.startDate.split('T')[0],
+      endDate: c.endDate.split('T')[0],
+    })),
   });
 
   const [loading, setLoading] = useState(false);

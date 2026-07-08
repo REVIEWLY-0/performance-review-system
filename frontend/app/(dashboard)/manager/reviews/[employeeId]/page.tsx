@@ -5,8 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   getDownwardReview,
   saveDownwardReview,
+  getDownwardReviewContext,
   invalidateReviewCaches,
   ManagerReviewData,
+  DownwardReviewContext,
   Answer,
   QuestionWithAnswer,
 } from '@/lib/reviews';
@@ -25,6 +27,7 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
   const cycleId = searchParams.get('cycleId');
 
   const [reviewData, setReviewData] = useState<ManagerReviewData | null>(null);
+  const [peerContext, setPeerContext] = useState<DownwardReviewContext | null>(null);
   const [ratingScale, setRatingScale] = useState<RatingScale>(DEFAULT_SCALE);
   const [answers, setAnswers] = useState<Map<string, Answer>>(new Map());
   const [dirtyAnswers, setDirtyAnswers] = useState<Set<string>>(new Set());
@@ -66,12 +69,14 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
     try {
       setLoading(true);
       setError('');
-      const [data, scale] = await Promise.all([
+      const [data, scale, context] = await Promise.all([
         getDownwardReview(cycleId, params.employeeId),
         ratingScaleApi.get(),
+        getDownwardReviewContext(cycleId, params.employeeId).catch(() => null),
       ]);
       setReviewData(data);
       setRatingScale(scale);
+      setPeerContext(context);
 
       const initialAnswers = new Map<string, Answer>();
       data.questions.forEach((q) => {
@@ -254,6 +259,11 @@ export default function ManagerReviewPage({ params }: ManagerReviewPageProps) {
           selfReview={reviewData.employeeSelfReview}
           ratingScale={ratingScale}
         />
+      )}
+
+      {/* Anonymous peer-review context */}
+      {peerContext && (
+        <PeerContextPanel context={peerContext} ratingScale={ratingScale} />
       )}
 
       {/* Questions */}
@@ -466,6 +476,105 @@ function SelfReviewPanel({
                 )}
               </div>
               <SelfAnswerBlock question={q} ratingScale={ratingScale} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Anonymous peer-review context ───────────────────────────────────────────
+
+function PeerAnswerList({
+  answers,
+  ratingScale,
+}: {
+  answers: { questionId: string; questionText: string; rating: number | null; textAnswer: string | null }[];
+  ratingScale: RatingScale;
+}) {
+  const ratingAnswers = answers.filter((a) => a.rating != null);
+  const textAnswers = answers.filter((a) => a.textAnswer && a.textAnswer.trim());
+  return (
+    <div className="space-y-2">
+      {ratingAnswers.map((a) => (
+        <div key={a.questionId} className="flex justify-between items-center text-sm">
+          <span className="text-on-surface-variant">{a.questionText}</span>
+          <span className="font-bold text-on-surface font-mono">{a.rating}/{ratingScale.maxRating}</span>
+        </div>
+      ))}
+      {textAnswers.map((a) => (
+        <div key={a.questionId + '-text'} className="text-sm">
+          <div className="text-on-surface-variant text-xs mb-1">{a.questionText}</div>
+          <div className="text-on-surface rounded-xl bg-surface-container-high px-3 py-2 text-sm">
+            {a.textAnswer}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PeerContextPanel({
+  context,
+  ratingScale,
+}: {
+  context: DownwardReviewContext;
+  ratingScale: RatingScale;
+}) {
+  const [open, setOpen] = useState(false);
+  const { count, reviews } = context.peer;
+
+  return (
+    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest shadow-sm overflow-hidden mb-6">
+      {/* Panel header — always visible */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-surface-container-low transition-colors text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-on-surface">Peer Reviews (anonymous)</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              {count === 0
+                ? 'No peer reviews submitted yet'
+                : `${count} anonymous review${count === 1 ? '' : 's'} so far · Click to ${open ? 'hide' : 'view'}`}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-4">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-high text-on-surface-variant uppercase tracking-wide">
+            {count}
+          </span>
+          <svg
+            className={`h-4 w-4 text-on-surface-variant transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {open && (
+        <div className="border-t border-outline-variant divide-y divide-outline-variant">
+          {count === 0 && (
+            <div className="px-6 py-5 text-sm text-on-surface-variant italic">
+              No peer reviews have been submitted for this person yet.
+            </div>
+          )}
+          {reviews.map((r, i) => (
+            <div key={i} className="px-6 py-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs text-on-surface-variant font-medium italic">Anonymous peer review {i + 1}</span>
+              </div>
+              <PeerAnswerList answers={r.answers} ratingScale={ratingScale} />
             </div>
           ))}
         </div>
