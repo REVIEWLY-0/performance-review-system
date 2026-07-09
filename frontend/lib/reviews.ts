@@ -204,6 +204,43 @@ export async function saveDownwardReview(
 }
 
 // ============================================================================
+// Downward Review Context (manager-facing, read-only)
+// ============================================================================
+
+export interface DownwardContextAnswer {
+  questionId: string;
+  questionText: string;
+  questionType: string;
+  rating: number | null;
+  textAnswer: string | null;
+}
+
+export interface DownwardContextPeerEntry {
+  reviewType: string;
+  status: string;
+  // reviewer identity intentionally absent — anonymous
+  answers: DownwardContextAnswer[];
+}
+
+export interface DownwardReviewContext {
+  peer: {
+    count: number;
+    reviews: DownwardContextPeerEntry[];
+  };
+}
+
+/**
+ * Read-only context panel data for a manager assessing a subordinate:
+ * anonymous submitted peer reviews about that subordinate. Mid-cycle visible.
+ */
+export async function getDownwardReviewContext(
+  cycleId: string,
+  employeeId: string,
+): Promise<DownwardReviewContext> {
+  return fetchWithAuth(`${API_URL}/reviews/downward/${cycleId}/${employeeId}/context`);
+}
+
+// ============================================================================
 // Peer Review API Functions
 // ============================================================================
 

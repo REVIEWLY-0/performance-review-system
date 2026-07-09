@@ -214,6 +214,27 @@ export class ReviewsController {
   }
 
   /**
+   * GET /reviews/downward/:cycleId/:employeeId/context
+   * Read-only context panel for a manager assessing a subordinate: anonymous
+   * submitted PEER reviews about that subordinate. Same manager↔subordinate
+   * scope as the downward review itself. Mid-cycle visible (ACTIVE cycles only).
+   */
+  @Get('downward/:cycleId/:employeeId/context')
+  async getDownwardReviewContext(
+    @Param('cycleId') cycleId: string,
+    @Param('employeeId') employeeId: string,
+    @CurrentUser() user: any,
+    @CompanyId() companyId: string,
+  ) {
+    return this.reviewsService.getDownwardReviewContext(
+      user.id,
+      companyId,
+      cycleId,
+      employeeId,
+    );
+  }
+
+  /**
    * POST /reviews/downward/:cycleId/:employeeId
    * Save or submit downward review
    * Body should include { answers: [...], submit: boolean }

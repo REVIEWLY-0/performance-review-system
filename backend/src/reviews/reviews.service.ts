@@ -741,6 +741,90 @@ export class ReviewsService {
     });
   }
 
+  /**
+   * Read-only context panel for a manager assessing a subordinate they are the
+   * assigned MANAGER-type reviewer of: anonymous submitted PEER reviews about
+   * that subordinate. Mid-cycle visible (cycle must be ACTIVE, not COMPLETED).
+   *
+   * ANONYMITY: reviewerId/reviewer are never selected — same guarantee as
+   * getMyReceivedReviews's anonymousSection. Scoped to employeeId (reviews
+   * ABOUT the subordinate), never reviewerId, so it structurally cannot expose
+   * what the subordinate said about their own peers.
+   */
+  async getDownwardReviewContext(
+    managerId: string,
+    companyId: string,
+    cycleId: string,
+    employeeId: string,
+  ) {
+    console.log(`📋 Fetching downward review context for employee ${employeeId} by manager ${managerId}`);
+
+    const cycle = await this.prisma.reviewCycle.findFirst({
+      where: { id: cycleId, companyId, status: 'ACTIVE' },
+    });
+
+    if (!cycle) {
+      throw new NotFoundException('Review cycle not found, not active, or access denied');
+    }
+
+    // Same manager↔subordinate scope check as findOrCreateDownwardReview
+    const assignment = await this.prisma.reviewerAssignment.findFirst({
+      where: {
+        reviewCycleId: cycleId,
+        employeeId,
+        reviewerId: managerId,
+        reviewerType: 'MANAGER',
+        reviewCycle: { companyId },
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('Not assigned to review this employee or access denied');
+    }
+
+    const peerReviews = await this.prisma.review.findMany({
+      where: {
+        reviewCycleId: cycleId,
+        employeeId,
+        reviewType: 'PEER',
+        status: 'SUBMITTED',
+        reviewCycle: { companyId },
+      },
+      select: {
+        reviewType: true,
+        status: true,
+        answers: {
+          select: {
+            questionId: true,
+            rating: true,
+            textAnswer: true,
+            question: { select: { text: true, type: true, order: true } },
+          },
+        },
+      },
+    });
+
+    return {
+      peer: {
+        count: peerReviews.length,
+        reviews: peerReviews.map((r) => ({
+          reviewType: r.reviewType,
+          status: r.status,
+          // reviewer identity intentionally absent — never include for PEER reviews
+          answers: r.answers
+            .sort((a, b) => (a.question?.order ?? 0) - (b.question?.order ?? 0))
+            .map((a) => ({
+              questionId: a.questionId,
+              questionText: a.question?.text ?? '',
+              questionType: a.question?.type ?? '',
+              rating: a.rating,
+              textAnswer: a.textAnswer,
+            })),
+        })),
+      },
+    };
+  }
+
   // ============================================================================
   // Peer Review Methods
   // ============================================================================
