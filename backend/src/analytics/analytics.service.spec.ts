@@ -4,6 +4,7 @@ import { PrismaService } from '../common/services/prisma.service';
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
 const EMPLOYEE_ID = 'daniel-1';
+const MANAGER_ID  = 'tobi-1';
 const COMPANY_ID  = 'co-1';
 const CYCLE_ID    = 'cycle-1';
 
@@ -107,6 +108,94 @@ describe('AnalyticsService.getEmployeeAnalytics — upward manager-review counte
       reviewerId: EMPLOYEE_ID,
       reviewerType: 'MANAGER',
       employee: { role: 'MANAGER' },
+    });
+  });
+});
+
+// ─── getManagerAnalytics — Team Size (Bug B) ───────────────────────────────────
+//
+// Team Size must come from reviewer_assignments (the manager's downward-assigned
+// employees in this cycle), not from the org-chart User.managerId relationship.
+// The mock Prisma object below deliberately does NOT implement `user.count` —
+// if a regression reintroduces a call to it, these tests fail with a "not a
+// function" error rather than silently passing.
+
+function makeManagerAnalyticsService(assignedEmployees: { id: string; name: string; email: string }[]) {
+  const assignments = assignedEmployees.map((e) => ({
+    id: `assign-${e.id}`,
+    reviewCycleId: CYCLE_ID,
+    employeeId: e.id,
+    reviewerId: MANAGER_ID,
+    reviewerType: 'MANAGER',
+    employee: e,
+  }));
+
+  const assignmentFindMany = jest.fn().mockResolvedValue(assignments);
+
+  const prisma = {
+    reviewCycle: { findFirst: jest.fn().mockResolvedValue(ACTIVE_CYCLE) },
+    reviewerAssignment: { findMany: assignmentFindMany },
+    review: {
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    user: { findMany: jest.fn().mockResolvedValue([]) }, // no user.count on this mock — see note above
+  } as unknown as PrismaService;
+
+  return { svc: new AnalyticsService(prisma), assignmentFindMany };
+}
+
+describe('AnalyticsService.getManagerAnalytics — Team Size (assignment-based, not org-chart)', () => {
+  it("reflects Tobi's case: 3 downward-assigned employees → Team Size 3", async () => {
+    const { svc } = makeManagerAnalyticsService([
+      { id: 'comfort-1', name: 'Comfort Edet', email: 'comfort@co.com' },
+      { id: 'daniel-1', name: 'Daniel Igwe', email: 'daniel@co.com' },
+      { id: 'irene-1', name: 'Irene Jones', email: 'irene@co.com' },
+    ]);
+
+    const result = await svc.getManagerAnalytics(MANAGER_ID, CYCLE_ID, COMPANY_ID);
+
+    expect(result.teamSize).toBe(3);
+    expect(result.teamMembers).toHaveLength(3);
+  });
+
+  it('shows Team Size N for an arbitrary number of assigned downward employees', async () => {
+    const { svc } = makeManagerAnalyticsService([
+      { id: 'e1', name: 'E1', email: 'e1@co.com' },
+      { id: 'e2', name: 'E2', email: 'e2@co.com' },
+      { id: 'e3', name: 'E3', email: 'e3@co.com' },
+      { id: 'e4', name: 'E4', email: 'e4@co.com' },
+      { id: 'e5', name: 'E5', email: 'e5@co.com' },
+    ]);
+
+    const result = await svc.getManagerAnalytics(MANAGER_ID, CYCLE_ID, COMPANY_ID);
+
+    expect(result.teamSize).toBe(5);
+  });
+
+  it('shows Team Size 0 when the manager has no downward assignments this cycle', async () => {
+    const { svc } = makeManagerAnalyticsService([]);
+
+    const result = await svc.getManagerAnalytics(MANAGER_ID, CYCLE_ID, COMPANY_ID);
+
+    expect(result.teamSize).toBe(0);
+    expect(result.teamMembers).toEqual([]);
+  });
+
+  it('derives Team Size from the same assignment query used to build teamMembers, scoped to reviewerType MANAGER and employee.role EMPLOYEE', async () => {
+    const { svc, assignmentFindMany } = makeManagerAnalyticsService([
+      { id: 'comfort-1', name: 'Comfort Edet', email: 'comfort@co.com' },
+    ]);
+
+    await svc.getManagerAnalytics(MANAGER_ID, CYCLE_ID, COMPANY_ID);
+
+    expect(assignmentFindMany).toHaveBeenCalledTimes(1);
+    const call = assignmentFindMany.mock.calls[0][0];
+    expect(call.where).toEqual({
+      reviewCycleId: CYCLE_ID,
+      reviewerId: MANAGER_ID,
+      reviewerType: 'MANAGER',
+      employee: { role: 'EMPLOYEE' },
     });
   });
 });
