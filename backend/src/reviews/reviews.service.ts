@@ -557,11 +557,19 @@ export class ReviewsService {
 
     if (assignments.length === 0) return [];
 
+    // Downward reviews are always written with reviewType: 'DOWNWARD' (see
+    // findOrCreateDownwardReview below). Scoping this lookup to DOWNWARD only
+    // avoids colliding with an unrelated MANAGER-type row that may exist for the
+    // same (reviewerId, employeeId) pair — e.g. a stale row from this manager's
+    // own upward-review flow. Mixing the two types here previously caused
+    // `new Map(...)` to silently pick whichever row came back last from
+    // Postgres, showing SUBMITTED downward reviews as Not Started for some
+    // employees depending on row order.
     const existingReviews = await this.prisma.review.findMany({
       where: {
         reviewCycleId: cycleId,
         reviewerId: managerId,
-        reviewType: { in: ['DOWNWARD', 'MANAGER'] },
+        reviewType: 'DOWNWARD',
       },
       select: { employeeId: true, status: true },
     });

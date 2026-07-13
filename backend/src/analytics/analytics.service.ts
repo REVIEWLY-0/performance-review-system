@@ -189,21 +189,21 @@ export class AnalyticsService {
       throw new NotFoundException('Review cycle not found or access denied');
     }
 
-    // Get team members (employees this manager is assigned to review — downward only)
-    const [assignments, directReportCount] = await Promise.all([
-      this.prisma.reviewerAssignment.findMany({
-        where: {
-          reviewCycleId: cycleId,
-          reviewerId: managerId,
-          reviewerType: 'MANAGER',
-          employee: { role: 'EMPLOYEE' }, // downward only — direct reports
-          // cycleId already verified to belong to companyId above
-        },
-        include: { employee: true },
-      }),
-      // Count actual direct reports (managerId relationship) for the Team Size stat
-      this.prisma.user.count({ where: { managerId, companyId } }),
-    ]);
+    // Get team members (employees this manager is assigned to review — downward only).
+    // Team Size is derived from this same assignment list (reviewer_assignments),
+    // not the org-chart User.managerId relationship, which is independently
+    // maintained and not guaranteed to match a cycle's actual reviewer assignments.
+    const assignments = await this.prisma.reviewerAssignment.findMany({
+      where: {
+        reviewCycleId: cycleId,
+        reviewerId: managerId,
+        reviewerType: 'MANAGER',
+        employee: { role: 'EMPLOYEE' }, // downward only — direct reports
+        // cycleId already verified to belong to companyId above
+      },
+      include: { employee: true },
+    });
+    const directReportCount = assignments.length;
 
     const teamMemberIds = assignments.map((a) => a.employeeId);
 
