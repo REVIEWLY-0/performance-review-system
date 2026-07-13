@@ -305,21 +305,21 @@ export class ReviewsService {
       throw new NotFoundException('Review cycle not found, not active, or access denied');
     }
 
-    // Upward reviews: current user is reviewing their own manager
-    // First find who the current user's manager is
-    const currentUser = await this.prisma.user.findFirst({
-      where: { id: managerId, companyId },
-      select: { managerId: true },
-    });
-
-    if (!currentUser?.managerId) return [];
-
+    // Upward reviews: sourced from ReviewerAssignment (reviewerType MANAGER), not the org
+    // chart / User.managerId. A user may be assigned multiple upward targets in the same
+    // cycle. employee.role === 'MANAGER' excludes a manager's own downward reports from
+    // their own upward list: the assign-reviewers UI's manager picker only ever offers
+    // role=MANAGER users as a *reviewer*, so a downward assignment's reviewer is always
+    // role=MANAGER while its target can be any role — but the auto-generated reverse
+    // (upward) row's target is always that same role=MANAGER reviewer. Filtering targets
+    // to role=MANAGER keeps a manager's own (typically role=EMPLOYEE) reports out of this
+    // list without needing User.managerId.
     const assignments = await this.prisma.reviewerAssignment.findMany({
       where: {
         reviewCycleId: cycleId,
         reviewerId: managerId,
         reviewerType: 'MANAGER',
-        employeeId: currentUser.managerId, // Only reviewing own manager (upward)
+        employee: { role: 'MANAGER' },
         reviewCycle: { companyId },
       },
       include: {
